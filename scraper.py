@@ -301,12 +301,25 @@ class TrendyolScraper:
         return price, original_price
 
     def _extract_image_url(self, soup):
-        """Extract product image URL (logic from old scraper)."""
+        """Extract product image URL using multiple methods."""
         try:
+            # Method 1: Try to get from 'og:image' meta tag (most reliable)
+            og_image = soup.find('meta', property='og:image')
+            if og_image and og_image.get('content'):
+                return og_image['content']
+
+            # Method 2: New gallery image selector
+            gallery_img = soup.select_one('.product-image-gallery-container img')
+            if gallery_img and gallery_img.get('src'):
+                image_url = gallery_img.get('src')
+                return image_url if image_url.startswith('http') else 'https:' + image_url
+
+            # Method 3: Fallback to old selector
             img_tag = soup.select_one('img.ph-gl-img, .product-slide img')
             if img_tag and img_tag.get('src'):
                 image_url = img_tag.get('src')
                 return image_url if image_url.startswith('http') else 'https:' + image_url
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error extracting image URL: {e}")
             return None
         return None
