@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Kullanıcı Yönetimi • Trendcord{% endblock %}
+{% block content %}
+<div class="grid gap-lg two-cols">
+    <div class="card">
+        <div class="card-header">
+            <h3>Yeni Kullanıcı Oluştur</h3>
+        </div>
+        {% if message %}
+        <div class="alert alert-success">{{ message }}</div>
+        {% endif %}
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+        <form method="post" class="form">
+            <label>
+                <span>Kullanıcı adı</span>
+                <input type="text" name="username" required>
+            </label>
+            <label>
+                <span>E-posta</span>
+                <input type="email" name="email" required>
+            </label>
+            <label>
+                <span>Şifre</span>
+                <input type="password" name="password" required>
+            </label>
+            <label>
+                <span>Rol</span>
+                <select name="role">
+                    <option value="user">Kullanıcı</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </label>
+            <label>
+                <span>Discord ID (opsiyonel)</span>
+                <input type="text" name="discord_id" placeholder="1234567890">
+            </label>
+            <button type="submit" class="btn-primary">Kullanıcı Oluştur</button>
+        </form>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <h3>Varolan Kullanıcılar</h3>
+            <span class="pill light">{{ users|length }} kişi</span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Kullanıcı</th>
+                        <th>Rol</th>
+                        <th>Discord ID</th>
+                        <th>Son Giriş</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in users %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.username }}</strong>
+                            <p class="muted tiny">{{ item.email }}</p>
+                        </td>
+                        <td>{{ item.role|title }}</td>
+                        <td>{{ item.discord_id or '-' }}</td>
+                        <td>{{ item.last_login|datetime }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="muted">Henüz kullanıcı bulunmuyor.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

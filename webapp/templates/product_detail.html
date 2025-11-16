@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }} • Trendcord{% endblock %}
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="product-detail">
+        <div>
+            <p class="eyebrow">Ürün Bilgisi</p>
+            <h2>{{ product.name }}</h2>
+            <p class="muted">ID: {{ product.product_id }}</p>
+            <ul class="meta">
+                <li><strong>Güncel Fiyat:</strong> {{ '%.2f'|format(product.current_price or 0) }} ₺</li>
+                {% if product.original_price %}
+                <li><strong>Liste Fiyatı:</strong> {{ '%.2f'|format(product.original_price) }} ₺</li>
+                {% endif %}
+                <li><strong>Sunucu:</strong> {{ product.guild_id or '-' }}</li>
+                <li><strong>Kanal ID:</strong> {{ product.channel_id or '-' }}</li>
+                <li><strong>Ekleyen Kullanıcı:</strong> {{ product.user_id or '-' }}</li>
+                <li><strong>Eklenme Tarihi:</strong> {{ product.added_at|datetime }}</li>
+            </ul>
+            <a href="{{ product.url }}" class="btn-primary" target="_blank" rel="noopener">Trendyol sayfasını aç</a>
+        </div>
+        {% if product.image_url %}
+        <img src="{{ product.image_url }}" alt="{{ product.name }}">
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3>Fiyat Geçmişi</h3>
+    </div>
+    <canvas id="historyChart" height="120"></canvas>
+</div>
+
+<script>
+const ctx = document.getElementById('historyChart');
+if (ctx) {
+    const labels = {{ labels | safe }};
+    const values = {{ values | safe }};
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Fiyat (₺)',
+                data: values,
+                borderColor: '#7c3aed',
+                backgroundColor: 'rgba(124, 58, 237, 0.15)',
+                tension: 0.4,
+                fill: true,
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { ticks: { callback: (value) => value + ' ₺' } }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trendcord • Giriş Yap</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('web_static', path='styles.css') }}">
+</head>
+<body class="login-body">
+    <div class="login-card">
+        <div>
+            <p class="eyebrow">Trendcord</p>
+            <h1>Kontrol Paneline Giriş</h1>
+            <p class="muted">Takip ettiğiniz Trendyol ürünlerini yönetin.</p>
+        </div>
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+        <form method="post" class="form">
+            <label>
+                <span>Kullanıcı adı</span>
+                <input type="text" name="username" placeholder="admin" required>
+            </label>
+            <label>
+                <span>Şifre</span>
+                <input type="password" name="password" placeholder="••••••••" required>
+            </label>
+            <button type="submit" class="btn-primary">Giriş Yap</button>
+        </form>
+        <p class="muted tiny">İlk admin kullanıcı .env dosyasındaki değerlerle otomatik oluşturulur.</p>
+    </div>
+</body>
+</html>

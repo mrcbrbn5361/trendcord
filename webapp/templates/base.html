@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Trendcord{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('web_static', path='styles.css') }}">
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">TY</div>
+                <div>
+                    <strong>Trendcord</strong>
+                    <span>Kontrol Paneli</span>
+                </div>
+            </div>
+            <nav>
+                <a href="/dashboard" class="nav-item {% if request.url.path.startswith('/dashboard') %}active{% endif %}">
+                    <span>📊</span> Gösterge Paneli
+                </a>
+                {% if user and user.role == 'admin' %}
+                <a href="/admin/users" class="nav-item {% if request.url.path.startswith('/admin/users') %}active{% endif %}">
+                    <span>🛠️</span> Kullanıcı Yönetimi
+                </a>
+                {% endif %}
+                <a href="/logout" class="nav-item">
+                    <span>🚪</span> Çıkış Yap
+                </a>
+            </nav>
+        </aside>
+        <main class="content">
+            <header class="top-bar">
+                <div>
+                    <p class="top-bar__eyebrow">Hoş geldin</p>
+                    <h1>{{ user.username if user else 'Trendcord' }}</h1>
+                </div>
+                {% if user %}
+                <div class="pill">{{ 'Admin' if user.role == 'admin' else 'Kullanıcı' }}</div>
+                {% endif %}
+            </header>
+            <section>
+                {% block content %}{% endblock %}
+            </section>
+        </main>
+    </div>
+</body>
+</html>

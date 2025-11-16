@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}Gösterge Paneli • Trendcord{% endblock %}
+{% block content %}
+<div class="grid gap-lg two-cols">
+    <div class="card gradient">
+        <p class="eyebrow">Toplam Ürün</p>
+        <h2>{{ total_products }}</h2>
+        <p class="muted">Sistemde takip edilen toplam ürün sayısı</p>
+    </div>
+    <div class="card gradient purple">
+        <p class="eyebrow">Aktif Sunucular</p>
+        <h2>{{ guild_count }}</h2>
+        <p class="muted">Botun kurulu olduğu ve ürün takip eden sunucular</p>
+    </div>
+</div>
+
+<div class="grid gap-lg two-cols">
+    <div class="card">
+        <div class="card-header">
+            <h3>Ürünlerim</h3>
+            {% if user.role != 'admin' and not owns_products %}
+            <span class="pill warning">Discord ID eşleştirilmedi</span>
+            {% endif %}
+        </div>
+        {% if products %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ürün</th>
+                        <th>Fiyat</th>
+                        <th>Sunucu</th>
+                        <th>Güncellenen</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>
+                            <div class="product">
+                                {% if product.image_url %}
+                                <img src="{{ product.image_url }}" alt="{{ product.name }}">
+                                {% endif %}
+                                <div>
+                                    <strong>{{ product.name }}</strong>
+                                    <p class="muted tiny">{{ product.product_id }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ '%.2f'|format(product.current_price or 0) }} ₺</td>
+                        <td>{{ product.guild_id or '-' }}</td>
+                        <td>{{ product.last_checked|datetime }}</td>
+                        <td><a href="/products/{{ product.product_id }}" class="btn-link">İncele</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="muted">Henüz gösterilecek ürün bulunamadı. Discord ID'nizi bir yöneticiye ileterek hesabınıza tanımlayabilirsiniz.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h3>Son Fiyat Kayıtları</h3>
+        <ul class="timeline">
+            {% for event in recent_events %}
+            <li>
+                <div>
+                    <strong>{{ event.name }}</strong>
+                    <p class="muted tiny">{{ event.product_id }}</p>
+                </div>
+                <span>{{ event.price }} ₺</span>
+                <p class="muted tiny">{{ event.date|datetime }}</p>
+            </li>
+            {% else %}
+            <li class="muted tiny">Henüz fiyat geçmişi bulunmuyor.</li>
+            {% endfor %}
+        </ul>
+        <h4>Sunucu Bazlı Dağılım</h4>
+        <ul class="pill-list">
+            {% for item in guild_breakdown %}
+            <li><span class="pill light">Sunucu {{ item.guild_id }} • {{ item.product_count }} ürün</span></li>
+            {% else %}
+            <li class="muted tiny">Sunucu verisi bulunamadı.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

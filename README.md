@@ -9,6 +9,8 @@ Discord üzerinden Trendyol ürünlerinin fiyatlarını takip etmenizi sağlayan
 - Ürün fiyat geçmişini izleme
 - Proxy desteği ile istekleri yönetme
 - Discord üzerinden kolay kullanılabilir komutlar
+- Modern web kontrol paneli ile takip edilen ürünleri görselleştirme
+- Kullanıcı ve admin rolleri için giriş sistemi
 
 ## Kurulum
 
@@ -92,6 +94,45 @@ Bu botu çalıştırmak için bilgisayarınızda Python 3.8 veya üzeri bir sür
     # python3 main.py
     ```
     Botunuz artık Discord sunucunuzda aktif olmalıdır.
+
+## Web Kontrol Paneli
+
+Trendyol botunu yönetmek ve takip edilen ürünleri görselleştirmek için FastAPI tabanlı yeni bir web arayüzü eklenmiştir.
+
+### Gerekli Ortam Değişkenleri
+
+`.env` dosyanıza aşağıdaki değerleri ekleyerek yönetici hesabının otomatik oluşturulmasını sağlayabilirsiniz:
+
+```dotenv
+WEB_SECRET_KEY=rasgele_ve_uzun_bir_anahtar
+WEB_ADMIN_USERNAME=admin
+WEB_ADMIN_EMAIL=admin@example.com
+WEB_ADMIN_PASSWORD=guclu_sifreniz
+WEB_ADMIN_DISCORD_ID=1234567890 # Opsiyonel, kullanıcıya ait Discord ID'si
+WEB_SESSION_COOKIE=trendcord_session
+WEB_SESSION_MAX_AGE=604800
+WEB_COOKIE_SECURE=False
+```
+
+- `WEB_ADMIN_PASSWORD` belirtilmezse varsayılan `admin123` şifresi kullanılır. Güvenlik için kendi güçlü şifrenizi tanımlayın.
+- `WEB_SECRET_KEY` değeri oturum imzalama için kullanılır ve kesinlikle gizli tutulmalıdır.
+
+### Paneli Başlatma
+
+1. Bağımlılıkların yüklü olduğundan emin olun: `pip install -r requirements.txt`
+2. Veritabanı oluşturulduktan sonra aşağıdaki komutla web sunucusunu çalıştırın:
+
+```bash
+uvicorn webapp.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+3. Tarayıcıdan `http://localhost:8000/login` adresine giderek yönetim paneline erişebilirsiniz.
+
+### Panel Özellikleri
+
+- **Gösterge Paneli:** Toplam ürün sayısı, aktif sunucular ve son fiyat güncellemeleri tek ekranda.
+- **Kullanıcı Yönetimi:** Adminler yeni kullanıcılar oluşturabilir, rolleri belirleyebilir ve Discord ID eşleştirmesi yapabilir.
+- **Ürün Detayları:** Her ürün için fiyat geçmişi grafiği ve temel metrikler görüntülenir.
 
 ## Komutlar
 
