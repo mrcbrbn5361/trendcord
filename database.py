@@ -332,6 +332,14 @@ class Database:
             row = self.cursor.fetchone()
             return dict(row) if row else None
 
+    def get_user_by_discord_id(self, discord_id):
+        if not discord_id:
+            return None
+        with self.lock:
+            self.cursor.execute("SELECT * FROM users WHERE discord_id = ?", (str(discord_id),))
+            row = self.cursor.fetchone()
+            return dict(row) if row else None
+
     def get_user_by_id(self, user_id):
         with self.lock:
             self.cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))

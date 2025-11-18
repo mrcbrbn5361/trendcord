@@ -4,8 +4,10 @@ import os
 import secrets
 from datetime import datetime
 from typing import Optional
+from urllib.parse import urlencode
 
 import dotenv
+import httpx
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -25,6 +27,12 @@ COOKIE_NAME = os.getenv('WEB_SESSION_COOKIE', 'trendcord_session')
 COOKIE_SECURE = os.getenv('WEB_COOKIE_SECURE', 'false').lower() == 'true'
 COOKIE_MAX_AGE = int(os.getenv('WEB_SESSION_MAX_AGE', 60 * 60 * 24 * 7))
 SECRET_KEY = os.getenv('WEB_SECRET_KEY', secrets.token_hex(16))
+DISCORD_CLIENT_ID = os.getenv('DISCORD_CLIENT_ID')
+DISCORD_CLIENT_SECRET = os.getenv('DISCORD_CLIENT_SECRET')
+DISCORD_REDIRECT_URI = os.getenv('DISCORD_REDIRECT_URI')
+DISCORD_SCOPE = os.getenv('DISCORD_SCOPE', 'identify email')
+DISCORD_API_BASE = 'https://discord.com/api'
+OAUTH_STATE_COOKIE = f"{COOKIE_NAME}_oauth_state"
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 serializer = URLSafeSerializer(SECRET_KEY, salt='trendcord-web')
@@ -66,12 +74,10 @@ def get_current_user(request: Request, db: Database) -> Optional[dict]:
 def ensure_admin_user(db: Database):
     username = os.getenv('WEB_ADMIN_USERNAME', 'admin')
     email = os.getenv('WEB_ADMIN_EMAIL', 'admin@example.com')
-    password = os.getenv('WEB_ADMIN_PASSWORD')
     discord_id = os.getenv('WEB_ADMIN_DISCORD_ID')
 
-    if not password:
-        logger.warning("WEB_ADMIN_PASSWORD tanımlanmadı. Varsayılan 'admin123' kullanılacak.")
-        password = 'admin123'
+    if not discord_id:
+        logger.warning("WEB_ADMIN_DISCORD_ID tanımlanmadı. Admin hesabı Discord ile oturum açamayacak.")
 
     admin = db.get_user_by_username(username)
     if not admin:
@@ -79,11 +85,56 @@ def ensure_admin_user(db: Database):
         db.create_user(
             username=username,
             email=email,
-            password_hash=pwd_context.hash(password),
+            password_hash=pwd_context.hash(secrets.token_urlsafe(32)),
             role='admin',
             discord_id=discord_id,
         )
         logger.info("Admin kullanıcısı hazır.")
+    elif discord_id and str(admin.get('discord_id')) != str(discord_id):
+        logger.info("Admin kullanıcısının Discord ID'si güncelleniyor...")
+        db.update_user_discord_id(admin['id'], discord_id)
+
+
+def _discord_oauth_ready() -> bool:
+    return all([DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_REDIRECT_URI])
+
+
+def _build_discord_authorize_url(state: str) -> str:
+    params = {
+        'response_type': 'code',
+        'client_id': DISCORD_CLIENT_ID,
+        'scope': DISCORD_SCOPE,
+        'redirect_uri': DISCORD_REDIRECT_URI,
+        'state': state,
+        'prompt': 'consent',
+    }
+    return f"{DISCORD_API_BASE}/oauth2/authorize?{urlencode(params)}"
+
+
+async def _fetch_discord_profile(code: str) -> dict:
+    data = {
+        'client_id': DISCORD_CLIENT_ID,
+        'client_secret': DISCORD_CLIENT_SECRET,
+        'grant_type': 'authorization_code',
+        'code': code,
+        'redirect_uri': DISCORD_REDIRECT_URI,
+    }
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        token_resp = await client.post(f"{DISCORD_API_BASE}/oauth2/token", data=data, headers=headers)
+        token_resp.raise_for_status()
+        token_data = token_resp.json()
+        access_token = token_data.get('access_token')
+        if not access_token:
+            raise RuntimeError('Discord access token alınamadı')
+
+        user_resp = await client.get(
+            f"{DISCORD_API_BASE}/users/@me",
+            headers={'Authorization': f"Bearer {access_token}"},
+        )
+        user_resp.raise_for_status()
+        return user_resp.json()
 
 
 @app.on_event('startup')
@@ -113,16 +164,107 @@ async def login_page(request: Request, db: Database = Depends(get_db)):
     user = get_current_user(request, db)
     if user:
         return RedirectResponse('/dashboard', status_code=status.HTTP_303_SEE_OTHER)
-    return templates.TemplateResponse('login.html', {"request": request, "error": None})
+    error = request.query_params.get('error')
+    context = {
+        "request": request,
+        "error": error,
+        "oauth_ready": _discord_oauth_ready(),
+    }
+    return templates.TemplateResponse('login.html', context)
 
 
-@app.post('/login', response_class=HTMLResponse)
-async def login_action(request: Request, username: str = Form(...), password: str = Form(...), db: Database = Depends(get_db)):
-    user = db.get_user_by_username(username)
-    error = None
-    if not user or not pwd_context.verify(password, user['password_hash']):
-        error = "Kullanıcı adı veya şifre hatalı."
-        return templates.TemplateResponse('login.html', {"request": request, "error": error}, status_code=status.HTTP_401_UNAUTHORIZED)
+@app.get('/auth/discord')
+async def start_discord_oauth():
+    if not _discord_oauth_ready():
+        raise HTTPException(status_code=500, detail="Discord OAuth ayarları eksik. Lütfen .env dosyanızı kontrol edin.")
+
+    state = secrets.token_urlsafe(16)
+    authorize_url = _build_discord_authorize_url(state)
+    signed_state = serializer.dumps({"state": state})
+
+    response = RedirectResponse(authorize_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+    response.set_cookie(
+        OAUTH_STATE_COOKIE,
+        signed_state,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        max_age=300,
+        samesite='lax'
+    )
+    return response
+
+
+@app.get('/auth/callback', response_class=HTMLResponse)
+async def discord_callback(request: Request, code: Optional[str] = None, state: Optional[str] = None, db: Database = Depends(get_db)):
+    if not _discord_oauth_ready():
+        raise HTTPException(status_code=500, detail="Discord OAuth ayarları eksik.")
+
+    if not code or not state:
+        return templates.TemplateResponse(
+            'login.html',
+            {"request": request, "error": "Discord doğrulaması başarısız oldu.", "oauth_ready": True},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    stored_state = request.cookies.get(OAUTH_STATE_COOKIE)
+    if not stored_state:
+        return templates.TemplateResponse(
+            'login.html',
+            {"request": request, "error": "Oturum doğrulama bilgisi bulunamadı.", "oauth_ready": True},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        payload = serializer.loads(stored_state)
+    except BadSignature:
+        return templates.TemplateResponse(
+            'login.html',
+            {"request": request, "error": "Geçersiz oturum doğrulama bilgisi.", "oauth_ready": True},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if payload.get('state') != state:
+        return templates.TemplateResponse(
+            'login.html',
+            {"request": request, "error": "Oturum doğrulaması uyuşmuyor.", "oauth_ready": True},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        profile = await _fetch_discord_profile(code)
+    except httpx.HTTPError as exc:
+        logger.error("Discord OAuth isteği başarısız oldu: %s", exc)
+        return templates.TemplateResponse(
+            'login.html',
+            {"request": request, "error": "Discord doğrulaması sırasında hata oluştu.", "oauth_ready": True},
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+    except Exception as exc:
+        logger.error("Discord OAuth beklenmedik hata: %s", exc)
+        return templates.TemplateResponse(
+            'login.html',
+            {"request": request, "error": "Discord hesabı doğrulanamadı.", "oauth_ready": True},
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    discord_id = profile.get('id')
+    if not discord_id:
+        return templates.TemplateResponse(
+            'login.html',
+            {"request": request, "error": "Discord hesabı doğrulanamadı.", "oauth_ready": True},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    user = db.get_user_by_discord_id(discord_id)
+    if not user:
+        context = {
+            "request": request,
+            "error": "Bu Discord hesabı için yetkilendirilmiş kullanıcı bulunamadı.",
+            "oauth_ready": True,
+        }
+        response = templates.TemplateResponse('login.html', context, status_code=status.HTTP_403_FORBIDDEN)
+        response.delete_cookie(OAUTH_STATE_COOKIE)
+        return response
 
     db.record_user_login(user['id'])
 
@@ -136,6 +278,7 @@ async def login_action(request: Request, username: str = Form(...), password: st
         max_age=COOKIE_MAX_AGE,
         samesite='lax'
     )
+    response.delete_cookie(OAUTH_STATE_COOKIE)
     return response
 
 
@@ -143,6 +286,7 @@ async def login_action(request: Request, username: str = Form(...), password: st
 async def logout_action():
     response = RedirectResponse('/login', status_code=status.HTTP_303_SEE_OTHER)
     response.delete_cookie(COOKIE_NAME)
+    response.delete_cookie(OAUTH_STATE_COOKIE)
     return response
 
 
@@ -223,17 +367,29 @@ async def manage_users(request: Request, db: Database = Depends(get_db)):
 
 
 @app.post('/admin/users', response_class=HTMLResponse)
-async def create_user(request: Request, username: str = Form(...), email: str = Form(...), password: str = Form(...), role: str = Form('user'), discord_id: Optional[str] = Form(None), db: Database = Depends(get_db)):
+async def create_user(
+    request: Request,
+    username: str = Form(...),
+    email: str = Form(...),
+    role: str = Form('user'),
+    discord_id: Optional[str] = Form(None),
+    db: Database = Depends(get_db),
+):
     user = get_current_user(request, db)
     if not user:
         return RedirectResponse('/login', status_code=status.HTTP_303_SEE_OTHER)
     if user['role'] != 'admin':
         raise HTTPException(status_code=403, detail="Bu işlem için yetkiniz yok")
 
+    if not discord_id:
+        users = db.list_users()
+        context = {"request": request, "user": user, "users": users, "error": "Discord ID zorunludur.", "message": None}
+        return templates.TemplateResponse('admin_users.html', context, status_code=status.HTTP_400_BAD_REQUEST)
+
     success, message = db.create_user(
         username=username.strip(),
         email=email.strip(),
-        password_hash=pwd_context.hash(password),
+        password_hash=pwd_context.hash(secrets.token_urlsafe(32)),
         role=role,
         discord_id=discord_id.strip() if discord_id else None,
     )

@@ -185,6 +185,26 @@ th, td {
   cursor: pointer;
 }
 
+.btn-discord {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #5865f2;
+  color: #fff;
+  border-radius: 12px;
+  padding: 0.95rem 1.4rem;
+  font-weight: 600;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 15px 35px rgba(88, 101, 242, 0.35);
+}
+
+.btn-discord:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 40px rgba(88, 101, 242, 0.45);
+}
+
 .form {
   display: flex;
   flex-direction: column;
@@ -260,6 +280,11 @@ input:focus, select:focus {
 .alert-success {
   background: rgba(34, 197, 94, 0.12);
   color: #bbf7d0;
+}
+
+.alert-warning {
+  background: rgba(250, 204, 21, 0.12);
+  color: #fef9c3;
 }
 
 .login-body {

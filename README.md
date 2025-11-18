@@ -107,15 +107,19 @@ Trendyol botunu yönetmek ve takip edilen ürünleri görselleştirmek için Fas
 WEB_SECRET_KEY=rasgele_ve_uzun_bir_anahtar
 WEB_ADMIN_USERNAME=admin
 WEB_ADMIN_EMAIL=admin@example.com
-WEB_ADMIN_PASSWORD=guclu_sifreniz
-WEB_ADMIN_DISCORD_ID=1234567890 # Opsiyonel, kullanıcıya ait Discord ID'si
+WEB_ADMIN_DISCORD_ID=1234567890 # Adminin Discord kullanıcı ID'si
 WEB_SESSION_COOKIE=trendcord_session
 WEB_SESSION_MAX_AGE=604800
 WEB_COOKIE_SECURE=False
+DISCORD_CLIENT_ID=discord_uygulama_id
+DISCORD_CLIENT_SECRET=discord_uygulama_gizli_anahtari
+DISCORD_REDIRECT_URI=http://localhost:8000/auth/callback
+DISCORD_SCOPE=identify email
 ```
 
-- `WEB_ADMIN_PASSWORD` belirtilmezse varsayılan `admin123` şifresi kullanılır. Güvenlik için kendi güçlü şifrenizi tanımlayın.
+- `WEB_ADMIN_DISCORD_ID` zorunludur; Discord ile giriş yapabilen admin hesabı bu ID'ye göre eşleştirilir.
 - `WEB_SECRET_KEY` değeri oturum imzalama için kullanılır ve kesinlikle gizli tutulmalıdır.
+- `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` ve `DISCORD_REDIRECT_URI` değerleri Discord Developer Portal'daki OAuth2 uygulamanızdan alınır.
 
 ### Paneli Başlatma
 
@@ -133,6 +137,8 @@ uvicorn webapp.main:app --host 0.0.0.0 --port 8000 --reload
 - **Gösterge Paneli:** Toplam ürün sayısı, aktif sunucular ve son fiyat güncellemeleri tek ekranda.
 - **Kullanıcı Yönetimi:** Adminler yeni kullanıcılar oluşturabilir, rolleri belirleyebilir ve Discord ID eşleştirmesi yapabilir.
 - **Ürün Detayları:** Her ürün için fiyat geçmişi grafiği ve temel metrikler görüntülenir.
+
+Tüm kullanıcılar (admin dahil) panele yalnızca Discord OAuth2 ile giriş yapabilir. Yeni hesapların Discord ID'leri admin panelinden eklenmelidir.
 
 ## Komutlar
 

@@ -19,18 +19,14 @@
         {% if error %}
         <div class="alert alert-danger">{{ error }}</div>
         {% endif %}
-        <form method="post" class="form">
-            <label>
-                <span>Kullanıcı adı</span>
-                <input type="text" name="username" placeholder="admin" required>
-            </label>
-            <label>
-                <span>Şifre</span>
-                <input type="password" name="password" placeholder="••••••••" required>
-            </label>
-            <button type="submit" class="btn-primary">Giriş Yap</button>
-        </form>
-        <p class="muted tiny">İlk admin kullanıcı .env dosyasındaki değerlerle otomatik oluşturulur.</p>
+        {% if oauth_ready %}
+        <a class="btn-discord" href="/auth/discord">
+            <span>Discord ile giriş yap</span>
+        </a>
+        {% else %}
+        <div class="alert alert-warning">Discord OAuth ayarları eksik. Lütfen sistem yöneticiniz ile iletişime geçin.</div>
+        {% endif %}
+        <p class="muted tiny">Giriş için Discord hesabınızın yetkilendirilmiş olması gerekir.</p>
     </div>
 </body>
 </html>
