@@ -11,6 +11,8 @@ import traceback
 
 from database import Database
 from scraper import TrendyolScraper
+import uvicorn
+from web.app import app as web_app, set_instances
 
 dotenv.load_dotenv()
 
@@ -32,6 +34,9 @@ bot = commands.Bot(command_prefix=PREFIX, intents=intents, case_insensitive=True
 # Database ve Scraper instance'larını bot objesine ata
 bot.db = Database(db_name=DATABASE_PATH)
 bot.scraper = TrendyolScraper(use_proxy=PROXY_ENABLED, verify_ssl=VERIFY_SSL)
+
+# Web app instance'larını set et
+set_instances(bot, bot.db)
 
 @bot.event
 async def on_ready():
@@ -210,12 +215,36 @@ async def custom_prefix_help(ctx: commands.Context, *, command_name: str = None)
     embed.set_footer(text=f"Trendyol Takip Botu • Fiyat kontrol aralığı: {CHECK_INTERVAL//60} dakika")
     await ctx.send(embed=embed)
 
-if __name__ == "__main__":
+async def run_bot():
     if not TOKEN:
         logger.error("Discord token bulunamadı! Lütfen .env dosyasına DISCORD_TOKEN ekleyin.")
-        exit(1)
+        return
+
     try:
-        bot.run(TOKEN)
+        async with bot:
+            await bot.start(TOKEN)
     except Exception as e:
         logger.error(f"Bot başlatılırken hata oluştu: {e}")
+        traceback.print_exc()
+
+async def run_web():
+    port = int(os.getenv("PORT", 8000))
+    config = uvicorn.Config(web_app, host="0.0.0.0", port=port, log_level="info")
+    server = uvicorn.Server(config)
+    await server.serve()
+
+async def main_all():
+    # Bot ve Web sunucusunu aynı anda çalıştır
+    await asyncio.gather(
+        run_bot(),
+        run_web()
+    )
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main_all())
+    except KeyboardInterrupt:
+        pass
+    except Exception as e:
+        logger.error(f"Sistem başlatılırken hata oluştu: {e}")
         traceback.print_exc()

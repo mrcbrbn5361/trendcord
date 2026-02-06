@@ -30,6 +30,8 @@ class TrendyolScraper:
         self.use_proxy = use_proxy
         self.proxies = []
         self.working_proxies = []  # Çalışan proxyleri sakla
+        self.bad_proxies = {} # Kötü proxyleri sakla {proxy: timestamp}
+        self.bad_proxy_timeout = 1800 # 30 dakika
         self.timeout = timeout
         self.max_retries = max_retries
         self.verify_ssl = verify_ssl
@@ -59,16 +61,34 @@ class TrendyolScraper:
         except Exception as e:
             logger.error(f"Proxy yüklenirken hata oluştu: {e}")
     
+    def clean_bad_proxies(self):
+        """Zaman aşımına uğramış kötü proxyleri temizler."""
+        now = time.time()
+        expired = [p for p, t in self.bad_proxies.items() if now - t > self.bad_proxy_timeout]
+        for p in expired:
+            del self.bad_proxies[p]
+            import logging
+            logging.getLogger(__name__).info(f"Proxy tekrar aktif edildi: {p}")
+
     def get_random_proxy(self):
         """Rastgele bir proxy döndürür. Önce çalışan proxylerden denenir."""
+        self.clean_bad_proxies()
+
         if not self.proxies and not self.working_proxies:
             return None
         
-        # Önce çalışan proxylerden seç (eğer varsa)
-        if self.working_proxies:
-            proxy = random.choice(self.working_proxies)
+        # Sadece kötü olmayan proxyleri seç
+        available_proxies = [p for p in self.proxies if p not in self.bad_proxies]
+
+        # Önce çalışan proxylerden seç (eğer varsa ve kötü değilse)
+        available_working = [p for p in self.working_proxies if p not in self.bad_proxies]
+
+        if available_working:
+            proxy = random.choice(available_working)
+        elif available_proxies:
+            proxy = random.choice(available_proxies)
         else:
-            proxy = random.choice(self.proxies)
+            return None
             
         return {
             'http': f'http://{proxy}',
@@ -160,15 +180,14 @@ class TrendyolScraper:
             
             except requests.exceptions.RequestException as e:
                 logger.error(f"Proxy bağlantı hatası: {e}")
-                # Proxy'yi çalışan listesinden kaldır
+                # Proxy'yi kötü listesine ekle
                 proxy_str = proxy['http'].replace('http://', '')
+                self.bad_proxies[proxy_str] = time.time()
                 
                 if proxy_str in self.working_proxies:
                     self.working_proxies.remove(proxy_str)
                     
-                if proxy_str in self.proxies:
-                    self.proxies.remove(proxy_str)
-                    logger.warning(f"Çalışmayan proxy kaldırıldı: {proxy_str}")
+                logger.warning(f"Kötü proxy işaretlendi: {proxy_str}")
                 
                 retries += 1
                 # Kısa bir bekleme
@@ -196,11 +215,58 @@ class TrendyolScraper:
         """HTML yanıtından ürün verilerini çıkarır."""
         try:
             soup = BeautifulSoup(response.text, 'html.parser')
-            
-            # Ürün ID'si çıkar
             product_id = self.extract_product_id(product_url)
             
-            # Ürün adı
+            # 1. Yöntem: JSON State'den çekme (En sağlamı)
+            state_script = None
+            for script in soup.find_all('script'):
+                if script.string and '__PRODUCT_DETAIL_APP_INITIAL_STATE__' in script.string:
+                    state_script = script
+                    break
+                if script.text and '__PRODUCT_DETAIL_APP_INITIAL_STATE__' in script.text:
+                    state_script = script
+                    break
+
+            if state_script:
+                try:
+                    script_content = state_script.string or state_script.text
+                    json_match = re.search(r'__PRODUCT_DETAIL_APP_INITIAL_STATE__\s*=\s*({.*?});', script_content, re.DOTALL)
+                    if json_match:
+                        json_text = json_match.group(1)
+                        state_data = json.loads(json_text)
+
+                        product = state_data.get('product', {})
+                        product_name = product.get('name') or product.get('nameWithProductCode')
+
+                        # Fiyatı bul
+                        price_data = product.get('price', {})
+                        current_price = None
+                        original_price = None
+
+                        if price_data:
+                            current_price = price_data.get('sellingPrice', {}).get('value')
+                            original_price = price_data.get('originalPrice', {}).get('value')
+
+                        # Resimler
+                        images = product.get('images', [])
+                        image_url = images[0] if images else None
+                        if image_url and not image_url.startswith('http'):
+                            image_url = 'https://www.trendyol.com' + image_url
+
+                        if product_name and current_price:
+                            return {
+                                'product_id': product_id,
+                                'name': product_name,
+                                'url': product_url,
+                                'image_url': image_url,
+                                'current_price': float(current_price),
+                                'original_price': float(original_price or current_price),
+                                'success': True
+                            }
+                except Exception as e:
+                    logger.warning(f"JSON state parse hatası: {e}")
+
+            # 2. Yöntem: CSS Selectors (Fallback)
             try:
                 product_name = soup.select_one('h1.pr-new-br').text.strip()
             except:
@@ -209,7 +275,6 @@ class TrendyolScraper:
                 except:
                     product_name = None
             
-            # Fiyat bilgileri
             try:
                 current_price_elem = soup.select_one('.prc-dsc')
                 current_price = float(current_price_elem.text.strip().replace('TL', '').replace('.', '').replace(',', '.').strip())
@@ -222,26 +287,25 @@ class TrendyolScraper:
             except:
                 original_price = current_price
             
-            # Ürün resmi
             try:
                 image_url = soup.select_one('img.ph-gl-img, .product-slide img').get('src')
-                if not image_url.startswith('http'):
+                if image_url and not image_url.startswith('http'):
                     image_url = 'https:' + image_url
             except:
                 image_url = None
             
-            # Ürün verilerini JSON olarak hazırlama
-            product_data = {
-                'product_id': product_id,
-                'name': product_name,
-                'url': product_url,
-                'image_url': image_url,
-                'current_price': current_price,
-                'original_price': original_price,
-                'success': True
-            }
+            if product_name and current_price:
+                return {
+                    'product_id': product_id,
+                    'name': product_name,
+                    'url': product_url,
+                    'image_url': image_url,
+                    'current_price': current_price,
+                    'original_price': original_price,
+                    'success': True
+                }
             
-            return product_data
+            return None
         except Exception as e:
             logger.error(f"Ürün verisi çıkarılırken hata: {e}")
             return None

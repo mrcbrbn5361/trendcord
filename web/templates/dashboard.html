@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Trendyol Takip Botu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Trendyol Takip Botu</a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3 text-white">{{ user.username }}</span>
+                <a class="btn btn-outline-light" href="/logout">Çıkış Yap</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Takip Edilen Ürünler</h2>
+            <span class="badge bg-secondary">{{ view_type }}</span>
+        </div>
+
+        <div class="row">
+            {% for product in products %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    {% if product.image_url %}
+                        <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: contain;">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title text-truncate">{{ product.name }}</h5>
+                        <p class="card-text">
+                            <strong>Mevcut Fiyat:</strong> {{ "%.2f"|format(product.current_price) }} TL<br>
+                            {% if product.original_price != product.current_price %}
+                                <small class="text-muted"><del>{{ "%.2f"|format(product.original_price) }} TL</del></small>
+                            {% endif %}
+                        </p>
+                        <div class="d-grid gap-2">
+                            <a href="{{ product.url }}" target="_blank" class="btn btn-outline-primary btn-sm">Trendyol'da Gör</a>
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        ID: {{ product.product_id }} | Guild: {{ product.guild_id }}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12 text-center">
+                <div class="alert alert-info">Henüz takip edilen ürün bulunmuyor.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

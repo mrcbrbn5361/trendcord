@@ -13,7 +13,7 @@ class Database:
         
         try:
             # Eğer data klasörü yoksa oluştur
-            os.makedirs(os.path.dirname(db_name), exist_ok=True)
+            if os.path.dirname(db_name): os.makedirs(os.path.dirname(db_name), exist_ok=True)
             
             # Tam dosya yolunu al
             abs_path = os.path.abspath(db_name)
@@ -125,15 +125,19 @@ class Database:
     def get_all_products(self, guild_id=None, user_id=None):
         """Tüm ürünleri veya belirli bir kullanıcı/sunucu için ürünleri getirir."""
         query = "SELECT * FROM products"
+        conditions = []
         params = []
         
         if guild_id:
-            query += " WHERE guild_id = ?"
+            conditions.append("guild_id = ?")
             params.append(guild_id)
             
-            if user_id:
-                query += " AND user_id = ?"
-                params.append(user_id)
+        if user_id:
+            conditions.append("user_id = ?")
+            params.append(user_id)
+
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
         
         self.cursor.execute(query, params)
         results = self.cursor.fetchall()
