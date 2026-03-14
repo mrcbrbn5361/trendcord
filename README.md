@@ -20,7 +20,13 @@ Discord üzerinden Trendyol ürünlerinin fiyatlarını takip etmenizi sağlayan
 ### 2. Bağımlılıklar
 ```bash
 pip install -r requirements.txt
-pip install fastapi uvicorn jinja2 python-multipart httpx itsdangerous
+```
+
+**Termux (Android) için Not:**
+Eğer `pydantic-core` veya `maturin` hatası alıyorsanız, kurulum öncesi şu komutu çalıştırın:
+```bash
+export ANDROID_API_LEVEL=24
+pip install -r requirements.txt
 ```
 
 ### 3. Yapılandırma (`.env`)
