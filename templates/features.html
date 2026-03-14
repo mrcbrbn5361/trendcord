@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="bg-white p-8 rounded-lg shadow-sm">
+    <h1 class="text-3xl font-bold mb-6 text-trendyol">Özellikler</h1>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="border p-6 rounded-lg border-orange-100 bg-orange-50">
+            <h3 class="font-bold text-xl mb-2 text-trendyol"><i class="fas fa-search-dollar mr-2"></i> Fiyat Takibi</h3>
+            <p class="text-gray-600">Ürünlerin fiyatlarını saatlik olarak kontrol ediyoruz ve değişimleri anında kaydediyoruz.</p>
+        </div>
+        <div class="border p-6 rounded-lg border-blue-100 bg-blue-50">
+            <h3 class="font-bold text-xl mb-2 text-blue-600"><i class="fab fa-discord mr-2"></i> Discord Bildirimi</h3>
+            <p class="text-gray-600">Fiyat düştüğünde Discord sunucunuzdaki belirlenen kanala veya direkt mesaj ile size haber veriyoruz.</p>
+        </div>
+        <div class="border p-6 rounded-lg border-green-100 bg-green-50">
+            <h3 class="font-bold text-xl mb-2 text-green-600"><i class="fas fa-history mr-2"></i> Fiyat Geçmişi</h3>
+            <p class="text-gray-600">Ürünün en düşük ve en yüksek fiyatlarını görerek doğru zamanda alışveriş yapmanızı sağlıyoruz.</p>
+        </div>
+        <div class="border p-6 rounded-lg border-purple-100 bg-purple-50">
+            <h3 class="font-bold text-xl mb-2 text-purple-600"><i class="fas fa-globe mr-2"></i> Web Dashboard</h3>
+            <p class="text-gray-600">Kullanıcı dostu web arayüzü ile tüm ürünlerinizi tek bir yerden kolayca yönetin.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

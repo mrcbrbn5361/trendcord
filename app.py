@@ -128,7 +128,6 @@ async def guilds(request: Request, user=Depends(get_current_user)):
         return RedirectResponse(url="/")
 
     async with httpx.AsyncClient() as client:
-        # Get user guilds
         res = await client.get(f"{API_ENDPOINT}/users/@me/guilds", headers={
             "Authorization": f"Bearer {user['access_token']}"
         })
@@ -136,7 +135,6 @@ async def guilds(request: Request, user=Depends(get_current_user)):
              return RedirectResponse(url="/login")
         user_guilds = res.json()
 
-        # Get bot guilds
         bot_res = await client.get(f"{API_ENDPOINT}/users/@me/guilds", headers={
             "Authorization": f"Bot {BOT_TOKEN}"
         })
@@ -144,10 +142,9 @@ async def guilds(request: Request, user=Depends(get_current_user)):
         if bot_res.status_code == 200:
             bot_guild_ids = [g['id'] for g in bot_res.json()]
 
-    # Filter manageable guilds and check bot presence
     processed_guilds = []
     for g in user_guilds:
-        if (int(g['permissions']) & 0x20) == 0x20 or (int(g['permissions']) & 0x8) == 0x8: # Manage Guild or Admin
+        if (int(g['permissions']) & 0x20) == 0x20 or (int(g['permissions']) & 0x8) == 0x8:
             g['has_bot'] = g['id'] in bot_guild_ids
             processed_guilds.append(g)
 
@@ -157,6 +154,49 @@ async def guilds(request: Request, user=Depends(get_current_user)):
         "guilds": processed_guilds,
         "bot_id": CLIENT_ID
     })
+
+# --- NEW INFORMATIONAL ROUTES ---
+
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy(request: Request, user=Depends(get_current_user)):
+    return templates.TemplateResponse("privacy.html", {"request": request, "user": user})
+
+@app.get("/policy", response_class=HTMLResponse)
+async def policy(request: Request, user=Depends(get_current_user)):
+    return templates.TemplateResponse("policy.html", {"request": request, "user": user})
+
+@app.get("/terms", response_class=HTMLResponse)
+async def terms(request: Request, user=Depends(get_current_user)):
+    return templates.TemplateResponse("terms.html", {"request": request, "user": user})
+
+@app.get("/features", response_class=HTMLResponse)
+async def features(request: Request, user=Depends(get_current_user)):
+    return templates.TemplateResponse("features.html", {"request": request, "user": user})
+
+@app.get("/stats", response_class=HTMLResponse)
+async def stats(request: Request, user=Depends(get_current_user)):
+    # Fetch statistics from database
+    total_users = 0
+    total_products = 0
+    total_checks = 0
+
+    try:
+        db.cursor.execute("SELECT COUNT(*) FROM users")
+        total_users = db.cursor.fetchone()[0]
+        db.cursor.execute("SELECT COUNT(*) FROM products")
+        total_products = db.cursor.fetchone()[0]
+        db.cursor.execute("SELECT COUNT(*) FROM subscriptions")
+        total_subscriptions = db.cursor.fetchone()[0]
+    except:
+        pass
+
+    stats_data = {
+        "total_users": total_users,
+        "total_products": total_products,
+        "total_subscriptions": total_subscriptions
+    }
+
+    return templates.TemplateResponse("stats.html", {"request": request, "user": user, "stats": stats_data})
 
 if __name__ == "__main__":
     import uvicorn
