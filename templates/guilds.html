@@ -18,15 +18,27 @@
             {% endif %}
             <div>
                 <h3 class="font-bold text-gray-800">{{ guild.name }}</h3>
-                <p class="text-xs text-gray-400">Sunucu ID: {{ guild.id }}</p>
+                <p class="text-xs text-gray-400">
+                    {% if guild.has_bot %}
+                        <span class="text-green-500 font-semibold"><i class="fas fa-check-circle"></i> Bot Eklendi</span>
+                    {% else %}
+                        <span class="text-gray-400">Bot Yok</span>
+                    {% endif %}
+                </p>
             </div>
         </div>
 
+        {% if not guild.has_bot %}
         <a href="https://discord.com/api/oauth2/authorize?client_id={{bot_id}}&permissions=8&scope=bot%20applications.commands&guild_id={{guild.id}}&disable_guild_select=true"
            target="_blank"
-           class="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-bold hover:bg-trendyol hover:text-white transition">
+           class="bg-trendyol text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-orange-600 transition shadow-sm">
             Botu Ekle
         </a>
+        {% else %}
+        <button disabled class="bg-gray-100 text-gray-400 px-4 py-2 rounded-md text-sm font-bold cursor-not-allowed">
+            Aktif
+        </button>
+        {% endif %}
     </div>
     {% endfor %}
 </div>
@@ -34,8 +46,8 @@
 <div class="mt-12 bg-orange-50 p-6 rounded-lg border border-orange-100 text-orange-800">
     <h4 class="font-bold mb-2"><i class="fas fa-info-circle mr-2"></i> Bilgi</h4>
     <p class="text-sm">
-        Burada sadece yönetici yetkisine sahip olduğunuz sunucular listelenir.
-        Botu ekledikten sonra sunucunuzdaki kanallara bildirim alabilmek için Discord üzerinden <code>!ekle</code> komutunu kullanabilirsiniz.
+        Burada sadece yönetici veya sunucuyu yönetme yetkisine sahip olduğunuz sunucular listelenir.
+        Botu ekledikten sonra fiyat bildirimlerini kanallara alabilmek için kanalda <code>!ekle [link]</code> komutunu kullanın.
     </p>
 </div>
 {% endblock %}
