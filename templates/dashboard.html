@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="mb-8 bg-white p-6 rounded-lg shadow-sm">
+    <h2 class="text-xl font-bold mb-4">Yeni Ürün Takip Et</h2>
+    <form action="/add-product" method="POST" class="flex gap-4">
+        <input type="text" name="url" placeholder="Trendyol Ürün Linkini Yapıştırın..." class="flex-1 border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-trendyol focus:border-transparent outline-none">
+        <button type="submit" class="bg-trendyol text-white px-6 py-2 rounded-md font-bold hover:bg-orange-600 transition">
+            Takibe Al
+        </button>
+    </form>
+</div>
+
+<h2 class="text-2xl font-bold mb-6 flex items-center">
+    <i class="fas fa-list text-trendyol mr-2"></i> Takip Ettiğim Ürünler
+</h2>
+
+{% if not products %}
+<div class="bg-white p-12 text-center rounded-lg shadow-sm">
+    <img src="https://cdn.dsmcdn.com/web/production/empty-basket.png" class="w-32 mx-auto mb-4 opacity-50">
+    <p class="text-gray-500 text-lg">Henüz takip ettiğiniz bir ürün bulunmuyor.</p>
+</div>
+{% else %}
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    {% for product in products %}
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 flex flex-col hover:shadow-md transition">
+        <div class="relative h-64 bg-gray-50">
+            <img src="{{ product.image_url }}" class="w-full h-full object-contain p-4">
+            {% if product.original_price > product.current_price %}
+            <div class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                -%{{ ((product.original_price - product.current_price) / product.original_price * 100) | round(1) }}
+            </div>
+            {% endif %}
+        </div>
+        <div class="p-4 flex-1 flex flex-col">
+            <h3 class="text-sm text-gray-800 line-clamp-2 mb-2 h-10">{{ product.name }}</h3>
+            <div class="mt-auto">
+                {% if product.original_price > product.current_price %}
+                <p class="text-gray-400 text-xs line-through">{{ product.original_price }} TL</p>
+                {% endif %}
+                <p class="text-trendyol font-bold text-lg">{{ product.current_price }} TL</p>
+            </div>
+            <div class="mt-4 flex gap-2">
+                <a href="{{ product.url }}" target="_blank" class="flex-1 text-center border border-gray-300 py-1.5 rounded text-sm font-medium hover:bg-gray-50">Ürüne Git</a>
+                <a href="/delete-product/{{ product.product_id }}" class="bg-gray-100 text-gray-500 p-2 rounded hover:bg-red-50 hover:text-red-500 transition">
+                    <i class="fas fa-trash"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

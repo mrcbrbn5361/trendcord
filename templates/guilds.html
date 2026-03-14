@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-6 flex items-center">
+    <i class="fab fa-discord text-trendyol mr-2"></i> Sunucularım
+</h2>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for guild in guilds %}
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            {% if guild.icon %}
+                <img src="https://cdn.discordapp.com/icons/{{guild.id}}/{{guild.icon}}.png" class="w-12 h-12 rounded-full">
+            {% else %}
+                <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
+                    {{ guild.name[0] }}
+                </div>
+            {% endif %}
+            <div>
+                <h3 class="font-bold text-gray-800">{{ guild.name }}</h3>
+                <p class="text-xs text-gray-400">Sunucu ID: {{ guild.id }}</p>
+            </div>
+        </div>
+
+        <a href="https://discord.com/api/oauth2/authorize?client_id={{bot_id}}&permissions=8&scope=bot%20applications.commands&guild_id={{guild.id}}&disable_guild_select=true"
+           target="_blank"
+           class="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-bold hover:bg-trendyol hover:text-white transition">
+            Botu Ekle
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="mt-12 bg-orange-50 p-6 rounded-lg border border-orange-100 text-orange-800">
+    <h4 class="font-bold mb-2"><i class="fas fa-info-circle mr-2"></i> Bilgi</h4>
+    <p class="text-sm">
+        Burada sadece yönetici yetkisine sahip olduğunuz sunucular listelenir.
+        Botu ekledikten sonra sunucunuzdaki kanallara bildirim alabilmek için Discord üzerinden <code>!ekle</code> komutunu kullanabilirsiniz.
+    </p>
+</div>
+{% endblock %}

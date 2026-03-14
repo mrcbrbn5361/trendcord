@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trendyol Takip Botu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        trendyol: '#F27A1A',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-white shadow-md border-b-4 border-trendyol">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center">
+                    <a href="/" class="text-2xl font-bold text-trendyol flex items-center">
+                        <i class="fas fa-shopping-cart mr-2"></i>
+                        <span>Trendyol Takip</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    {% if user %}
+                        <a href="/dashboard" class="text-gray-700 hover:text-trendyol">Dashboard</a>
+                        <a href="/guilds" class="text-gray-700 hover:text-trendyol">Sunucularım</a>
+                        <div class="flex items-center space-x-2 border-l pl-4">
+                            <img src="https://cdn.discordapp.com/avatars/{{user.id}}/{{user.avatar}}.png" class="w-8 h-8 rounded-full">
+                            <span class="text-sm font-medium">{{user.username}}</span>
+                            <a href="/logout" class="text-red-500 hover:text-red-700 text-sm">Çıkış</a>
+                        </div>
+                    {% else %}
+                        <a href="/login" class="bg-trendyol text-white px-6 py-2 rounded-md font-bold hover:bg-orange-600 transition">
+                            <i class="fab fa-discord mr-2"></i> Discord ile Giriş Yap
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-white border-t mt-12 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
+            &copy; 2026 Trendyol Takip Botu. Tüm hakları saklıdır.
+        </div>
+    </footer>
+</body>
+</html>

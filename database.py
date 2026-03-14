@@ -19,38 +19,55 @@ class Database:
             abs_path = os.path.abspath(db_name)
             logger.info(f"Veritabanı dosyası yolu: {abs_path}")
             
-            # Klasör yazılabilir mi?
-            if os.access(os.path.dirname(abs_path), os.W_OK):
-                logger.info(f"Klasöre yazma izni var: {os.path.dirname(abs_path)}")
-            else:
-                logger.error(f"HATA: Klasöre yazma izni yok: {os.path.dirname(abs_path)}")
-            
             # Veritabanı bağlantısı oluştur
             self.conn = sqlite3.connect(db_name)
+            self.conn.row_factory = sqlite3.Row
             self.cursor = self.conn.cursor()
             self.create_tables()
             logger.info(f"Veritabanı bağlantısı başarıyla kuruldu: {db_name}")
         except Exception as e:
             logger.error(f"Veritabanı bağlantısı oluşturulurken hata: {e}")
-            logger.error(f"Veritabanı dosyası: {db_name}")
             raise
 
     def create_tables(self):
         """Gerekli tabloları oluşturur."""
+        # Users table for OAuth2
+        self.cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            discord_id TEXT PRIMARY KEY,
+            username TEXT,
+            avatar TEXT,
+            access_token TEXT,
+            refresh_token TEXT,
+            expires_at TIMESTAMP
+        )
+        ''')
+
+        # Refactored products table
         self.cursor.execute('''
         CREATE TABLE IF NOT EXISTS products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id TEXT UNIQUE,
+            product_id TEXT PRIMARY KEY,
             name TEXT,
             url TEXT,
             image_url TEXT,
             current_price REAL,
             original_price REAL,
-            added_at TIMESTAMP,
-            last_checked TIMESTAMP,
-            guild_id TEXT,
+            last_checked TIMESTAMP
+        )
+        ''')
+
+        # Subscriptions table
+        self.cursor.execute('''
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id TEXT,
-            channel_id TEXT
+            product_id TEXT,
+            guild_id TEXT,
+            channel_id TEXT,
+            added_at TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(discord_id),
+            FOREIGN KEY(product_id) REFERENCES products(product_id),
+            UNIQUE(user_id, product_id, guild_id)
         )
         ''')
 
@@ -66,16 +83,51 @@ class Database:
         
         self.conn.commit()
 
+    def add_user(self, user_data):
+        """Kullanıcı ekler veya günceller."""
+        try:
+            self.cursor.execute('''
+            INSERT INTO users (discord_id, username, avatar, access_token, refresh_token, expires_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(discord_id) DO UPDATE SET
+                username = excluded.username,
+                avatar = excluded.avatar,
+                access_token = excluded.access_token,
+                refresh_token = excluded.refresh_token,
+                expires_at = excluded.expires_at
+            ''', (
+                user_data['id'],
+                user_data['username'],
+                user_data['avatar'],
+                user_data['access_token'],
+                user_data['refresh_token'],
+                user_data['expires_at']
+            ))
+            self.conn.commit()
+            return True
+        except Exception as e:
+            logger.error(f"Kullanıcı eklenirken hata: {e}")
+            return False
+
+    def get_user(self, discord_id):
+        """Kullanıcı bilgilerini getirir."""
+        self.cursor.execute('SELECT * FROM users WHERE discord_id = ?', (discord_id,))
+        row = self.cursor.fetchone()
+        return dict(row) if row else None
+
     def add_product(self, product_data, guild_id, user_id, channel_id):
-        """Ürün ekler ve ilk fiyat kaydını oluşturur."""
+        """Ürün ve abonelik ekler."""
         try:
             now = datetime.now().isoformat()
             
-            # Ürünü ekleme
+            # Ürünü ekle veya güncelle (fiyatlar değişmiş olabilir)
             self.cursor.execute('''
-            INSERT INTO products 
-            (product_id, name, url, image_url, current_price, original_price, added_at, last_checked, guild_id, user_id, channel_id) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO products (product_id, name, url, image_url, current_price, original_price, last_checked)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(product_id) DO UPDATE SET
+                current_price = excluded.current_price,
+                original_price = excluded.original_price,
+                last_checked = excluded.last_checked
             ''', (
                 product_data['product_id'],
                 product_data['name'],
@@ -83,213 +135,105 @@ class Database:
                 product_data['image_url'],
                 product_data['current_price'],
                 product_data['original_price'],
-                now,
-                now,
-                guild_id,
-                user_id,
-                channel_id
-            ))
-            
-            # Fiyat geçmişi kaydı ekleme
-            self.cursor.execute('''
-            INSERT INTO price_history 
-            (product_id, price, date) 
-            VALUES (?, ?, ?)
-            ''', (
-                product_data['product_id'],
-                product_data['current_price'],
                 now
             ))
             
+            # Abonelik ekle
+            self.cursor.execute('''
+            INSERT OR IGNORE INTO subscriptions (user_id, product_id, guild_id, channel_id, added_at)
+            VALUES (?, ?, ?, ?, ?)
+            ''', (user_id, product_data['product_id'], guild_id, channel_id, now))
+
+            # Fiyat geçmişi (eğer yeni fiyat ise veya ilk kayıt ise eklemek mantıklı olabilir)
+            # Ama genellikle update_product_price içinde yapılıyor. Burada ilk kaydı ekleyelim.
+            self.cursor.execute('''
+            INSERT INTO price_history (product_id, price, date)
+            VALUES (?, ?, ?)
+            ''', (product_data['product_id'], product_data['current_price'], now))
+            
             self.conn.commit()
             return True
-        except sqlite3.IntegrityError:
-            # Aynı ürün zaten eklenmişse
-            return False
         except Exception as e:
-            print(f"Ürün eklenirken hata: {e}")
+            logger.error(f"Ürün/Abonelik eklenirken hata: {e}")
+            self.conn.rollback()
             return False
 
     def get_product(self, product_id):
         """Belirli bir ürünün bilgilerini getirir."""
-        self.cursor.execute('''
-        SELECT * FROM products WHERE product_id = ?
-        ''', (product_id,))
-        
-        result = self.cursor.fetchone()
-        if result:
-            columns = [desc[0] for desc in self.cursor.description]
-            return dict(zip(columns, result))
-        return None
+        self.cursor.execute('SELECT * FROM products WHERE product_id = ?', (product_id,))
+        row = self.cursor.fetchone()
+        return dict(row) if row else None
 
-    def get_all_products(self, guild_id=None, user_id=None):
-        """Tüm ürünleri veya belirli bir kullanıcı/sunucu için ürünleri getirir."""
-        query = "SELECT * FROM products"
-        params = []
-        
-        if guild_id:
-            query += " WHERE guild_id = ?"
-            params.append(guild_id)
-            
-            if user_id:
-                query += " AND user_id = ?"
-                params.append(user_id)
-        
-        self.cursor.execute(query, params)
-        results = self.cursor.fetchall()
-        
-        products = []
-        if results:
-            columns = [desc[0] for desc in self.cursor.description]
-            for row in results:
-                products.append(dict(zip(columns, row)))
-        
-        return products
+    def get_user_products(self, user_id):
+        """Bir kullanıcının takip ettiği tüm ürünleri getirir."""
+        self.cursor.execute('''
+        SELECT p.*, s.guild_id, s.channel_id, s.added_at
+        FROM products p
+        JOIN subscriptions s ON p.product_id = s.product_id
+        WHERE s.user_id = ?
+        ''', (user_id,))
+        return [dict(row) for row in self.cursor.fetchall()]
+
+    def get_all_products(self):
+        """Takip edilen tüm benzersiz ürünleri getirir (fiyat kontrolü için)."""
+        self.cursor.execute('SELECT * FROM products')
+        return [dict(row) for row in self.cursor.fetchall()]
+
+    def get_subscriptions_for_product(self, product_id):
+        """Bir ürün için tüm abonelikleri getirir (bildirim için)."""
+        self.cursor.execute('SELECT * FROM subscriptions WHERE product_id = ?', (product_id,))
+        return [dict(row) for row in self.cursor.fetchall()]
 
     def update_product_price(self, product_id, new_price):
         """Ürün fiyatını günceller ve fiyat geçmişine ekler."""
         try:
             now = datetime.now().isoformat()
-            
-            logger.info(f"Ürün fiyatı güncelleniyor: {product_id} -> {new_price} TL")
-            
-            # Ürün fiyatını güncelleme
             self.cursor.execute('''
-            UPDATE products 
-            SET current_price = ?, last_checked = ? 
-            WHERE product_id = ?
+            UPDATE products SET current_price = ?, last_checked = ? WHERE product_id = ?
             ''', (new_price, now, product_id))
             
-            update_row_count = self.cursor.rowcount
-            logger.info(f"Güncellenen satır sayısı: {update_row_count}")
-            
-            # Fiyat geçmişi kaydı ekleme
             self.cursor.execute('''
-            INSERT INTO price_history 
-            (product_id, price, date) 
+            INSERT INTO price_history (product_id, price, date)
             VALUES (?, ?, ?)
             ''', (product_id, new_price, now))
             
-            insert_row_count = self.cursor.rowcount
-            logger.info(f"Eklenen fiyat geçmişi satır sayısı: {insert_row_count}")
-            
             self.conn.commit()
-            logger.info(f"İşlemler veritabanına kaydedildi (commit yapıldı)")
             return True
         except Exception as e:
-            logger.error(f"Ürün fiyatı güncellenirken hata: {e}")
+            logger.error(f"Fiyat güncellenirken hata: {e}")
             self.conn.rollback()
-            logger.error(f"İşlemler geri alındı (rollback yapıldı)")
+            return False
+
+    def delete_subscription(self, user_id, product_id, guild_id=None):
+        """Kullanıcının bir ürün aboneliğini siler."""
+        try:
+            if guild_id:
+                self.cursor.execute('''
+                DELETE FROM subscriptions WHERE user_id = ? AND product_id = ? AND guild_id = ?
+                ''', (user_id, product_id, guild_id))
+            else:
+                self.cursor.execute('''
+                DELETE FROM subscriptions WHERE user_id = ? AND product_id = ?
+                ''', (user_id, product_id))
+
+            # Eğer ürüne başka abonelik kalmadıysa ürünü de silebiliriz (isteğe bağlı)
+            self.cursor.execute('SELECT COUNT(*) FROM subscriptions WHERE product_id = ?', (product_id,))
+            if self.cursor.fetchone()[0] == 0:
+                self.cursor.execute('DELETE FROM products WHERE product_id = ?', (product_id,))
+                self.cursor.execute('DELETE FROM price_history WHERE product_id = ?', (product_id,))
+            
+            self.conn.commit()
+            return True
+        except Exception as e:
+            logger.error(f"Abonelik silinirken hata: {e}")
             return False
 
     def get_price_history(self, product_id, limit=10):
-        """Ürün fiyat geçmişini getirir."""
         self.cursor.execute('''
-        SELECT price, date FROM price_history 
-        WHERE product_id = ? 
-        ORDER BY date DESC LIMIT ?
+        SELECT price, date FROM price_history WHERE product_id = ? ORDER BY date DESC LIMIT ?
         ''', (product_id, limit))
-        
-        results = self.cursor.fetchall()
-        history = []
-        
-        if results:
-            for row in results:
-                history.append({"price": row[0], "date": row[1]})
-        
-        return history
-
-    def delete_product(self, product_id, guild_id=None, user_id=None):
-        """Ürünü ve fiyat geçmişini siler."""
-        try:
-            if guild_id and user_id:
-                self.cursor.execute('''
-                DELETE FROM products 
-                WHERE product_id = ? AND guild_id = ? AND user_id = ?
-                ''', (product_id, guild_id, user_id))
-            else:
-                self.cursor.execute('''
-                DELETE FROM products 
-                WHERE product_id = ?
-                ''', (product_id,))
-                
-            # İlişkili fiyat geçmişini silme
-            self.cursor.execute('''
-            DELETE FROM price_history 
-            WHERE product_id = ?
-            ''', (product_id,))
-            
-            self.conn.commit()
-            return self.cursor.rowcount > 0
-        except Exception as e:
-            print(f"Ürün silinirken hata: {e}")
-            return False
-
-    def check_price_changes(self):
-        """Fiyat değişikliklerini kontrol eder ve değişen ürünleri döndürür."""
-        self.cursor.execute('''
-        SELECT p.*, 
-            (SELECT price FROM price_history 
-             WHERE product_id = p.product_id 
-             ORDER BY date DESC LIMIT 1, 1) as previous_price
-        FROM products p
-        ''')
-        
-        results = self.cursor.fetchall()
-        changed_products = []
-        
-        if results:
-            columns = [desc[0] for desc in self.cursor.description]
-            for row in results:
-                product = dict(zip(columns, row))
-                
-                # Eğer önceki fiyat varsa ve farklıysa
-                if product['previous_price'] and product['current_price'] != product['previous_price']:
-                    product['price_change'] = product['current_price'] - product['previous_price']
-                    product['price_change_percentage'] = (product['price_change'] / product['previous_price']) * 100
-                    changed_products.append(product)
-        
-        return changed_products
+        return [{"price": row['price'], "date": row['date']} for row in self.cursor.fetchall()]
 
     def close(self):
-        """Veritabanı bağlantısını kapatır."""
         if self.conn:
             self.conn.close()
-        
-    def test_database(self):
-        """Veritabanı bağlantısını ve işlemlerini test eder."""
-        try:
-            # Test verisi oluştur
-            test_data = {
-                'product_id': 'test123',
-                'name': 'Test Ürün',
-                'url': 'https://www.trendyol.com/test-urun-p-123456',
-                'image_url': 'https://test.com/image.jpg',
-                'current_price': 99.99,
-                'original_price': 129.99,
-                'success': True
-            }
-            
-            # Test verisini ekle
-            result = self.add_product(test_data, 'test_guild', 'test_user', 'test_channel')
-            if result:
-                logger.info("Veritabanı test verisi başarıyla eklendi.")
-                
-                # Eklenen veriyi kontrol et
-                product = self.get_product('test123')
-                if product:
-                    logger.info(f"Test verisi başarıyla okundu: {product['name']}")
-                    
-                    # Test verisini sil
-                    self.delete_product('test123')
-                    logger.info("Test verisi silindi.")
-                    return True
-                else:
-                    logger.error("Test verisi eklendi ancak okunamadı!")
-            else:
-                logger.error("Test verisi eklenemedi!")
-            
-            return False
-        except Exception as e:
-            logger.error(f"Veritabanı testi sırasında hata oluştu: {e}")
-            return False 
