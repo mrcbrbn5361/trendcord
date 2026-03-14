@@ -63,12 +63,18 @@ class TrendyolScraper:
             return url
 
         try:
-            # ty.gl veya diğer yönlendirmeler için
+            # ty.gl veya diğer yönlendirmeler için HEAD isteği ile takip et
+            # allow_redirects=True sayesinde nihai URL'yi alırız
             response = requests.head(url, headers=self.headers, allow_redirects=True, timeout=self.timeout, verify=self.verify_ssl)
             return response.url
         except Exception as e:
             logger.error(f"URL çözümlenirken hata: {e}")
-            return url
+            # Hata durumunda GET ile dene (bazı siteler HEAD'e izin vermeyebilir)
+            try:
+                response = requests.get(url, headers=self.headers, allow_redirects=True, timeout=self.timeout, verify=self.verify_ssl)
+                return response.url
+            except:
+                return url
 
     def extract_product_id(self, url):
         """URL'den ürün ID'sini çıkarır."""
@@ -76,19 +82,32 @@ class TrendyolScraper:
             if url.isdigit():
                 return url
 
-            # URL'yi temizle (query parametrelerini ayır)
             parsed_url = urlparse(url)
             path = parsed_url.path
+            query_params = parse_qs(parsed_url.query)
             
-            # Standart: /...-p-12345
+            # 1. Standart: /...-p-12345
             match = re.search(r'-p-(\d+)', path)
             if match:
                 return match.group(1)
             
-            # Query: ?productId=12345
-            query_params = parse_qs(parsed_url.query)
+            # 2. Query: ?productId=12345
             if 'productId' in query_params:
                 return query_params['productId'][0]
+
+            # 3. Query: ?pi=12345
+            if 'pi' in query_params:
+                return query_params['pi'][0]
+
+            # 4. Path directly: /p-12345
+            match = re.search(r'/p-(\d+)', path)
+            if match:
+                return match.group(1)
+
+            # 5. Herhangi bir sayı grubunu p- ön ekiyle ara
+            match = re.search(r'p-(\d+)', url)
+            if match:
+                return match.group(1)
                 
             return None
         except Exception as e:
@@ -101,7 +120,7 @@ class TrendyolScraper:
         product_id = self.extract_product_id(resolved_url)
         
         if not product_id:
-            logger.error(f"Geçerli bir ürün ID'si bulunamadı: {url}")
+            logger.error(f"Geçerli bir ürün ID'si bulunamadı: {url} (Çözümlenen: {resolved_url})")
             return None
         
         # Canonical URL
@@ -112,7 +131,7 @@ class TrendyolScraper:
             result = self._try_with_proxy(product_url)
 
         if result:
-            result['url'] = product_url # Her zaman temiz URL'yi kaydet
+            result['url'] = product_url
         return result
     
     def _try_with_proxy(self, product_url):
@@ -142,8 +161,7 @@ class TrendyolScraper:
             soup = BeautifulSoup(response.text, 'html.parser')
             product_id = self.extract_product_id(product_url)
             
-            # Farklı seçicileri dene
-            name_selectors = ['h1.pr-new-br', 'h1.product-name', 'h1.pr-in-nm', '.product-name-container h1']
+            name_selectors = ['h1.pr-new-br', 'h1.product-name', 'h1.pr-in-nm', '.product-name-container h1', '.pr-in-at-name']
             product_name = None
             for selector in name_selectors:
                 element = soup.select_one(selector)
@@ -151,7 +169,7 @@ class TrendyolScraper:
                     product_name = element.get_text(strip=True)
                     break
             
-            price_selectors = ['.prc-dsc', '.product-price', '.pr-in-at-pr-dsc', '.featured-fiyat']
+            price_selectors = ['.prc-dsc', '.product-price', '.pr-in-at-pr-dsc', '.featured-fiyat', '.prc-slg']
             current_price = None
             for selector in price_selectors:
                 element = soup.select_one(selector)
@@ -162,7 +180,7 @@ class TrendyolScraper:
                         break
                     except: continue
 
-            original_price_selectors = ['.prc-org', '.product-price-old', '.pr-in-at-pr-org']
+            original_price_selectors = ['.prc-org', '.product-price-old', '.pr-in-at-pr-org', '.prc-org-ori']
             original_price = current_price
             for selector in original_price_selectors:
                 element = soup.select_one(selector)
@@ -173,7 +191,7 @@ class TrendyolScraper:
                         break
                     except: continue
             
-            image_selectors = ['img.ph-gl-img', '.product-slide img', '.base-product-image img']
+            image_selectors = ['img.ph-gl-img', '.product-slide img', '.base-product-image img', '.gallery-container img']
             image_url = None
             for selector in image_selectors:
                 element = soup.select_one(selector)
@@ -184,7 +202,6 @@ class TrendyolScraper:
                     break
             
             if not product_name or current_price is None:
-                # Script içinden çekmeyi dene (window.__PRODUCT_DETAIL_APP_INITIAL_STATE__)
                 scripts = soup.find_all('script')
                 for script in scripts:
                     if 'window.__PRODUCT_DETAIL_APP_INITIAL_STATE__' in script.text:
