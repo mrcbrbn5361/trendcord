@@ -1,0 +1,45 @@
+# Trendcord Caddy Configuration
+# Auto HTTPS, HTTP/3, reverse proxy
+
+# API Server
+api.trendcord.com {
+    reverse_proxy api:8000
+    
+    # Security headers
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    }
+    
+    # Logging
+    log {
+        output file /var/log/caddy/api.log
+    }
+}
+
+# Web Frontend
+trendcord.com {
+    reverse_proxy web:3000
+    
+    # Security headers
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    }
+    
+    # Logging
+    log {
+        output file /var/log/caddy/web.log
+    }
+}
+
+# Default - redirect to main domain
+:80 {
+    redir https://trendcord.com{uri}
+}
