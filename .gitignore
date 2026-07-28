@@ -1,43 +1,58 @@
-# Dependencies
-node_modules/
-__pycache__/
-*.pyc
-.mypy_cache/
-.ruff_cache/
+# Veritabanı
+*.db
+*.sqlite3
 
-# Environment
+# Ortam değişkenleri
 .env
-.env.local
-.env.production
 
-# Build
-.next/
-out/
-dist/
+# Python dosyaları
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
 build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# IDE
-.vscode/
+# Sanal ortamlar
+venv/
+ENV/
+env/
+
+# IDE dosyaları
 .idea/
+.vscode/
 *.swp
 *.swo
 
-# OS
+# İşletim sistemi dosyaları
 .DS_Store
 Thumbs.db
 
-# Docker
-docker-compose.override.yml
+# Next.js
+.next/
+out/
+.vercel
+
+# Node
+node_modules/
+npm-debug.log*
 
 # Logs
 *.log
-logs/
-
-# Coverage
-.coverage
-htmlcov/
-coverage.xml
-
-# Database
-*.sqlite
-*.db
+tunnel.log
+run.log
+bot.log
