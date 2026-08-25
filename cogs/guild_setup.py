@@ -3,11 +3,12 @@ import logging
 
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from provisioner.common.store import SetupStore
 from provisioner.common.analyzer import analyze_roles
 from provisioner.common.views import TicketPanelView
+from provisioner.common import content as ccontent
 from provisioner.client import runner
 from provisioner.client.data import CATEGORIES
 
@@ -104,6 +105,98 @@ class GuildSetup(commands.Cog):
 
     async def cog_load(self):
         logger.info("GuildSetup cog yüklendi.")
+        if not self.status_loop.is_running():
+            self.status_loop.start()
+
+    async def cog_unload(self):
+        self.status_loop.cancel()
+
+    # ---------- canli durum mesaji (#durum) ----------
+    @tasks.loop(minutes=5)
+    async def status_loop(self):
+        for guild in list(self.bot.guilds):
+            try:
+                await ccontent.post_status_message(guild)
+            except Exception as e:
+                logger.debug(f"[Durum] {guild.id}: {e}")
+
+    @status_loop.before_loop
+    async def before_status(self):
+        await self.bot.wait_until_ready()
+
+    # ---------- hos geldin sistemi (tum sunucular) ----------
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        try:
+            e = ccontent.b_welcome_member(member)
+            hedef = None
+            for key in ("oh:hosgeldin", "ch:hosgeldin", "hoş-geldin"):
+                ent = self.store.entity(str(member.guild.id), key)
+                if ent:
+                    hedef = member.guild.get_channel(int(ent["discord_id"]))
+                    if hedef:
+                        break
+            if hedef is None:
+                hedef = discord.utils.find(
+                    lambda c: c.name in ("hoş-geldin", "genel", "hoş-geldin"),
+                    member.guild.text_channels)
+            if hedef is None:
+                hedef = member.guild.system_channel
+            if hedef and hedef.permissions_for(member.guild.me).send_messages:
+                await hedef.send(embed=e)
+        except Exception as e:
+            logger.error(f"[Welcome] {member.guild.id}: {e}")
+
+    # ---------- /duyuru ----------
+    @commands.hybrid_command(name="duyuru",
+                             description="Duyurular kanalına embed duyuru gönderir")
+    @app_commands.default_permissions(manage_guild=True)
+    @commands.guild_only()
+    async def duyuru(self, ctx: commands.Context, baslik: str, mesaj: str,
+                     rol: str = "yok"):
+        """rol: yok | fiyat | indirim | kampanya | guncelleme"""
+        rol_map = {
+            "fiyat": "🔔 Fiyat Bildirim",
+            "indirim": "🏷️ İndirim Bildirim",
+            "kampanya": "🎁 Kampanya Bildirim",
+            "guncelleme": "📰 Güncelleme Bildirim",
+        }
+        hedef = None
+        for key in ("oh:duyurular", "ch:duyurular"):
+            ent = self.store.entity(str(ctx.guild.id), key)
+            if ent:
+                hedef = ctx.guild.get_channel(int(ent["discord_id"]))
+                if hedef:
+                    break
+        if hedef is None:
+            hedef = discord.utils.find(lambda c: c.name == "duyurular",
+                                       ctx.guild.text_channels) or ctx.channel
+        e = discord.Embed(title=baslik, description=mesaj, color=ORANGE)
+        e.set_author(name=ctx.author.display_name,
+                     icon_url=ctx.author.display_avatar.url)
+        e.set_footer(text="Trendcord Duyuru", 
+                     icon_url=ccontent.IMG)
+        icerik = None
+        rname = rol_map.get(rol.lower())
+        if rname:
+            r = discord.utils.find(lambda x: x.name == rname, ctx.guild.roles)
+            if r:
+                icerik = r.mention
+        await hedef.send(content=icerik, embed=e)
+        await ctx.reply(f"✅ Duyuru {hedef.mention} kanalına gönderildi.",
+                        ephemeral=True)
+
+    # ---------- /destek ----------
+    @commands.hybrid_command(name="destek",
+                             description="Destek talebi panelini açar")
+    @commands.guild_only()
+    async def destek(self, ctx: commands.Context):
+        e = discord.Embed(
+            title="🎫 Destek Talebi",
+            description="Aşağıdaki menüden destek türünü seç — özel bir thread "
+                        "açılsın, sadece sen ve destek ekibi görsün.",
+            color=ORANGE)
+        await ctx.reply(embed=e, view=TicketPanelView(), ephemeral=True)
 
     # ---------- yardimcilar ----------
     def report_embed(self, report: dict) -> discord.Embed:

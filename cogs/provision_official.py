@@ -51,6 +51,7 @@ class ProvisionOfficial(commands.Cog):
         app_commands.Choice(name="apply — eksikleri kur", value="apply"),
         app_commands.Choice(name="verify — raporla (değişiklik yok)", value="verify"),
         app_commands.Choice(name="diff — fark listesi", value="diff"),
+        app_commands.Choice(name="reset — SIFIRLA ve yeniden kur", value="reset"),
     ])
     @commands.guild_only()
     async def provision_official(self, ctx: commands.Context, eylem: str = "apply"):
@@ -83,6 +84,43 @@ class ProvisionOfficial(commands.Cog):
                             value="\n".join(f"[ ] {m}" for m in report["manual"])[:1024],
                             inline=False)
             await ctx.reply(embed=embed)
+            return
+
+        if eylem == "reset":
+            view = ResetConfirm()
+            await ctx.reply(
+                "⚠️ **SIFIRLAMA** — yönetilen tüm kanallar/kategoriler ve "
+                "blueprint rolleri SİLİNPEN yeniden kurulacak. Emin misiniz?",
+                view=view)
+            await view.wait()
+            if not view.onay:
+                return
+            await ctx.channel.typing()
+            report = await runner.reset_official(guild)
+            embed = discord.Embed(
+                title="♻️ Resmi Sunucu SIFIRLANDI ve Yeniden Kuruldu",
+                color=ORANGE,
+                description=(
+                    f"Silinen kanal/kategori: **{len(report['reset']['channels'])}** · "
+                    f"Silinen rol: **{len(report['reset']['roles'])}**\n"
+                    f"Oluşturulan: **{len(report['created'])}** · "
+                    f"Hata: **{len(report['errors'])}** · "
+                    f"İçerik: **{report.get('content', 0)}** kanal"))
+            if report["reset"]["errors"]:
+                embed.add_field(name="Silme Hataları",
+                                value="\n".join(report["reset"]["errors"][:10]),
+                                inline=False)
+            if report["errors"]:
+                embed.add_field(name="Kurulum Hataları",
+                                value="\n".join(report["errors"][:15]), inline=False)
+            embed.add_field(name="Manuel Adımlar",
+                            value="\n".join(f"[ ] {m}" for m in report["manual"])[:1024],
+                            inline=False)
+            await ctx.reply(embed=embed)
+            try:
+                await self._post_panels(guild)
+            except Exception:
+                pass
             return
 
         # apply
@@ -137,6 +175,25 @@ class ProvisionOfficial(commands.Cog):
                     description="Aşağıdan destek türünü seç, özel thread açalım.",
                     color=ORANGE)
                 await channel.send(embed=embed, view=TicketPanelView())
+
+
+class ResetConfirm(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=60)
+        self.onay = False
+
+    @discord.ui.button(label="Evet, SIFIRLA", style=discord.ButtonStyle.danger)
+    async def evet(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.onay = True
+        await interaction.response.edit_message(content="♻️ Sıfırlama başladı…",
+                                                view=None)
+        self.stop()
+
+    @discord.ui.button(label="Vazgeç", style=discord.ButtonStyle.secondary)
+    async def vazgec(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.edit_message(content="Sıfırlama iptal edildi.",
+                                                view=None)
+        self.stop()
 
 
 async def setup(bot):

@@ -91,3 +91,44 @@ class TicketPanelView(discord.ui.View):
             await interaction.response.send_message(
                 "⚠️ Destek talebi açılamadı (izin eksik) ve DM gönderilemedi.",
                 ephemeral=True)
+
+
+class SSSView(discord.ui.View):
+    """#sss butonlu soru-cevap sistemi — cevaplar ephemeral embed."""
+
+    SORULAR = {
+        "📦 Ürün nasıl takip edilir?":
+            "`/ekle` komutunu `#komutlar` kanalında kullan.\n"
+            "Trendyol ürün linkini yapıştırman yeterli — bot fiyatı "
+            "otomatik izlemeye başlar.",
+        "🔔 Bildirim neden gelmiyor?":
+            "1. Rol seçmiş misin? `#rol-seçimi` panelinden 🔔 Fiyat Bildirim al.\n"
+            "2. Bildirim kanalı doğru mu? `/bildirim-kanal` ile kontrol et.\n"
+            "3. Ürün gerçekten düştü mü? Web panelinden geçmişe bak.",
+        "⏰ Alarm nasıl kurulur?":
+            "`/alarm <ürün-id> <hedef-fiyat> alt` — fiyat düşünce DM + kanal "
+            "bildirimi alırsın.\n`/alarmlar` ile listeleyip `/alarm-sil` ile "
+            "kaldırabilirsin.",
+        "📈 Fiyat geçmişi nerede?":
+            "Web panelinde her ürünün sayfası var: grafik, en düşük/en yüksek, "
+            "değişim yüzdesi.\n" + "https://trendcord.miracdeveloper.com.tr/dashboard",
+        "🎫 Destek nasıl açılır?":
+            "`#destek-paneli` kanalındaki menüden tür seç — özel thread açılır, "
+            "sadece sen ve ekip görür.",
+        "💰 Bu hizmet ücretli mi?":
+            "Hayır — Trendcord temel özellikleriyle **tamamen ücretsizdir**. "
+            "7/24 bulut altyapısında çalışır.",
+    }
+
+    def __init__(self):
+        super().__init__(timeout=None)
+        for i, soru in enumerate(self.SORULAR):
+            btn = discord.ui.Button(label=soru.split(" ", 1)[1][:80], row=i // 3,
+                                    style=discord.ButtonStyle.secondary)
+
+            async def cb(interaction: discord.Interaction, s=soru):
+                e = discord.Embed(title=s, description=self.SORULAR[s],
+                                  color=0xF27A1A)
+                await interaction.response.send_message(embed=e, ephemeral=True)
+            btn.callback = cb
+            self.add_item(btn)

@@ -234,6 +234,63 @@ async def apply_official(guild) -> dict:
 
     report["automod"] = await _apply_automod(guild)
     store.save_state(guild.id, "OFFICIAL", "RAN" if not report["errors"] else "PARTIAL")
+
+    # kanal icerikleri (embed/panel) — idempotent
+    try:
+        from provisioner.common.content import post_all_content
+        report["content"] = await post_all_content(guild, official=True)
+    except Exception as e:
+        logger.warning(f"[Official] icerik postlama: {e}")
+    return report
+
+
+async def reset_official(guild) -> dict:
+    """Resmi sunucuyu SIFIRLA + yeniden kur (yalnizca managed kaynaklar).
+
+    1) managed_entities'teki tum kanal/kategori silinir
+    2) blueprint rolleri (isim eslesmesi) silinir — bot rolunun altindaysa
+    3) apply_official ile sifirdan kurulur
+    """
+    from provisioner.common.store import SetupStore
+    from provisioner.common.ratelimit import safe_call, StepResult
+    store = SetupStore(guild.client.db)
+    deleted = {"channels": [], "roles": [], "errors": []}
+
+    # 1) kanallar + kategoriler (alttan uste: once kanal sonra kategori)
+    ents = store.entities(guild.id, active_only=False)
+    chans = [e for e in ents if e["entity_type"] == "CHANNEL" and not e["deleted_at"]]
+    cats = [e for e in ents if e["entity_type"] == "CATEGORY" and not e["deleted_at"]]
+    for ent in chans + cats:
+        ch = guild.get_channel(int(ent["discord_id"]))
+        if ch:
+            async def factory(ch=ch):
+                return await ch.delete(reason="Trendcord reset (provision-official)")
+            res = await safe_call(ent["key"], factory)
+            if res.status == StepResult.CREATED:
+                deleted["channels"].append(ent["key"])
+            else:
+                deleted["errors"].append(f"{ent['key']}: {res.status}")
+        store.mark_deleted(guild.id, ent["key"])
+
+    # msg kayitlarini da temizle
+    for ent in ents:
+        if ent["entity_type"] == "MESSAGE":
+            store.mark_deleted(guild.id, ent["key"])
+
+    # 2) blueprint rollerini sil
+    me = guild.me
+    for spec in odata.OFFICIAL_ROLES:
+        role = discord.utils.find(lambda r: r.name == spec["name"], guild.roles)
+        if role and me and role < me.top_role:
+            async def factory(role=role):
+                return await role.delete(reason="Trendcord reset (provision-official)")
+            res = await safe_call(f"role:{spec['name']}", factory)
+            if res.status == StepResult.CREATED:
+                deleted["roles"].append(spec["name"])
+
+    # 3) sifirdan kur
+    report = await apply_official(guild)
+    report["reset"] = deleted
     return report
 
 

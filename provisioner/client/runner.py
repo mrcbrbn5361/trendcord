@@ -171,6 +171,14 @@ async def apply_setup(guild, modules: dict = None, analysis: dict = None) -> dic
     if report["errors"]:
         report["status"] = "PARTIAL"
     store.save_state(guild.id, "CLIENT", report["status"], analysis)
+
+    # kanal icerikleri (embed/panel) — idempotent, rol dokunulmaz (G1)
+    try:
+        from provisioner.common.content import post_all_content
+        report["content"] = await post_all_content(guild, official=False)
+    except Exception as e:
+        logger.warning(f"[ClientSetup] icerik postlama: {e}")
+
     logger.info(f"[ClientSetup] {guild.id}: {report['status']} "
                 f"oluşturulan={len(report['created'])} atlanan={len(report['skipped'])}")
     return report
