@@ -67,4 +67,4 @@ bot.log
 tmp/
 .pytest_cache/
 proxies.txt
-current
+current.vds
