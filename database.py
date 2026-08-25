@@ -280,6 +280,20 @@ class Database:
             print(f"[DB ERROR] get_all_products_admin: {e}")
             return []
 
+    def get_product(self, product_id):
+        """Tek bir urunu dondur."""
+        try:
+            self.cursor.execute(
+                "SELECT * FROM products WHERE product_id = ?",
+                (str(product_id),)
+            )
+            colnames = [d[0] for d in self.cursor.description]
+            row = self.cursor.fetchone()
+            return dict(zip(colnames, row)) if row else None
+        except Exception as e:
+            print(f"[DB ERROR] get_product: {e}")
+            return None
+
     def get_product_price_history(self, product_id, limit=20):
         """Bir ürünün fiyat geçmişini döndür."""
         try:

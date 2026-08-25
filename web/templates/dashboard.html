@@ -127,12 +127,14 @@
             <!-- Mobile: horizontal card | Desktop: vertical card -->
             <div class="flex md:flex-col gap-4 glass-panel p-3 md:p-4 rounded-lg group product-card touch-scale" data-name="{{ p.name|lower }}">
                 <div class="relative w-24 h-24 md:w-full md:aspect-square rounded-xl overflow-hidden shrink-0 border border-border-glass bg-surface-container-low">
+                    <a href="/product/{{ p.product_id }}" class="block w-full h-full group/det" aria-label="Ürün detayına git">
                     <img src="{{ p.image_url }}" alt="{{ p.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x600/1c1b1b/dec1b1?text=G%C3%B6rsel+Yok'">
                     {% if p.original_price and p.current_price and p.original_price > p.current_price %}
                     <div class="absolute top-2 left-2">
                         <span class="ty-badge-discount">-{{ (((p.original_price - p.current_price) / p.original_price) * 100)|int }}%</span>
                     </div>
                     {% endif %}
+                    </a>
                     <form action="/product/delete/{{ p.product_id }}" method="POST" class="absolute top-2 right-2 z-10">
                         <input type="hidden" name="guild_id" value="{{ current_guild.id if current_guild else '' }}">
                         <button type="submit" class="w-7 h-7 rounded-full bg-black/40 hover:bg-error text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
@@ -141,7 +143,7 @@
                     </form>
                 </div>
                 <div class="flex-1 min-w-0 space-y-1">
-                    <h3 class="font-label-bold text-on-surface text-sm truncate">{{ p.name }}</h3>
+                    <a href="/product/{{ p.product_id }}" class="block hover:text-primary transition-colors"><h3 class="font-label-bold text-on-surface text-sm truncate group-hover:text-primary transition-colors">{{ p.name }}</h3></a>
                     <div class="flex items-baseline gap-2">
                         <span class="text-on-surface font-black text-lg md:text-xl">₺{{ "{:,.0f}".format(p.current_price) }}</span>
                         {% if p.basket_price and p.basket_price < p.current_price %}

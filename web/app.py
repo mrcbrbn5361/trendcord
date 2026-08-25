@@ -1,4 +1,5 @@
 import os
+import json
 import asyncio
 import functools
 import httpx
@@ -297,6 +298,41 @@ async def delete_product(request: Request, pid: str, guild_id: str = Form(None))
     if request.session.get("user") and db_instance: db_instance.delete_product(pid)
     redirect_path = f"/dashboard?guild_id={guild_id}" if guild_id else "/dashboard"
     return RedirectResponse(redirect_path, status_code=303)
+
+@app.get("/product/{pid}", response_class=HTMLResponse)
+async def product_detail(request: Request, pid: str):
+    _ensure_db()
+    product = db_instance.get_product(pid) if db_instance else None
+    if not product:
+        return templates.TemplateResponse("index.html", template_context(request), status_code=404)
+
+    history_desc = db_instance.get_product_price_history(pid, limit=300) or []
+    chrono = list(reversed(history_desc))
+    prices = [float(h["price"]) for h in chrono if h.get("price") is not None]
+
+    stats = {"count": len(prices), "min": None, "max": None, "avg": None,
+             "change_pct": None, "first_ts": None}
+    if prices:
+        stats["min"] = min(prices)
+        stats["max"] = max(prices)
+        stats["avg"] = round(sum(prices) / len(prices))
+        first_p = prices[0]
+        cur = float(product["current_price"] or first_p)
+        if first_p > 0:
+            stats["change_pct"] = round((cur - first_p) / first_p * 100, 1)
+        stats["first_ts"] = (chrono[0].get("timestamp") or "")[:16]
+
+    chart = [{"t": (h.get("timestamp") or "")[:16], "p": float(h["price"])}
+             for h in chrono if h.get("price") is not None]
+
+    ctx = template_context(request, {
+        "product": product,
+        "history": history_desc[:40],
+        "stats": stats,
+        "chart_json": json.dumps(chart, ensure_ascii=False),
+        "get_guild_name": get_guild_name,
+    })
+    return templates.TemplateResponse("product_detail.html", ctx)
 
 @app.get("/login")
 async def login(request: Request):
