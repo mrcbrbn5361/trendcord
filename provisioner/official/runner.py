@@ -53,24 +53,37 @@ async def _ensure_role(guild, spec, current_by_name: dict):
     return await safe_call(f"role:{name}", factory)
 
 
-async def ensure_official_roles(guild) -> list:
-    """Rolleri hiyerarsi sirasinda olustur; pozisyonlari ustten alta ayarlar."""
+async def ensure_official_roles(guild, report=None) -> list:
+    """Rolleri olustur VEYA var olanlari izin/renk/hoist acisindan esitle."""
     results = []
     by_name = {r.name: r for r in guild.roles}
-    created_roles = []
     for spec in odata.OFFICIAL_ROLES:
-        res = await _ensure_role(guild, spec, by_name)
-        results.append(res)
-        if res.status in (StepResult.CREATED, StepResult.SKIPPED):
-            created_roles.append(res.entity)
-    # pozisyon: listedeki sira = yukaridan asagi; en ustteki en buyuk pozisyona
-    try:
-        top = max((r.position for r in guild.roles
-                   if r != guild.default_role and not r.managed), default=1)
-        for i, role in enumerate(created_roles):
-            await role.edit(position=top - i)
-    except Exception as e:
-        logger.warning(f"[Official] rol pozisyonlama atlandi: {e}")
+        role = by_name.get(spec["name"])
+        if role is None:
+            res = await _ensure_role(guild, spec, by_name)
+            results.append(res)
+            if res.status == StepResult.CREATED and report is not None:
+                report["created"].append(f"🏷️ {spec['name']}")
+            continue
+        # SENKRON: izin/renk/hoist/mentionable
+        exp = _resolve_permissions(spec["permissions"])
+        if (role.permissions.value != exp.value
+                or role.color.value != spec["color"]
+                or role.hoist != spec["hoist"]
+                or role.mentionable != spec["mentionable"]):
+            try:
+                await role.edit(
+                    colour=discord.Colour(spec["color"]),
+                    hoist=spec["hoist"],
+                    permissions=exp,
+                    mentionable=spec["mentionable"],
+                    reason="Trendcord: rol senkronu")
+                if report is not None:
+                    report["synced"].append(f"🏷️ {spec['name']} izinleri")
+            except discord.Forbidden:
+                if report is not None:
+                    report["errors"].append(f"rol {spec['name']}: 50013")
+        results.append(StepResult(f"role:{spec['name']}", StepResult.SKIPPED, role))
     return results
 
 
@@ -174,30 +187,69 @@ async def _apply_automod(guild):
 
 
 async def apply_official(guild, db=None) -> dict:
-    """apply: eksikleri idempotent kurar; rapor dondurur."""
+    """apply/SENKRON: eksikleri kur, VAR OLANLARIN IZINLERINI EŞITLE.
+
+    - Roller: izin/renk/hoist/mentionable esitlenir + hiyerarsi duzenlenir
+    - Kategori/kanallar: overwrite'lar yeniden uygulanir
+    - @everyone baz izinleri sikilastirilir
+    - Karantina rolune public kategorilerde yazma/voice engeli verilir
+    """
     from provisioner.common.store import SetupStore
-    assert db is not None, 'db gerekli'
     store = SetupStore(db)
-
-    report = {"created": [], "skipped": [], "errors": [], "automod": [],
-              "manual": odata.MANUAL_STEPS}
-
-    role_results = await ensure_official_roles(guild)
-    for r in role_results:
-        if r.status == StepResult.CREATED:
-            report["created"].append(f"🏷️ {r.entity.name}")
-        elif r.status == StepResult.SKIPPED:
-            report["skipped"].append(f"🏷️ {r.entity.name}")
-        else:
-            report["errors"].append(f"{r.key}: {r.status}")
+    report = {"created": [], "synced": [], "skipped": [], "errors": [],
+              "automod": [], "manual": odata.MANUAL_STEPS, "content": 0}
 
     me = guild.me
+
+    # ---- 0) @everyone baz izinleri (guvenli minimum) ----
+    safe = discord.Permissions.none()
+    for p in ("view_channel", "send_messages", "embed_links", "attach_files",
+              "add_reactions", "read_message_history", "use_application_commands",
+              "use_external_emojis", "create_public_threads",
+              "send_messages_in_threads", "connect", "speak",
+              "send_voice_messages"):
+        setattr(safe, p, True)
+    if guild.default_role.permissions.value != safe.value:
+        try:
+            await guild.default_role.edit(permissions=safe,
+                                          reason="Trendcord: @everyone sikilastirma")
+            report["synced"].append("🔒 @everyone baz izinleri")
+        except discord.Forbidden:
+            report["errors"].append("@everyone edit: izin yok")
+
+    # ---- 1) ROLLER: olustur VEYA senkronize et ----
+    role_results = await ensure_official_roles(guild, report)
+    blueprint_roles = []
+    for spec in odata.OFFICIAL_ROLES:
+        role = discord.utils.find(lambda r: r.name == spec["name"], guild.roles)
+        if role:
+            blueprint_roles.append(role)
+
+    # hiyerarsi: bot rolunun hemen altina yerlestir
+    try:
+        if me:
+            top = me.top_role.position - 1
+            for i, role in enumerate(blueprint_roles):
+                if role.position != top - i:
+                    await role.edit(position=top - i)
+            report["synced"].append("📊 Rol hiyerarsisi")
+    except Exception as e:
+        logger.debug(f"[Official] pozisyonlama: {e}")
+
+    # ---- 2) KATEGORILER + KANALLAR ----
     for cat in odata.OFFICIAL_CATEGORIES:
         ent = store.entity(guild.id, cat["key"])
         parent = guild.get_channel(int(ent["discord_id"])) if ent else None
+        cat_ow = list(cat.get("overwrites", []))
+        if not cat.get("private"):
+            # Karantina: public kategorilerde yazma/threads/voice engeli
+            cat_ow.append(("⛔ Karantina",
+                           {"send_messages": False, "connect": False,
+                            "create_public_threads": False, "add_reactions": False}))
+        cat_map = _build_overwrite_map(guild, {"overwrites": cat_ow}, me)
+
         if parent is None:
-            owmap = _build_overwrite_map(guild, cat, me)
-            res = await safe_call(cat["key"], lambda c=cat, o=owmap:
+            res = await safe_call(cat["key"], lambda c=cat, o=cat_map:
                                   guild.create_category(c["name"], overwrites=o))
             if res.status == StepResult.CREATED:
                 store.mark(guild.id, cat["key"], "CATEGORY", res.entity.id)
@@ -207,59 +259,65 @@ async def apply_official(guild, db=None) -> dict:
                 report["errors"].append(f"{cat['key']}: {res.status}")
                 continue
         else:
+            try:
+                if _ow_farkli(parent.overwrites, cat_map):
+                    await parent.edit(overwrites=cat_map,
+                                      reason="Trendcord: izin senkronu")
+                    report["synced"].append(f"📂 {parent.name} izinleri")
+            except discord.Forbidden:
+                report["errors"].append(f"{cat['key']} izin: 50013")
             report["skipped"].append(f"📂 {parent.name}")
 
         for ch in cat.get("channels", []):
             cent = store.entity(guild.id, ch["key"])
-            if cent and guild.get_channel(int(cent["discord_id"])):
+            existing = guild.get_channel(int(cent["discord_id"])) if cent else None
+            if existing is not None:
+                # izin + ozellik SENKRONU
+                spec = dict(ch)
+                if ch["kind"] == "BOT_FEED" and ch.get("ping_roles"):
+                    extra = _feed_overwrites(ch["ping_roles"])
+                    spec["overwrites"] = extra
+                elif ch["kind"] in odata.KIND_TO_OVERWRITES:
+                    spec["overwrites"] = odata.KIND_TO_OVERWRITES[ch["kind"]]()
+                spec = _strip_private(spec, cat)
+                owmap = _build_overwrite_map(guild, spec, me)
+                try:
+                    degisti = False
+                    if _ow_farkli(existing.overwrites, owmap):
+                        await existing.edit(overwrites=owmap,
+                                            reason="Trendcord: izin senkronu")
+                        degisti = True
+                    if getattr(existing, "topic", None) != ch.get("topic") and ch.get("topic"):
+                        await existing.edit(topic=ch["topic"])
+                        degisti = True
+                    if ch.get("slowmode") and getattr(existing, "slowmode_delay", 0) != ch["slowmode"]:
+                        await existing.edit(slowmode_delay=ch["slowmode"])
+                        degisti = True
+                    if degisti:
+                        report["synced"].append(f"# {existing.name} izinleri")
+                except discord.Forbidden:
+                    report["errors"].append(f"{ch['key']} izin: 50013")
                 report["skipped"].append(f"#{ch['name']}")
                 continue
-            spec = dict(ch)
-            # Gizli kategorilerde kanal-bazli @everyone/Üye ALLOW'lar
-            # kategori DENY'ini ezer -> filtrele (gizlilik sizmasin)
-            def _cat_view(target):
-                for t, perms in cat.get("overwrites", []):
-                    if t == target and perms.get("view_channel") is False:
-                        return True
-                return False
-            strip_everyone = _cat_view("@everyone")
-            strip_member = _cat_view(MEMBER_NAME)
 
+            spec = dict(ch)
             if ch["kind"] == "BOT_FEED" and ch.get("ping_roles"):
-                # ping rollerine VIEW ekle
-                extra = [("__BOT__", {"view_channel": True, "send_messages": True,
-                                      "embed_links": True, "attach_files": True,
-                                      "mention_everyone": False}),
-                         ("@everyone", {"view_channel": True, "send_messages": False}),
-                         ("✅ Üye", {"view_channel": True, "send_messages": False,
-                                     "add_reactions": True, "read_message_history": True}),
-                         ("🚨 Moderator", {"manage_messages": True})]
-                for pr in ch["ping_roles"]:
-                    extra.append((pr, {"view_channel": True}))
-                spec["overwrites"] = extra
+                spec["overwrites"] = odata._feed_overwrites(ch["ping_roles"])
             elif ch["kind"] in odata.KIND_TO_OVERWRITES:
                 spec["overwrites"] = odata.KIND_TO_OVERWRITES[ch["kind"]]()
-            if strip_everyone or strip_member:
-                temiz = []
-                for t, perms in spec.get("overwrites", []):
-                    if t == "@everyone" and strip_everyone:
-                        continue
-                    if t == MEMBER_NAME and strip_member:
-                        continue
-                    temiz.append((t, perms))
-                spec["overwrites"] = temiz
+            spec = _strip_private(spec, cat)
             owmap = _build_overwrite_map(guild, spec, me)
             cres = await _ensure_channel(guild, spec, parent, owmap)
             if cres.status == StepResult.CREATED:
                 store.mark(guild.id, ch["key"], "CHANNEL", cres.entity.id)
                 report["created"].append(f"# {cres.entity.name}")
-            elif cres.status == StepResult.SKIPPED_PERM or cres.status == StepResult.FAILED:
+            else:
                 report["errors"].append(f"{ch['key']}: {cres.status}")
 
     report["automod"] = await _apply_automod(guild)
     store.save_state(guild.id, "OFFICIAL", "RAN" if not report["errors"] else "PARTIAL")
 
-    # kanal icerikleri (embed/panel) — idempotent
+    # ---- kanal icerikleri (idempotent + eski kopyalari temizler) ----
     try:
         from provisioner.common.content import post_all_content
         report["content"] = await post_all_content(guild, db, official=True)
@@ -268,57 +326,33 @@ async def apply_official(guild, db=None) -> dict:
     return report
 
 
-async def reset_official(guild, db=None) -> dict:
-    """Resmi sunucuyu TAMAMEN SIFIRLA + yeniden kur.
+def _ow_farkli(mevcut: dict, hedef: dict) -> bool:
+    """Overwrite sozlukleri esit mi? (Role/Member id bazli karsilastirma)"""
+    if len(mevcut) != len(hedef):
+        return True
+    for target, po in hedef.items():
+        if mevcut.get(target) != po:
+            return True
+    return False
 
-    1) TUM kanallar silinir (managed + eski manuel — tam temizlik)
-    2) TUM yonetilebilir roller silinir (@everyone + managed bot rolleri haric)
-    3) apply_official ile blueprint sifirdan kurulur
-    """
-    from provisioner.common.store import SetupStore
-    from provisioner.common.ratelimit import safe_call, StepResult
-    assert db is not None, 'db gerekli'
-    store = SetupStore(db)
-    deleted = {"channels": 0, "roles": 0, "errors": []}
 
-    me = guild.me
-
-    # ---- 1) TUM KANALLAR (once kanallar, sonra kategoriler) ----
-    normal = [c for c in guild.channels
-              if not isinstance(c, discord.CategoryChannel)]
-    cats = [c for c in guild.channels if isinstance(c, discord.CategoryChannel)]
-    for ch in normal + cats:
-        async def factory(ch=ch):
-            return await ch.delete(reason="Trendcord reset: tam sifirlama")
-        res = await safe_call(f"purge:{ch.name}", factory)
-        if res.status == StepResult.CREATED:
-            deleted["channels"] += 1
-        else:
-            deleted["errors"].append(f"kanal {ch.name}: {res.status}")
-
-    # managed kayitlarini da temizle
-    for ent in store.entities(guild.id, active_only=False):
-        store.mark_deleted(guild.id, ent["key"])
-
-    # ---- 2) TUM YONETILEBILIR ROLLER ----
-    for role in list(guild.roles):
-        if role == guild.default_role or role.managed:
-            continue  # @everyone + baska botlarin rolleri dokunulmaz
-        if me and role >= me.top_role:
-            continue
-        async def factory(role=role):
-            return await role.delete(reason="Trendcord reset: tam sifirlama")
-        res = await safe_call(f"role:{role.name}", factory)
-        if res.status == StepResult.CREATED:
-            deleted["roles"] += 1
-        else:
-            deleted["errors"].append(f"rol {role.name}: {res.status}")
-
-    # ---- 3) SIFIRDAN KUR ----
-    report = await apply_official(guild, db=db)
-    report["reset"] = deleted
-    return report
-
+def _strip_private(spec, cat):
+    """Gizli kategorilerde kanal-bazli @everyone/Üye ALLOW'lari filtrele."""
+    def _cat_view(target):
+        for t, perms in cat.get("overwrites", []):
+            if t == target and perms.get("view_channel") is False:
+                return True
+        return False
+    strip_e = _cat_view("@everyone")
+    strip_m = _cat_view(odata.MEMBER)
+    if strip_e or strip_m:
+        temiz = []
+        for t, perms in spec.get("overwrites", []):
+            if (t == "@everyone" and strip_e) or (t == odata.MEMBER and strip_m):
+                continue
+            temiz.append((t, perms))
+        spec["overwrites"] = temiz
+    return spec
 
 async def verify_official(guild, db=None) -> dict:
     """verify/diff: hicbir sey degistirmeden eksikleri raporlar (3.2)."""

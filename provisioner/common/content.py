@@ -447,6 +447,18 @@ async def post_channel_content(guild, spec, db, force=False) -> bool:
         return False
 
     built = spec["build"](guild)
+
+    # DEDUP: ayni baslikli eski bot mesajlarini sil (cift post onleme/temizlik)
+    basliklar = {e.title for e, _ in built
+                 if not isinstance(e, str) and getattr(e, "title", None)}
+    try:
+        async for m in ch.history(limit=30):
+            if (m.author == guild.me and m.embeds
+                    and m.embeds[0].title in basliklar):
+                await m.delete()
+    except Exception:
+        pass
+
     last_msg = None
     for item in built:
         if item == ("DURUM", None):

@@ -126,10 +126,6 @@ class ProvisionOfficial(commands.Cog):
                             value="\n".join(f"[ ] {m}" for m in report["manual"])[:1024],
                             inline=False)
             await ctx.reply(embed=embed)
-            try:
-                await self._post_panels(guild)
-            except Exception:
-                pass
             return
 
         # apply
@@ -138,8 +134,12 @@ class ProvisionOfficial(commands.Cog):
             title="🏗️ Resmi Sunucu Provisioning",
             color=ORANGE,
             description=f"Oluşturulan: **{len(report['created'])}** · "
+                        f"Senkronize: **{len(report.get('synced', []))}** · "
                         f"Zaten var: **{len(report['skipped'])}** · "
                         f"Hata: **{len(report['errors'])}**")
+        if report.get("synced"):
+            embed.add_field(name="İzin Senkronu",
+                            value="\n".join(report["synced"][:20]), inline=False)
         if report["created"]:
             embed.add_field(name="Oluşturulan",
                             value="\n".join(report["created"][:30]), inline=False)
@@ -154,55 +154,6 @@ class ProvisionOfficial(commands.Cog):
                         inline=False)
         await ctx.reply(embed=embed)
 
-        # panelleri yerlestir (best-effort)
-        try:
-            await self._post_panels(guild)
-        except Exception as e:
-            logger.warning(f"[Official] panel yerlestirme: {e}")
-
-    async def _post_panels(self, guild: discord.Guild):
-        from provisioner.common.store import SetupStore
-        store = SetupStore(self.bot.db)
-
-        rol_ch = store.entity(guild.id, "oh:rol-secimi")
-        if rol_ch:
-            channel = guild.get_channel(int(rol_ch["discord_id"]))
-            if channel:
-                embed = discord.Embed(
-                    title="🎨 Rol Seçimi",
-                    description="Aşağıdaki menüden bildirim ve ilgi rollerini "
-                                "seçebilirsin.\nAynı menüden seçimi kaldırınca rol "
-                                "silinir.", color=ORANGE)
-                await channel.send(embed=embed, view=RolePanelView())
-
-        destek = store.entity(guild.id, "oh:destek-paneli")
-        if destek:
-            channel = guild.get_channel(int(destek["discord_id"]))
-            if channel:
-                embed = discord.Embed(
-                    title="🎫 Destek",
-                    description="Aşağıdan destek türünü seç, özel thread açalım.",
-                    color=ORANGE)
-                await channel.send(embed=embed, view=TicketPanelView())
-
-
-class ResetConfirm(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=60)
-        self.onay = False
-
-    @discord.ui.button(label="Evet, SIFIRLA", style=discord.ButtonStyle.danger)
-    async def evet(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.onay = True
-        await interaction.response.edit_message(content="♻️ Sıfırlama başladı…",
-                                                view=None)
-        self.stop()
-
-    @discord.ui.button(label="Vazgeç", style=discord.ButtonStyle.secondary)
-    async def vazgec(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.edit_message(content="Sıfırlama iptal edildi.",
-                                                view=None)
-        self.stop()
 
 
 async def setup(bot):
