@@ -55,7 +55,7 @@ class SetupPanel(discord.ui.View):
         modules = {v: True for v in (sel.values if sel else [])}
         self.cog.bot.db.set_guild_settings(str(interaction.guild_id), modules=modules)
         report = await runner.apply_setup(interaction.guild, modules=modules,
-                                          analysis=self.analysis)
+                                          analysis=self.analysis, db=self.bot.db)
         try:
             await self.cog.post_ticket_panel(interaction.guild)
         except Exception:
@@ -81,7 +81,7 @@ class RemoveConfirm(discord.ui.View):
     @discord.ui.button(label="Evet, kaldır", style=discord.ButtonStyle.danger)
     async def evet(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer(thinking=True)
-        report = await runner.remove_setup(interaction.guild)
+        report = await runner.remove_setup(interaction.guild, db=self.bot.db)
         embed = discord.Embed(title="🗑️ Kurulum Kaldırıldı", color=ORANGE,
                               description=f"Silinen: **{len(report['removed'])}** kaynak")
         if report["errors"]:
@@ -116,7 +116,7 @@ class GuildSetup(commands.Cog):
     async def status_loop(self):
         for guild in list(self.bot.guilds):
             try:
-                await ccontent.post_status_message(guild)
+                await ccontent.post_status_message(guild, db=self.bot.db)
             except Exception as e:
                 logger.debug(f"[Durum] {guild.id}: {e}")
 
@@ -286,7 +286,7 @@ class GuildSetup(commands.Cog):
         self.store.save_state(str(ctx.guild.id), "CLIENT", "PENDING", analysis)
 
         if eylem == "repair":
-            report = await runner.repair_setup(ctx.guild)
+            report = await runner.repair_setup(ctx.guild, db=self.bot.db)
             await ctx.reply(embed=self.report_embed(report))
             return
 
@@ -333,7 +333,7 @@ class GuildSetup(commands.Cog):
                 await self._send_somewhere(guild, embed)
                 return
             report = await runner.apply_setup(guild, modules=cfg["modules_parsed"],
-                                              analysis=analysis)
+                                              analysis=analysis, db=self.bot.db)
             embed = self.report_embed(report)
             embed.title = "✅ Trendcord kanalları kuruldu"
             await self._send_somewhere(guild, embed)

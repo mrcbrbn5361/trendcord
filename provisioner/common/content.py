@@ -47,18 +47,7 @@ def link_view(*links):
 # ---------------- icerik ureticileri ----------------
 
 def _c(guild, *keys_names):
-    """Managed key VEYA isim ile kanal bul; mention dondurur, yoksa #isim."""
-    try:
-        from provisioner.common.store import store_for
-        store = store_for(guild)
-        for k in keys_names:
-            ent = store.entity(str(guild.id), k)
-            if ent:
-                ch = guild.get_channel(int(ent["discord_id"]))
-                if ch:
-                    return ch.mention
-    except Exception:
-        return "`#" + keys_names[-1] + "`"
+    """Kanal ismiyle arar; mention dondurur, yoksa #isim yazar."""
     try:
         for n in keys_names:
             ch = discord.utils.find(lambda c: c.name == n, guild.text_channels)
@@ -421,8 +410,10 @@ CONTENT = [
 ]
 
 
-async def post_channel_content(guild, spec, store, force=False) -> bool:
+async def post_channel_content(guild, spec, db, force=False) -> bool:
     """Tek kanalin icerigini idempotent post eder. Donus: post edildi mi."""
+    from provisioner.common.store import SetupStore
+    store = SetupStore(db)
     ch = None
     for k in spec["keys"]:
         ent = store.entity(str(guild.id), k)
@@ -475,16 +466,17 @@ async def post_channel_content(guild, spec, store, force=False) -> bool:
     return True
 
 
-async def post_all_content(guild, official: bool = False) -> int:
+async def post_all_content(guild, db=None, official: bool = False) -> int:
     """Tum kanallarin icerigini post eder; sayi dondurur."""
-    from provisioner.common.store import store_for
-    store = store_for(guild)
+    assert db is not None, "db gerekli"
+    from provisioner.common.store import SetupStore
+    store = SetupStore(db)
     n = 0
     for spec in CONTENT:
         if spec.get("official_only") and not official:
             continue
         try:
-            if await post_channel_content(guild, spec, store):
+            if await post_channel_content(guild, spec, db):
                 n += 1
         except Exception as e:
             logger.warning(f"[Content] {guild.id}/{spec['keys'][0]}: {e}")
@@ -492,11 +484,12 @@ async def post_all_content(guild, official: bool = False) -> int:
     return n
 
 
-async def post_status_message(guild) -> None:
+async def post_status_message(guild, db=None, bot=None) -> None:
     """#durum kanalina/edit: canli sistem durumu (tek mesaj)."""
+    assert db is not None, "db gerekli"
     import time as _time
-    from provisioner.common.store import store_for
-    store = store_for(guild)
+    from provisioner.common.store import SetupStore
+    store = SetupStore(db)
     ch = None
     for k in ("oh:durum", "ch:durum", "durum"):
         ent = store.entity(str(guild.id), k)
@@ -509,8 +502,6 @@ async def post_status_message(guild) -> None:
     if ch is None:
         return
 
-    from provisioner.common.store import client_for
-    bot = client_for(guild)
     web_ok = "🟢"
     try:
         import httpx

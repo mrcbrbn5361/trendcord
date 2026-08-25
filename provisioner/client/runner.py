@@ -84,14 +84,15 @@ def _resolve_conflict(guild, name: str, ours_ids: set) -> str:
     return f"{name}-tc"
 
 
-async def apply_setup(guild, modules: dict = None, analysis: dict = None) -> dict:
+async def apply_setup(guild, modules: dict = None, analysis: dict = None, db=None) -> dict:
     """Idempotent kurulum. Donus: rapor sozlugu.
 
     Rapor: {"status": RAN|PARTIAL|FAILED, "created": [...], "skipped": [...],
             "errors": [...], "analysis": {...}}
     """
-    from provisioner.common.store import store_for
-    store = store_for(guild)
+    from provisioner.common.store import SetupStore
+    assert db is not None, 'db gerekli'
+    store = SetupStore(db)
 
     missing = check_permissions(guild)
     if missing:
@@ -175,7 +176,7 @@ async def apply_setup(guild, modules: dict = None, analysis: dict = None) -> dic
     # kanal icerikleri (embed/panel) — idempotent, rol dokunulmaz (G1)
     try:
         from provisioner.common.content import post_all_content
-        report["content"] = await post_all_content(guild, official=False)
+        report["content"] = await post_all_content(guild, db, official=False)
     except Exception as e:
         logger.warning(f"[ClientSetup] icerik postlama: {e}")
 
@@ -202,10 +203,11 @@ def _record_channel(store, guild, key, res, report):
         report["errors"].append(f"{key}: {res.status} {res.detail}".strip())
 
 
-async def remove_setup(guild) -> dict:
+async def remove_setup(guild, db=None) -> dict:
     """Yalnizca managed_entities kayitli kaynaklari siler (G4)."""
-    from provisioner.common.store import store_for
-    store = store_for(guild)
+    from provisioner.common.store import SetupStore
+    assert db is not None, 'db gerekli'
+    store = SetupStore(db)
     removed, errors = [], []
     for ent in store.entities(guild.id):
         ch = guild.get_channel(int(ent["discord_id"]))
@@ -224,6 +226,6 @@ async def remove_setup(guild) -> dict:
     return {"removed": removed, "errors": errors}
 
 
-async def repair_setup(guild, modules: dict = None) -> dict:
+async def repair_setup(guild, modules: dict = None, db=None) -> dict:
     """Silinen managed kanallari yeniden kurar (idempotent — 4.7 repair)."""
-    return await apply_setup(guild, modules=modules)
+    return await apply_setup(guild, modules=modules, db=db)

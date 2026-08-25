@@ -169,10 +169,11 @@ async def _apply_automod(guild):
     return applied
 
 
-async def apply_official(guild) -> dict:
+async def apply_official(guild, db=None) -> dict:
     """apply: eksikleri idempotent kurar; rapor dondurur."""
-    from provisioner.common.store import store_for
-    store = store_for(guild)
+    from provisioner.common.store import SetupStore
+    assert db is not None, 'db gerekli'
+    store = SetupStore(db)
 
     report = {"created": [], "skipped": [], "errors": [], "automod": [],
               "manual": odata.MANUAL_STEPS}
@@ -238,22 +239,23 @@ async def apply_official(guild) -> dict:
     # kanal icerikleri (embed/panel) — idempotent
     try:
         from provisioner.common.content import post_all_content
-        report["content"] = await post_all_content(guild, official=True)
+        report["content"] = await post_all_content(guild, db, official=True)
     except Exception as e:
         logger.warning(f"[Official] icerik postlama: {e}")
     return report
 
 
-async def reset_official(guild) -> dict:
+async def reset_official(guild, db=None) -> dict:
     """Resmi sunucuyu SIFIRLA + yeniden kur (yalnizca managed kaynaklar).
 
     1) managed_entities'teki tum kanal/kategori silinir
     2) blueprint rolleri (isim eslesmesi) silinir — bot rolunun altindaysa
     3) apply_official ile sifirdan kurulur
     """
-    from provisioner.common.store import store_for
+    from provisioner.common.store import SetupStore
     from provisioner.common.ratelimit import safe_call, StepResult
-    store = store_for(guild)
+    assert db is not None, 'db gerekli'
+    store = SetupStore(db)
     deleted = {"channels": [], "roles": [], "errors": []}
 
     # 1) kanallar + kategoriler (alttan uste: once kanal sonra kategori)
@@ -289,15 +291,16 @@ async def reset_official(guild) -> dict:
                 deleted["roles"].append(spec["name"])
 
     # 3) sifirdan kur
-    report = await apply_official(guild)
+    report = await apply_official(guild, db=db)
     report["reset"] = deleted
     return report
 
 
-async def verify_official(guild) -> dict:
+async def verify_official(guild, db=None) -> dict:
     """verify/diff: hicbir sey degistirmeden eksikleri raporlar (3.2)."""
-    from provisioner.common.store import store_for
-    store = store_for(guild)
+    from provisioner.common.store import SetupStore
+    assert db is not None, 'db gerekli'
+    store = SetupStore(db)
     missing_roles = [r["name"] for r in odata.OFFICIAL_ROLES
                      if not discord.utils.find(lambda x: x.name == r["name"], guild.roles)]
     missing_channels = []

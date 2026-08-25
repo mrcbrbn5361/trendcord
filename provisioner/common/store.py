@@ -5,18 +5,6 @@ import logging
 logger = logging.getLogger("Trendcord")
 
 
-def client_for(guild):
-    """Guild'den client cozumler (guild.client public degildir)."""
-    c = getattr(guild, "client", None)
-    if c is None:
-        c = guild._state.client
-    return c
-
-
-def store_for(guild):
-    """Guild'den dogrudan SetupStore uretir."""
-    return SetupStore(client_for(guild).db)
-
 
 class SetupStore:
     """Provisioner icin DB facade. Mevcut Database metodlarini sarar."""

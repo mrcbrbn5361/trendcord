@@ -67,7 +67,7 @@ class ProvisionOfficial(commands.Cog):
 
         guild = ctx.guild
         if eylem in ("verify", "diff"):
-            report = await runner.verify_official(guild)
+            report = await runner.verify_official(guild, db=self.bot.db)
             embed = discord.Embed(title="🔍 Resmi Sunucu Doğrulama", color=ORANGE)
             if not report["missing_roles"] and not report["missing_channels"]:
                 embed.description = "✅ Yapı blueprint ile uyumlu. Eksik yok."
@@ -98,7 +98,7 @@ class ProvisionOfficial(commands.Cog):
             await ctx.reply("⏳ Sıfırlama sürüyor — kanal/rol sayısına göre "
                             "birkaç dakika sürebilir…")
             try:
-                report = await runner.reset_official(guild)
+                report = await runner.reset_official(guild, db=self.bot.db)
             except Exception as e:
                 logger.exception("reset_official hatasi")
                 await ctx.reply(f"❌ Sıfırlama hatası: `{type(e).__name__}: {e}`\n"
@@ -131,7 +131,7 @@ class ProvisionOfficial(commands.Cog):
             return
 
         # apply
-        report = await runner.apply_official(guild)
+        report = await runner.apply_official(guild, db=self.bot.db)
         embed = discord.Embed(
             title="🏗️ Resmi Sunucu Provisioning",
             color=ORANGE,
