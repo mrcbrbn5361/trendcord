@@ -275,7 +275,7 @@ async def apply_official(guild, db=None) -> dict:
                 # izin + ozellik SENKRONU
                 spec = dict(ch)
                 if ch["kind"] == "BOT_FEED" and ch.get("ping_roles"):
-                    extra = _feed_overwrites(ch["ping_roles"])
+                    extra = odata._feed_overwrites(ch["ping_roles"])
                     spec["overwrites"] = extra
                 elif ch["kind"] in odata.KIND_TO_OVERWRITES:
                     spec["overwrites"] = odata.KIND_TO_OVERWRITES[ch["kind"]]()
