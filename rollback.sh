@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/data/data/com.termux/files/usr/bin/bash
 # ============================================================
 # Trendcord - Rollback (Termux tarafindan)
 #   ./rollback.sh            -> bir onceki release'e ANINDA don
