@@ -79,12 +79,14 @@
                 {% for p in products %}
                 <div class="glass-card rounded-lg p-4 group touch-scale">
                     <div class="relative aspect-square rounded-xl overflow-hidden mb-3 border border-border-glass bg-surface-container-low">
+                        <a href="/product/{{ p.product_id }}" class="block w-full h-full" aria-label="Ürün detayına git">
                         <img src="{{ p.image_url }}" alt="{{ p.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x600/1c1b1b/dec1b1?text=G%C3%B6rsel+Yok'">
                         {% if p.original_price and p.current_price and p.original_price > p.current_price %}
                         <div class="absolute top-2 left-2"><span class="ty-badge-discount">-{{ (((p.original_price - p.current_price) / p.original_price) * 100)|int }}%</span></div>
                         {% endif %}
+                        </a>
                     </div>
-                    <h3 class="font-label-bold text-on-surface text-sm truncate mb-1">{{ p.name }}</h3>
+                    <a href="/product/{{ p.product_id }}" class="block hover:text-primary transition-colors"><h3 class="font-label-bold text-on-surface group-hover:text-primary transition-colors text-sm truncate mb-1">{{ p.name }}</h3></a>
                     <div class="flex items-baseline gap-2 mb-1">
                         <span class="text-on-surface font-black text-lg">₺{{ "{:,.0f}".format(p.current_price) }}</span>
                         {% if p.basket_price and p.basket_price < p.current_price %}
