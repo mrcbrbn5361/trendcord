@@ -1,4 +1,5 @@
 import sqlite3
+import json
 import os
 from datetime import datetime
 import re
@@ -65,6 +66,34 @@ class Database:
                     self.cursor.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
                 except:
                     pass
+
+        # Guild kurulum tablolari (provisioner)
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS guild_settings (
+            guild_id TEXT PRIMARY KEY,
+            auto_setup INTEGER DEFAULT 1,
+            modules TEXT DEFAULT '{}',
+            left_at TEXT
+        )''')
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS guild_setup_state (
+            guild_id TEXT PRIMARY KEY,
+            mode TEXT DEFAULT 'CLIENT',
+            status TEXT DEFAULT 'PENDING',
+            analyzed_roles TEXT,
+            last_run_at TEXT,
+            last_error TEXT
+        )''')
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS managed_entities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guild_id TEXT NOT NULL,
+            entity_type TEXT NOT NULL,
+            discord_id TEXT NOT NULL,
+            key TEXT NOT NULL,
+            spec TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            deleted_at TEXT,
+            UNIQUE (guild_id, key)
+        )''')
+        self.conn.commit()
 
         # Kullanıcılar tablosu
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS users (
@@ -279,6 +308,116 @@ class Database:
         except Exception as e:
             print(f"[DB ERROR] get_all_products_admin: {e}")
             return []
+
+    # ---------- Guild kurulum (provisioner) ----------
+    def ensure_guild_settings(self, guild_id):
+        try:
+            self.cursor.execute("INSERT OR IGNORE INTO guild_settings (guild_id) VALUES (?)", (str(guild_id),))
+            self.conn.commit()
+        except Exception as e:
+            print(f"[DB ERROR] ensure_guild_settings: {e}")
+
+    def get_guild_settings(self, guild_id):
+        self.ensure_guild_settings(guild_id)
+        try:
+            self.cursor.execute("SELECT guild_id, auto_setup, modules, left_at FROM guild_settings WHERE guild_id = ?", (str(guild_id),))
+            row = self.cursor.fetchone()
+            if not row:
+                return {"guild_id": str(guild_id), "auto_setup": 1, "modules": "{}", "left_at": None}
+            return {"guild_id": row[0], "auto_setup": row[1], "modules": row[2] or "{}", "left_at": row[3]}
+        except Exception as e:
+            print(f"[DB ERROR] get_guild_settings: {e}")
+            return {"guild_id": str(guild_id), "auto_setup": 0, "modules": "{}", "left_at": None}
+
+    def set_guild_settings(self, guild_id, auto_setup=None, modules=None, left_at=None):
+        self.ensure_guild_settings(guild_id)
+        try:
+            if auto_setup is not None:
+                self.cursor.execute("UPDATE guild_settings SET auto_setup = ? WHERE guild_id = ?", (1 if auto_setup else 0, str(guild_id)))
+            if modules is not None:
+                self.cursor.execute("UPDATE guild_settings SET modules = ? WHERE guild_id = ?", (json.dumps(modules), str(guild_id)))
+            if left_at is not None:
+                self.cursor.execute("UPDATE guild_settings SET left_at = ? WHERE guild_id = ?", (left_at, str(guild_id)))
+            self.conn.commit()
+        except Exception as e:
+            print(f"[DB ERROR] set_guild_settings: {e}")
+
+    def upsert_setup_state(self, guild_id, mode='CLIENT', status='PENDING', analyzed_roles=None, last_error=None):
+        from datetime import datetime
+        try:
+            self.cursor.execute('''INSERT INTO guild_setup_state (guild_id, mode, status, analyzed_roles, last_run_at, last_error)
+                VALUES (?,?,?,?,?,?)
+                ON CONFLICT(guild_id) DO UPDATE SET mode=excluded.mode, status=excluded.status,
+                analyzed_roles=excluded.analyzed_roles, last_run_at=excluded.last_run_at, last_error=excluded.last_error''',
+                (str(guild_id), mode, status, json.dumps(analyzed_roles, ensure_ascii=False) if analyzed_roles else None,
+                 datetime.utcnow().isoformat(), last_error))
+            self.conn.commit()
+        except Exception as e:
+            print(f"[DB ERROR] upsert_setup_state: {e}")
+
+    def get_setup_state(self, guild_id):
+        try:
+            self.cursor.execute("SELECT guild_id, mode, status, analyzed_roles, last_run_at, last_error FROM guild_setup_state WHERE guild_id = ?", (str(guild_id),))
+            row = self.cursor.fetchone()
+            if not row:
+                return None
+            return {"guild_id": row[0], "mode": row[1], "status": row[2], "analyzed_roles": row[3],
+                    "last_run_at": row[4], "last_error": row[5]}
+        except Exception as e:
+            print(f"[DB ERROR] get_setup_state: {e}")
+            return None
+
+    def mark_entity(self, guild_id, key, entity_type, discord_id, spec=None):
+        from datetime import datetime
+        try:
+            self.cursor.execute('''INSERT INTO managed_entities (guild_id, entity_type, discord_id, key, spec, created_at)
+                VALUES (?,?,?,?,?,?)
+                ON CONFLICT(guild_id, key) DO UPDATE SET discord_id=excluded.discord_id,
+                entity_type=excluded.entity_type, spec=excluded.spec, deleted_at=NULL''',
+                (str(guild_id), entity_type, str(discord_id), key, json.dumps(spec, ensure_ascii=False) if spec else None,
+                 datetime.utcnow().isoformat()))
+            self.conn.commit()
+        except Exception as e:
+            print(f"[DB ERROR] mark_entity: {e}")
+
+    def get_entities(self, guild_id, active_only=True):
+        try:
+            q = "SELECT key, entity_type, discord_id, spec, deleted_at FROM managed_entities WHERE guild_id = ?"
+            if active_only:
+                q += " AND deleted_at IS NULL"
+            self.cursor.execute(q, (str(guild_id),))
+            return [{"key": r[0], "entity_type": r[1], "discord_id": r[2], "spec": r[3], "deleted_at": r[4]}
+                    for r in self.cursor.fetchall()]
+        except Exception as e:
+            print(f"[DB ERROR] get_entities: {e}")
+            return []
+
+    def get_entity(self, guild_id, key):
+        try:
+            self.cursor.execute("SELECT key, entity_type, discord_id, spec, deleted_at FROM managed_entities WHERE guild_id = ? AND key = ?", (str(guild_id), key))
+            row = self.cursor.fetchone()
+            return {"key": row[0], "entity_type": row[1], "discord_id": row[2], "spec": row[3], "deleted_at": row[4]} if row else None
+        except Exception as e:
+            print(f"[DB ERROR] get_entity: {e}")
+            return None
+
+    def mark_entity_deleted(self, guild_id, key):
+        from datetime import datetime
+        try:
+            self.cursor.execute("UPDATE managed_entities SET deleted_at = ? WHERE guild_id = ? AND key = ?",
+                                (datetime.utcnow().isoformat(), str(guild_id), key))
+            self.conn.commit()
+        except Exception as e:
+            print(f"[DB ERROR] mark_entity_deleted: {e}")
+
+    def get_entity_by_discord_id(self, discord_id):
+        try:
+            self.cursor.execute("SELECT key, guild_id, entity_type FROM managed_entities WHERE discord_id = ? AND deleted_at IS NULL", (str(discord_id),))
+            row = self.cursor.fetchone()
+            return {"key": row[0], "guild_id": row[1], "entity_type": row[2]} if row else None
+        except Exception as e:
+            print(f"[DB ERROR] get_entity_by_discord_id: {e}")
+            return None
 
     def get_product(self, product_id):
         """Tek bir urunu dondur."""
