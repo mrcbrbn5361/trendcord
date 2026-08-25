@@ -1,0 +1,22 @@
+[Unit]
+Description=Trendcord Discord Bot + Web Panel
+After=network-online.target postgresql.service redis-server.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__DEPLOY_USER__
+WorkingDirectory=/srv/trendcord/current
+ExecStart=/srv/trendcord/current/venv/bin/python main.py
+Restart=always
+RestartSec=5
+# Güvenlik sertleştirmesi
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/srv/trendcord/shared /srv/trendcord/releases
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
