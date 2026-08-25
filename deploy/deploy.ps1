@@ -50,8 +50,12 @@ Write-Host "    Commit: $TARGET"
 
 # 2) Temiz cikarma (git archive - kirli dosya tasinmaz)
 New-Item -ItemType Directory -Force -Path $REL | Out-Null
-git archive $TARGET | tar -x -C $REL
+$TMP_TAR = "$env:TEMP\tc-rel.tar"
+git archive --format=tar --output="$TMP_TAR" $TARGET
 Pop-Location
+tar -xf "$TMP_TAR" -C $REL
+if ($LASTEXITCODE -ne 0) { throw "tar cikarma basarisiz" }
+Remove-Item $TMP_TAR -Force
 
 # 3) Kalici veri ve gizli bilgiler (.env kopyalanir - uygulama sadece baslangicta okur;
 #    data JUNCTION ile baglanir - canli veri kaybi olmaz, admin yetkisi gerekmez)

@@ -55,8 +55,12 @@ if ($Commit) {
     Write-Host "==> Commit $Commit yeni release olarak kuruluyor ($STAMP)..."
     Push-Location "$BASE\repo"
     git fetch --all --quiet
-    git archive $Commit | tar -x -C $REL
+    $TMP_TAR = "$env:TEMP\tc-rb.tar"
+    git archive --format=tar --output="$TMP_TAR" $Commit
     Pop-Location
+    tar -xf "$TMP_TAR" -C $REL
+    if ($LASTEXITCODE -ne 0) { throw "tar cikarma basarisiz" }
+    Remove-Item $TMP_TAR -Force
     Copy-Item "$BASE\shared\.env" "$REL\.env"
     cmd /c mklink /J "$REL\data" "$BASE\shared\data" | Out-Null
     python -m venv "$REL\venv"
