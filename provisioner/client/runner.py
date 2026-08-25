@@ -90,8 +90,8 @@ async def apply_setup(guild, modules: dict = None, analysis: dict = None) -> dic
     Rapor: {"status": RAN|PARTIAL|FAILED, "created": [...], "skipped": [...],
             "errors": [...], "analysis": {...}}
     """
-    from provisioner.common.store import SetupStore
-    store = SetupStore(guild.client.db)
+    from provisioner.common.store import store_for
+    store = store_for(guild)
 
     missing = check_permissions(guild)
     if missing:
@@ -204,8 +204,8 @@ def _record_channel(store, guild, key, res, report):
 
 async def remove_setup(guild) -> dict:
     """Yalnizca managed_entities kayitli kaynaklari siler (G4)."""
-    from provisioner.common.store import SetupStore
-    store = SetupStore(guild.client.db)
+    from provisioner.common.store import store_for
+    store = store_for(guild)
     removed, errors = [], []
     for ent in store.entities(guild.id):
         ch = guild.get_channel(int(ent["discord_id"]))

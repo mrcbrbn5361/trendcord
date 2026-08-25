@@ -95,8 +95,15 @@ class ProvisionOfficial(commands.Cog):
             await view.wait()
             if not view.onay:
                 return
-            await ctx.channel.typing()
-            report = await runner.reset_official(guild)
+            await ctx.reply("⏳ Sıfırlama sürüyor — kanal/rol sayısına göre "
+                            "birkaç dakika sürebilir…")
+            try:
+                report = await runner.reset_official(guild)
+            except Exception as e:
+                logger.exception("reset_official hatasi")
+                await ctx.reply(f"❌ Sıfırlama hatası: `{type(e).__name__}: {e}`\n"
+                                "Loglar #sistem-log'a düştü.")
+                return
             embed = discord.Embed(
                 title="♻️ Resmi Sunucu SIFIRLANDI ve Yeniden Kuruldu",
                 color=ORANGE,

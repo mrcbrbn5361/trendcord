@@ -49,8 +49,8 @@ def link_view(*links):
 def _c(guild, *keys_names):
     """Managed key VEYA isim ile kanal bul; mention dondurur, yoksa #isim."""
     try:
-        from provisioner.common.store import SetupStore
-        store = SetupStore(guild.client.db)
+        from provisioner.common.store import store_for
+        store = store_for(guild)
         for k in keys_names:
             ent = store.entity(str(guild.id), k)
             if ent:
@@ -477,8 +477,8 @@ async def post_channel_content(guild, spec, store, force=False) -> bool:
 
 async def post_all_content(guild, official: bool = False) -> int:
     """Tum kanallarin icerigini post eder; sayi dondurur."""
-    from provisioner.common.store import SetupStore
-    store = SetupStore(guild.client.db)
+    from provisioner.common.store import store_for
+    store = store_for(guild)
     n = 0
     for spec in CONTENT:
         if spec.get("official_only") and not official:
@@ -495,8 +495,8 @@ async def post_all_content(guild, official: bool = False) -> int:
 async def post_status_message(guild) -> None:
     """#durum kanalina/edit: canli sistem durumu (tek mesaj)."""
     import time as _time
-    from provisioner.common.store import SetupStore
-    store = SetupStore(guild.client.db)
+    from provisioner.common.store import store_for
+    store = store_for(guild)
     ch = None
     for k in ("oh:durum", "ch:durum", "durum"):
         ent = store.entity(str(guild.id), k)
@@ -509,7 +509,8 @@ async def post_status_message(guild) -> None:
     if ch is None:
         return
 
-    bot = guild.client
+    from provisioner.common.store import client_for
+    bot = client_for(guild)
     web_ok = "🟢"
     try:
         import httpx

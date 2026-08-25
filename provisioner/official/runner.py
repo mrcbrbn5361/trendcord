@@ -171,8 +171,8 @@ async def _apply_automod(guild):
 
 async def apply_official(guild) -> dict:
     """apply: eksikleri idempotent kurar; rapor dondurur."""
-    from provisioner.common.store import SetupStore
-    store = SetupStore(guild.client.db)
+    from provisioner.common.store import store_for
+    store = store_for(guild)
 
     report = {"created": [], "skipped": [], "errors": [], "automod": [],
               "manual": odata.MANUAL_STEPS}
@@ -251,9 +251,9 @@ async def reset_official(guild) -> dict:
     2) blueprint rolleri (isim eslesmesi) silinir — bot rolunun altindaysa
     3) apply_official ile sifirdan kurulur
     """
-    from provisioner.common.store import SetupStore
+    from provisioner.common.store import store_for
     from provisioner.common.ratelimit import safe_call, StepResult
-    store = SetupStore(guild.client.db)
+    store = store_for(guild)
     deleted = {"channels": [], "roles": [], "errors": []}
 
     # 1) kanallar + kategoriler (alttan uste: once kanal sonra kategori)
@@ -296,8 +296,8 @@ async def reset_official(guild) -> dict:
 
 async def verify_official(guild) -> dict:
     """verify/diff: hicbir sey degistirmeden eksikleri raporlar (3.2)."""
-    from provisioner.common.store import SetupStore
-    store = SetupStore(guild.client.db)
+    from provisioner.common.store import store_for
+    store = store_for(guild)
     missing_roles = [r["name"] for r in odata.OFFICIAL_ROLES
                      if not discord.utils.find(lambda x: x.name == r["name"], guild.roles)]
     missing_channels = []
