@@ -62,11 +62,19 @@ Remove-Item $TMP_TAR -Force
 Copy-Item "$BASE\shared\.env" "$REL\.env"
 cmd /c mklink /J "$REL\data" "$BASE\shared\data" | Out-Null
 
-# 4) Veri yedegi (switch'ten ONCE)
-$data = Get-ChildItem "$BASE\shared\data" -ErrorAction SilentlyContinue
-if ($data) {
-    Compress-Archive -Path "$BASE\shared\data\*" -DestinationPath "$BASE\backups\data-$STAMP.zip" -Force
-    Write-Host "    Veri yedegi: backups\data-$STAMP.zip"
+# 4) Veri yedegi (switch'ten ONCE; SQLite online backup - kilit yok)
+# Yedek basarisiz olsa bile deploy durmaz: veriler shared/data'da dokunulmamis
+try {
+    $BAK_TMP = "$env:TEMP\tc-bak-$STAMP"
+    if (Test-Path $BAK_TMP) { Remove-Item $BAK_TMP -Recurse -Force }
+    python "$BASE\repo\deploy\backup_data.py" "$BASE\shared\data" $BAK_TMP
+    if ((Get-ChildItem $BAK_TMP -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0) {
+        Compress-Archive -Path "$BAK_TMP\*" -DestinationPath "$BASE\backups\data-$STAMP.zip" -Force
+        Write-Host "    Veri yedegi: backups\data-$STAMP.zip"
+    }
+    Remove-Item $BAK_TMP -Recurse -Force -ErrorAction SilentlyContinue
+} catch {
+    Write-Host "    ! Yedek alinamadi (deploy devam ediyor): $_" -ForegroundColor Yellow
 }
 
 # 5) Bagimliliklar + sozdizimi saglamasi
