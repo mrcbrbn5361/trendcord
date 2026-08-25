@@ -13,6 +13,8 @@ from provisioner.official import data as odata
 
 logger = logging.getLogger("Trendcord")
 
+MEMBER_NAME = "✅ Üye"
+
 
 def official_guild_id() -> str:
     return os.getenv("OFFICIAL_GUILD_ID", "").strip()
@@ -160,6 +162,7 @@ async def _apply_automod(guild):
                 name=spec["name"],
                 event=discord.AutoModRuleActionType.block_message,
                 trigger=trigger,
+                actions=[discord.AutoModRuleAction(block_message=True)],
                 enabled=True,
                 reason=spec.get("reason", "Trendcord automod"),
             )
@@ -211,6 +214,16 @@ async def apply_official(guild, db=None) -> dict:
                 report["skipped"].append(f"#{ch['name']}")
                 continue
             spec = dict(ch)
+            # Gizli kategorilerde kanal-bazli @everyone/Üye ALLOW'lar
+            # kategori DENY'ini ezer -> filtrele (gizlilik sizmasin)
+            def _cat_view(target):
+                for t, perms in cat.get("overwrites", []):
+                    if t == target and perms.get("view_channel") is False:
+                        return True
+                return False
+            strip_everyone = _cat_view("@everyone")
+            strip_member = _cat_view(MEMBER_NAME)
+
             if ch["kind"] == "BOT_FEED" and ch.get("ping_roles"):
                 # ping rollerine VIEW ekle
                 extra = [("__BOT__", {"view_channel": True, "send_messages": True,
@@ -225,6 +238,15 @@ async def apply_official(guild, db=None) -> dict:
                 spec["overwrites"] = extra
             elif ch["kind"] in odata.KIND_TO_OVERWRITES:
                 spec["overwrites"] = odata.KIND_TO_OVERWRITES[ch["kind"]]()
+            if strip_everyone or strip_member:
+                temiz = []
+                for t, perms in spec.get("overwrites", []):
+                    if t == "@everyone" and strip_everyone:
+                        continue
+                    if t == MEMBER_NAME and strip_member:
+                        continue
+                    temiz.append((t, perms))
+                spec["overwrites"] = temiz
             owmap = _build_overwrite_map(guild, spec, me)
             cres = await _ensure_channel(guild, spec, parent, owmap)
             if cres.status == StepResult.CREATED:

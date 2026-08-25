@@ -80,7 +80,7 @@ def _ro_overwrites():
     ]
 
 
-def _feed_overwrites(ping_roles):
+def _feed_overwrites(ping_roles=None):
     """3.5 BOT_FEED: Üye V✓,W✗,Rxn✓; BOT yazar; Moderator Mmsg✓; ping rolü görür."""
     ow = [
         ("@everyone", {"view_channel": True, "send_messages": False}),
@@ -89,8 +89,9 @@ def _feed_overwrites(ping_roles):
         ("__BOT__", {"view_channel": True, "send_messages": True, "embed_links": True,
                      "attach_files": True, "mention_everyone": False}),
         ("🚨 Moderator", {"manage_messages": True}),
-        *[(n, {"view_channel": True}) for n in ping_roles],
     ]
+    if ping_roles:
+        ow += [(n, {"view_channel": True}) for n in ping_roles]
     return ow
 
 
@@ -230,10 +231,10 @@ OFFICIAL_CATEGORIES = [
          {"key": "oh:destek-paneli", "name": "destek-paneli", "kind": "RO_PANEL",
           "topic": "Destek talebi aç"},
      ]},
-    {"key": "oc:tickets", "name": "🎟️ TICKETS",
+    {"key": "oc:tickets", "private": True, "name": "🎟️ TICKETS", "private": True,
      "overwrites": _private_cat_overwrites(),
      "channels": []},
-    {"key": "oc:partnerlik", "name": "🤝 PARTNERLİK",
+    {"key": "oc:partnerlik", "private": True, "name": "🤝 PARTNERLİK", "private": True,
      "overwrites": [
          ("@everyone", {"view_channel": False}),
          (MEMBER, {"view_channel": False}),
@@ -245,7 +246,7 @@ OFFICIAL_CATEGORIES = [
          {"key": "oh:partner-sohbet", "name": "partner-sohbet", "kind": "OPEN",
           "partner_only": True},
      ]},
-    {"key": "oc:staff", "name": "🛡️ STAFF",
+    {"key": "oc:staff", "private": True, "name": "🛡️ STAFF", "private": True,
      "overwrites": _private_cat_overwrites() + _view_for(SUPPORT_PLUS),
      "channels": [
          {"key": "oh:staff-sohbet", "name": "staff-sohbet", "kind": "OPEN"},
@@ -253,7 +254,7 @@ OFFICIAL_CATEGORIES = [
          {"key": "oh:moderasyon", "name": "moderasyon", "kind": "OPEN"},
          {"key": "oh:staff-odasi", "name": "Staff Odası", "kind": "VOICE", "limit": 10},
      ]},
-    {"key": "oc:logs", "name": "📊 LOGS",
+    {"key": "oc:logs", "private": True, "name": "📊 LOGS", "private": True,
      "overwrites": _logs_overwrites(),
      "channels": [
          {"key": "oh:mod-log", "name": "mod-log", "kind": "BOT_FEED"},
