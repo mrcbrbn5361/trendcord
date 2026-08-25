@@ -1,0 +1,114 @@
+{% extends "layout.html" %}
+{% block title %}Canlı Veri Merkezi - Trendcord Trendyol Fiyat Takip İstatistikleri{% endblock %}
+{% block description %}Trendcord canlı istatistikleri: takip edilen ürün sayısı, yakalanan fiyat değişiklikleri ve aktif sunucu istatistiklerini görüntüleyin.{% endblock %}
+{% block og_title %}Canlı Veri Merkezi - Trendcord Trendyol Fiyat Takip İstatistikleri{% endblock %}
+{% block og_description %}Trendcord canlı istatistikleri: takip edilen ürün sayısı, yakalanan fiyat değişiklikleri ve aktif sunucu istatistikleri.{% endblock %}
+
+{% block content %}
+<div class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-16">
+    <!-- Hero -->
+    <div class="text-center mb-16">
+        <h1 class="font-display-hero text-headline-lg-mobile md:text-display-hero text-on-surface max-w-4xl mx-auto leading-none">
+            Canlı<br><span class="text-on-surface-variant">Veri Merkezi</span>
+        </h1>
+        <p class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest mt-6">Trendyol fiyat takip botu gerçek zamanlı istatistikleri</p>
+    </div>
+
+    <!-- Featured Snippet -->
+    <div class="max-w-3xl mx-auto mb-24 glass-card rounded-xl p-10">
+        <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-6">Trendyol Fiyat Takip Botu Nedir?</h2>
+        <p class="font-body-md text-body-md text-on-surface-variant mb-8">Trendcord, şu an dünya genelinde binlerce sunucuda aktif olarak çalışan, Trendyol ürün fiyatlarını 7/24 analiz eden ve her fiyat değişimini anında raporlayan bir Discord fiyat takip botudur.</p>
+        <div class="overflow-x-auto">
+            <table class="w-full font-body-md text-body-md text-on-surface-variant">
+                <thead>
+                    <tr class="border-b border-border-glass">
+                        <th class="text-left py-3 pr-6 font-label-bold text-label-bold text-primary uppercase">Metrik</th>
+                        <th class="text-left py-3 font-label-bold text-label-bold text-primary uppercase">Değer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b border-border-glass"><td class="py-3 pr-6">Aktif Sunucu</td><td class="py-3 text-on-surface font-bold">{{ "{:,}".format(stats.guild_count) }}</td></tr>
+                    <tr class="border-b border-border-glass"><td class="py-3 pr-6">Takip Edilen Ürün</td><td class="py-3 text-on-surface font-bold">{{ "{:,}".format(stats.product_count) }}</td></tr>
+                    <tr class="border-b border-border-glass"><td class="py-3 pr-6">Fiyat Hareketi</td><td class="py-3 text-on-surface font-bold">{{ "{:,}".format(stats.price_checks) }}</td></tr>
+                    <tr><td class="py-3 pr-6">Çalışma Süresi</td><td class="py-3 text-on-surface font-bold">7/24 Kesintisiz</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="space-y-12">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-gutter">
+            <div class="glass-card rounded-lg p-7 md:p-9 flex items-center gap-5">
+                <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <span class="material-symbols-outlined text-3xl">bolt</span>
+                </div>
+                <div>
+                    <div class="font-black text-on-surface text-3xl md:text-4xl">{{ "{:,}".format(stats.price_checks) }}</div>
+                    <div class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wide mt-1">Yakalanan Fiyat Hareketi</div>
+                </div>
+            </div>
+            <div class="glass-card rounded-lg p-7 md:p-9 flex items-center gap-5">
+                <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <span class="material-symbols-outlined text-3xl">inventory_2</span>
+                </div>
+                <div>
+                    <div class="font-black text-on-surface text-3xl md:text-4xl">{{ "{:,}".format(stats.product_count) }}</div>
+                    <div class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wide mt-1">Aktif İzlenen Ürün</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card rounded-xl p-10 md:p-20 relative overflow-hidden">
+            <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
+                <div>
+                    <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-4">Geniş Ağ Kapasitesi</h2>
+                    <p class="font-body-md text-body-md text-on-surface-variant max-w-md">Trendcord şu an dünya genelinde <span class="text-on-surface font-bold">{{ stats.guild_count }} sunucuya</span> hizmet veriyor. Her saniye binlerce API sorgusu ile piyasayı domine ediyoruz.</p>
+                </div>
+                <div class="text-center">
+                    <div class="font-stat-giant text-stat-giant italic font-black text-primary">{{ stats.guild_count }}</div>
+                    <div class="font-label-bold text-label-bold text-primary uppercase tracking-widest">SUNUCU</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Links -->
+    <div class="text-center mt-16">
+        <a href="/features" class="inline-flex items-center gap-2 text-on-surface-variant hover:text-primary text-xs font-bold uppercase tracking-widest transition-colors mx-4">
+            <span class="material-symbols-outlined text-sm">bolt</span> Özellikler
+        </a>
+        <a href="/how-it-works" class="inline-flex items-center gap-2 text-on-surface-variant hover:text-primary text-xs font-bold uppercase tracking-widest transition-colors mx-4">
+            <span class="material-symbols-outlined text-sm">travel_explore</span> Nasıl Çalışır?
+        </a>
+        <a href="/privacy" class="inline-flex items-center gap-2 text-on-surface-variant hover:text-primary text-xs font-bold uppercase tracking-widest transition-colors mx-4">
+            <span class="material-symbols-outlined text-sm">security</span> Gizlilik
+        </a>
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="ty-footer w-full px-margin-mobile md:px-margin-desktop py-12 flex flex-col md:flex-row justify-between items-center gap-gutter">
+    <div class="flex flex-col items-center md:items-start gap-4">
+        <span class="font-display-hero text-headline-md italic text-white">Trendcord</span>
+        <p class="text-[#9a9a9a] font-body-md text-body-md max-w-xs text-center md:text-left">Türkiye'nin en gelişmiş Trendyol fiyat takip çözümü.</p>
+    </div>
+    <div class="flex gap-8">
+        <div class="flex flex-col gap-3">
+            <span class="font-label-bold text-label-bold text-white uppercase">Sayfalar</span>
+            <a href="/features" class="text-[#cfcfcf] font-body-md">Özellikler</a>
+            <a href="/servers" class="text-[#cfcfcf] font-body-md">Sunucular</a>
+            <a href="/users" class="text-[#cfcfcf] font-body-md">Kullanıcılar</a>
+            <a href="/how-it-works" class="text-[#cfcfcf] font-body-md">Nasıl Çalışır?</a>
+        </div>
+        <div class="flex flex-col gap-3">
+            <span class="font-label-bold text-label-bold text-white uppercase">Kurumsal</span>
+            <a href="/privacy" class="text-[#cfcfcf] font-body-md">Gizlilik</a>
+            <a href="/terms" class="text-[#cfcfcf] font-body-md">Şartlar</a>
+        </div>
+    </div>
+    <div class="text-[#8a8a8a] font-body-md text-body-md text-center md:text-right">
+        © 2025-2026 Trendcord. Tüm hakları saklıdır.
+    </div>
+</footer>
+{% endblock %}

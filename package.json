@@ -1,0 +1,17 @@
+{
+  "name": "trendcord",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node ./node_modules/.bin/tailwindcss -i web/static/css/input.css -o web/static/css/tailwind.min.css --minify",
+    "watch": "node ./node_modules/.bin/tailwindcss -i web/static/css/input.css -o web/static/css/tailwind.min.css --minify --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/container-queries": "^0.1.1",
+    "@tailwindcss/forms": "^0.5.9",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "psi": "^4.1.0",
+    "tailwindcss": "^3.4.16"
+  }
+}

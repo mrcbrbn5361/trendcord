@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block title %}Çıkış Yapıldı - Trendcord Trendyol Fiyat Takip Oturumu{% endblock %}
+{% block description %}Trendcord oturumunuz başarıyla sonlandırıldı. Trendyol fiyat takibine kaldığınız yerden devam etmek için tekrar giriş yapın.{% endblock %}
+{% block og_title %}Çıkış Yapıldı - Trendcord Trendyol Fiyat Takip{% endblock %}
+{% block og_description %}Trendcord oturumunuz başarıyla sonlandırıldı. Trendyol fiyat takibine kaldığınız yerden devam etmek için tekrar giriş yapın.{% endblock %}
+
+{% block content %}
+<section class="min-h-[70vh] flex flex-col items-center justify-center text-center px-margin-mobile relative">
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] bg-primary-container/5 rounded-full blur-[120px] pointer-events-none"></div>
+    
+    <div class="w-24 h-24 rounded-full bg-surface-variant/30 flex items-center justify-center mb-8 relative z-10">
+        <span class="material-symbols-outlined text-on-surface-variant text-4xl">logout</span>
+    </div>
+    
+    <h1 class="font-display-hero text-headline-lg-mobile md:text-display-hero text-on-surface mb-6 leading-none">
+        Görüşmek<br><span class="text-primary">Üzere</span>
+    </h1>
+    
+    <p class="font-body-lg text-body-lg text-on-surface-variant max-w-md mb-8 relative z-10">
+        Trendyol fiyat takip oturumunuz başarıyla sonlandırıldı. Kaldığınız yerden devam etmek için tekrar giriş yapabilirsiniz.
+    </p>
+
+    <!-- Featured Snippet -->
+    <div class="glass-card rounded-2xl p-6 max-w-md mx-auto mb-10 relative z-10 text-left">
+        <h2 class="font-label-bold text-label-bold text-primary mb-3">Trendyol Fiyat Takip Botu Nedir?</h2>
+        <p class="font-body-md text-body-md text-on-surface-variant">Trendcord, Discord üzerinde çalışan, Trendyol ürün fiyatlarını 7/24 analiz eden ve değişimleri anında bildiren akıllı bir fiyat takip botudur.</p>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-6 relative z-10">
+        <a href="/login" class="px-6 md:px-10 py-4 md:py-5 rounded-full bg-[#5865F2] text-white font-label-bold text-[12px] md:text-label-bold hover:scale-[1.03] active:scale-95 transition-transform duration-200 shadow-lg shadow-[#5865F2]/20 w-full sm:w-auto text-center">TEKRAR GİRİŞ YAP</a>
+        <a href="/" class="px-6 md:px-10 py-4 md:py-5 rounded-full border border-border-glass bg-surface-glass backdrop-blur-md text-on-surface font-label-bold text-[12px] md:text-label-bold hover:bg-surface-variant/50 active:scale-95 transition-all w-full sm:w-auto text-center">ANA SAYFA</a>
+    </div>
+
+    <div class="mt-12 relative z-10">
+        <a href="/features" class="text-on-surface-variant hover:text-primary text-[10px] font-bold uppercase tracking-widest transition-colors mx-3">Özellikler</a>
+        <a href="/how-it-works" class="text-on-surface-variant hover:text-primary text-[10px] font-bold uppercase tracking-widest transition-colors mx-3">Nasıl Çalışır?</a>
+        <a href="/stats" class="text-on-surface-variant hover:text-primary text-[10px] font-bold uppercase tracking-widest transition-colors mx-3">İstatistikler</a>
+    </div>
+</section>
+{% endblock %}

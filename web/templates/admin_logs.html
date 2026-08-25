@@ -1,0 +1,57 @@
+{% extends "admin_base.html" %}
+{% block title %}Denetim Günlüğü - Trendcord Admin{% endblock %}
+
+{% block admin_content %}
+<section class="px-margin-mobile md:px-margin-desktop py-8 md:py-12">
+    <header class="mb-8">
+        <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface tracking-tight">Denetim Günlüğü</h1>
+        <p class="text-on-surface-variant font-body-md text-body-md mt-1">Sistemdeki tüm aktivite kayıtları.</p>
+    </header>
+
+    <div class="glass-panel rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-surface-container-low">
+                    <tr>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Zaman</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Ürün</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Eski Fiyat</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Yeni Fiyat</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Kullanıcı</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden lg:table-cell">Sunucu</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border-glass">
+                    {% for a in activities %}
+                    <tr class="hover:bg-primary/5 transition-colors">
+                        <td class="px-4 md:px-6 py-3 text-xs text-on-surface-variant">{{ a.get('change_time', '')[:19] if a.get('change_time') else '-' }}</td>
+                        <td class="px-4 md:px-6 py-3">
+                            <div class="flex items-center gap-2">
+                                <span class="font-label-bold text-sm text-on-surface truncate max-w-[200px]">{{ a.get('name', 'Bilinmeyen')[:60] }}</span>
+                            </div>
+                        </td>
+                        <td class="px-4 md:px-6 py-3 text-sm text-on-surface-variant hidden md:table-cell">
+                            {% if a.get('old_price') %}
+                            ₺{{ "{:,.0f}".format(a.old_price) }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="px-4 md:px-6 py-3 hidden md:table-cell">
+                            <span class="font-label-bold text-sm {{ 'text-[#4ade80]' if a.get('old_price') and a.get('current_price') and a.current_price < a.old_price else 'text-error' if a.get('old_price') and a.get('current_price') and a.current_price > a.old_price else 'text-on-surface' }}">
+                                ₺{{ "{:,.0f}".format(a.get('current_price', 0)) }}
+                            </span>
+                        </td>
+                        <td class="px-4 md:px-6 py-3 text-xs text-on-surface-variant">{{ a.get('username', 'Bilinmeyen') }}</td>
+                        <td class="px-4 md:px-6 py-3 text-xs text-on-surface-variant hidden lg:table-cell">{{ get_guild_name(a.get('guild_id')) if a.get('guild_id') else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not activities %}
+                    <tr><td colspan="6" class="px-6 py-12 text-center text-on-surface-variant text-sm">Henüz kayıt yok</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

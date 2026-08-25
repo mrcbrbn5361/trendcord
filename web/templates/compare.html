@@ -1,0 +1,146 @@
+{% extends "layout.html" %}
+{% block title %}Ürün Karşılaştırma - Trendcord{% endblock %}
+{% block description %}Sunucunuzdaki Trendyol ürünlerini fiyat, indirim oranı ve tasarruf açısından karşılaştırın.{% endblock %}
+
+{% block content %}
+<section class="min-h-screen px-margin-mobile md:px-margin-desktop py-12 md:py-24">
+    <div class="max-w-container-max mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12 md:mb-20">
+            <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary font-label-bold text-label-bold mb-6">
+                <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1">compare</span>
+                ÜRÜN KARŞILAŞTIRMA
+            </div>
+            <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-4">Ürün Karşılaştırma</h1>
+            <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">Sunucunuzdaki ürünleri fiyat ve indirim oranına göre karşılaştırın.</p>
+        </div>
+
+        <!-- Sunucu Seçimi -->
+        <div class="max-w-md mx-auto mb-8 md:mb-12">
+            <form method="GET" action="/compare" class="flex gap-3">
+                <select name="guild_id" class="flex-1 bg-surface-container-low border border-border-glass rounded-full py-3 px-6 text-on-surface focus:outline-none focus:border-primary transition-colors font-body-md">
+                    <option value="">Sunucu seçin...</option>
+                    {% for g in guilds %}
+                    <option value="{{ g.id }}" {% if selected_guild == g.id|string %}selected{% endif %}>{{ g.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="px-6 py-3 rounded-full bg-primary-container text-on-primary-container font-label-bold text-label-bold active:scale-95 transition-all">
+                    Göster
+                </button>
+            </form>
+        </div>
+
+        {% if products %}
+        <!-- Karşılaştırma Tablosu -->
+        <div class="glass-panel rounded-lg overflow-hidden mb-8">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-border-glass">
+                            <th class="text-left p-4 font-label-bold text-label-bold text-on-surface-variant text-xs">#</th>
+                            <th class="text-left p-4 font-label-bold text-label-bold text-on-surface-variant text-xs">Ürün</th>
+                            <th class="text-right p-4 font-label-bold text-label-bold text-on-surface-variant text-xs">Güncel</th>
+                            <th class="text-right p-4 font-label-bold text-label-bold text-on-surface-variant text-xs">Orijinal</th>
+                            <th class="text-right p-4 font-label-bold text-label-bold text-on-surface-variant text-xs">İndirim</th>
+                            <th class="text-left p-4 font-label-bold text-label-bold text-on-surface-variant text-xs">Ekleyen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in products %}
+                        <tr class="border-b border-border-glass/50 hover:bg-surface-variant/20 transition-colors">
+                            <td class="p-4 font-label-bold text-on-surface-variant text-sm">
+                                {% if loop.index <= 3 %}<span class="text-primary">{{ loop.index }}</span>{% else %}{{ loop.index }}{% endif %}
+                            </td>
+                            <td class="p-4">
+                                <div class="flex items-center gap-3">
+                                    {% if p.image_url %}
+                                    <img src="{{ p.image_url }}" alt="{{ p.name }}" class="w-10 h-10 rounded-lg object-cover border border-border-glass" loading="lazy" width="40" height="40" onerror="this.style.display='none'">
+                                    {% endif %}
+                                    <span class="font-label-bold text-on-surface text-sm truncate max-w-[200px]">{{ p.name }}</span>
+                                </div>
+                            </td>
+                            <td class="p-4 text-right">
+                                <div class="space-y-0.5">
+                                    <span class="text-on-surface font-black text-sm">₺{{ "{:,.0f}".format(p.current_price or 0) }}</span>
+                                    {% if p.basket_price and p.basket_price < p.current_price %}
+                                    <div class="text-[#3BB143] text-[10px] font-bold">sepette ₺{{ "{:,.0f}".format(p.basket_price) }}</div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="p-4 text-right">
+                                <span class="ty-price-old">₺{{ "{:,.0f}".format(p.original_price or 0) }}</span>
+                            </td>
+                            <td class="p-4 text-right">
+                                {% set disc = p.discount_pct or 0 %}
+                                {% if disc > 0 %}
+                                <span class="px-2 py-0.5 rounded-full bg-[#4ade80]/10 text-[#4ade80] font-label-bold text-[10px]">-%{{ "%.1f"|format(disc) }}</span>
+                                {% else %}
+                                <span class="text-on-surface-variant text-xs">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-4">
+                                <span class="text-on-surface-variant text-xs">{{ p.username or 'N/A' }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Özet Kartları -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            {% set total_products = products|length %}
+            {% set discounted = products|selectattr('discount_pct', 'gt', 0)|list|length %}
+            {% set max_discount = products|map(attribute='discount_pct')|max if products else 0 %}
+            {% set total_savings = [] %}
+            {% for p in products %}
+                {% if p.original_price and p.current_price and p.original_price > p.current_price %}
+                    {% if total_savings.append(p.original_price - p.current_price) %}{% endif %}
+                {% endif %}
+            {% endfor %}
+            <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
+                <div class="font-stat-giant text-primary text-3xl md:text-4xl italic">{{ total_products }}</div>
+                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">Toplam Ürün</div>
+            </div>
+            <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
+                <div class="font-stat-giant text-[#4ade80] text-3xl md:text-4xl italic">{{ discounted }}</div>
+                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">İndirimli</div>
+            </div>
+            <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
+                <div class="font-stat-giant text-tertiary text-3xl md:text-4xl italic">%{{ "%.0f"|format(max_discount) }}</div>
+                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">Maks İndirim</div>
+            </div>
+            <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
+                <div class="font-stat-giant text-error text-3xl md:text-4xl italic">₺{{ "{:,.0f}".format(total_savings|sum if total_savings else 0) }}</div>
+                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">Toplam Tasarruf</div>
+            </div>
+        </div>
+        {% elif selected_guild %}
+        <div class="flex flex-col items-center justify-center py-16 glass-panel rounded-lg border-dashed border-border-glass">
+            <span class="material-symbols-outlined text-primary text-[60px] md:text-[80px] mb-4">inventory_2</span>
+            <h3 class="font-headline-md text-[20px] md:text-headline-md text-on-surface mb-2">Ürün bulunamadı</h3>
+            <p class="text-on-surface-variant font-body-md text-[13px] md:text-body-md max-w-md text-center mb-6 px-4">Bu sunucuda henüz takip edilen ürün yok.</p>
+        </div>
+        {% else %}
+        <div class="flex flex-col items-center justify-center py-16 glass-panel rounded-lg border-dashed border-border-glass">
+            <span class="material-symbols-outlined text-primary text-[60px] md:text-[80px] mb-4">compare</span>
+            <h3 class="font-headline-md text-[20px] md:text-headline-md text-on-surface mb-2">Sunucu seçin</h3>
+            <p class="text-on-surface-variant font-body-md text-[13px] md:text-body-md max-w-md text-center mb-6 px-4">Karşılaştırma yapmak için yukarıdan bir sunucu seçin.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="ty-footer px-margin-mobile md:px-margin-desktop py-12 flex flex-col md:flex-row justify-between items-center gap-gutter">
+    <div class="font-display-hero text-headline-md italic text-white">Trendcord</div>
+    <div class="flex gap-6">
+        <a href="/features" class="font-label-bold text-label-bold text-[#cfcfcf]">Özellikler</a>
+        <a href="/servers" class="font-label-bold text-label-bold text-[#cfcfcf]">Sunucular</a>
+        <a href="/privacy" class="font-label-bold text-label-bold text-[#cfcfcf]">Gizlilik</a>
+        <a href="/terms" class="font-label-bold text-label-bold text-[#cfcfcf]">Şartlar</a>
+    </div>
+    <div class="font-body-md text-body-md text-[#8a8a8a]">© 2025-2026 Trendcord</div>
+</footer>
+{% endblock %}

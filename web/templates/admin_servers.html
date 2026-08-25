@@ -1,0 +1,121 @@
+{% extends "admin_base.html" %}
+{% block title %}Sunucu Yönetimi - Trendcord Admin{% endblock %}
+
+{% block admin_content %}
+<section class="px-margin-mobile md:px-margin-desktop py-8 md:py-12">
+    <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface tracking-tight">Sunucu Yönetimi</h1>
+            <p class="text-on-surface-variant font-body-md text-body-md mt-1">Tüm Discord sunucularını yönet ve denetle.</p>
+        </div>
+    </header>
+
+    <!-- Stats Summary -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+        <div class="glass-panel p-4 rounded-lg text-center">
+            <div class="font-stat-giant text-primary text-2xl md:text-3xl italic">{{ servers|length }}</div>
+            <div class="font-label-bold text-[10px] text-on-surface-variant uppercase mt-1">Toplam Sunucu</div>
+        </div>
+        <div class="glass-panel p-4 rounded-lg text-center">
+            <div class="font-stat-giant text-on-surface text-2xl md:text-3xl italic">{{ "{:,}".format(total_members) }}</div>
+            <div class="font-label-bold text-[10px] text-on-surface-variant uppercase mt-1">Toplam Üye</div>
+        </div>
+        <div class="glass-panel p-4 rounded-lg text-center">
+            <div class="font-stat-giant text-primary-container text-2xl md:text-3xl italic">{{ total_products }}</div>
+            <div class="font-label-bold text-[10px] text-on-surface-variant uppercase mt-1">Takip Edilen</div>
+        </div>
+        <div class="glass-panel p-4 rounded-lg text-center">
+            <div class="font-stat-giant text-tertiary text-2xl md:text-3xl italic">{{ servers|selectattr('product_count', 'gt', 0)|list|length }}</div>
+            <div class="font-label-bold text-[10px] text-on-surface-variant uppercase mt-1">Aktif Sunucu</div>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="relative max-w-md mb-6">
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+        <input type="text" id="serverSearch" placeholder="Sunucu ara..." oninput="filterTable(this.value)"
+            class="w-full bg-surface-container-low border border-border-glass rounded-full py-3 pl-12 pr-6 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md text-sm">
+    </div>
+
+    <!-- Servers Table -->
+    <div class="glass-panel rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left" id="serversTable">
+                <thead class="bg-surface-container-low">
+                    <tr>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Sunucu</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden md:table-cell">ID</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Üye</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Rol/Kanal</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Ürün</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden lg:table-cell">Son Aktivite</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border-glass">
+                    {% for s in servers %}
+                    <tr class="hover:bg-primary/5 transition-colors server-row" data-name="{{ s.name|lower }}">
+                        <td class="px-4 md:px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                {% if s.icon_url %}
+                                <img src="{{ s.icon_url }}" alt="{{ s.name }} ikonu" class="w-9 h-9 md:w-10 md:h-10 rounded-xl object-cover border border-border-glass" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                                <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-primary-container text-on-primary-container items-center justify-center font-label-bold text-sm hidden">{{ s.name[:2] }}</div>
+                                {% else %}
+                                <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center font-label-bold text-sm">{{ s.name[:2] }}</div>
+                                {% endif %}
+                                <div class="min-w-0">
+                                    <div class="font-label-bold text-sm text-on-surface truncate max-w-[150px] md:max-w-[200px]">{{ s.name }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 md:px-6 py-4 text-xs text-on-surface-variant font-mono hidden md:table-cell">{{ s.id }}</td>
+                        <td class="px-4 md:px-6 py-4">
+                            <span class="font-label-bold text-sm text-on-surface">{{ "{:,}".format(s.member_count) }}</span>
+                        </td>
+                        <td class="px-4 md:px-6 py-4 text-xs text-on-surface-variant hidden md:table-cell">{{ s.role_count }} / {{ s.channel_count }}</td>
+                        <td class="px-4 md:px-6 py-4">
+                            {% if s.product_count > 0 %}
+                            <span class="px-2.5 py-1 rounded-full bg-primary/10 text-primary font-label-bold text-[10px]">{{ s.product_count }}</span>
+                            {% else %}
+                            <span class="text-on-surface-variant text-xs">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 md:px-6 py-4 text-xs text-on-surface-variant hidden lg:table-cell">{{ s.last_activity[:10] if s.last_activity else '-' }}</td>
+                        <td class="px-4 md:px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <a href="/admin/servers/{{ s.id }}" class="px-3 py-1.5 rounded-full bg-primary text-on-primary font-label-bold text-[10px] hover:opacity-90 transition-all">Detay</a>
+                                <button onclick="createInvite('{{ s.id }}')" class="px-3 py-1.5 rounded-full border border-border-glass text-on-surface-variant font-label-bold text-[10px] hover:bg-surface-container-high transition-all">
+                                    <span class="material-symbols-outlined text-sm">link</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if not servers %}
+    <div class="flex flex-col items-center justify-center py-16 glass-panel rounded-lg mt-6">
+        <span class="material-symbols-outlined text-primary text-6xl mb-4">dns</span>
+        <h3 class="font-headline-md text-on-surface mb-2">Henüz sunucu yok</h3>
+        <p class="text-on-surface-variant text-sm">Bot hiçbir sunucuya eklenmemiş.</p>
+    </div>
+    {% endif %}
+</section>
+
+<script>
+function filterTable(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('.server-row').forEach(r => {
+        r.style.display = r.dataset.name.includes(q) ? '' : 'none';
+    });
+}
+function createInvite(guildId) {
+    fetch('/admin/servers/' + guildId)
+        .then(r => r.text())
+        .then(() => location.reload());
+}
+</script>
+{% endblock %}

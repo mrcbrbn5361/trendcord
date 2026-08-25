@@ -1,0 +1,114 @@
+{% extends "layout.html" %}
+{% block title %}Hizmet Şartları - Trendcord Kullanım Sözleşmesi{% endblock %}
+{% block description %}Trendcord hizmet şartları: kullanım koşulları, sorumluluk reddi, yasaklı eylemler ve hesap kısıtlamaları hakkında bilgi.{% endblock %}
+{% block og_title %}Hizmet Şartları - Trendcord Kullanım Sözleşmesi{% endblock %}
+{% block og_description %}Trendcord hizmet şartları: kullanım koşulları, sorumluluk reddi, yasaklı eylemler ve hesap kısıtlamaları.{% endblock %}
+
+{% block content %}
+<section class="max-w-4xl mx-auto px-margin-mobile md:px-margin-desktop py-16 relative">
+    <div class="absolute -top-24 left-0 w-96 h-96 bg-secondary/5 blur-[120px] rounded-full pointer-events-none"></div>
+
+    <div class="mb-20 relative z-10">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-secondary/20 bg-secondary/5 mb-6 backdrop-blur-md">
+            <span class="w-2 h-2 rounded-full bg-secondary"></span>
+            <span class="text-[10px] uppercase font-black tracking-[0.3em] text-secondary">Kullanım Koşulları</span>
+        </div>
+        <h1 class="font-display-hero text-headline-lg-mobile md:text-display-hero text-on-surface leading-none">
+            HİZMET<br><span class="text-on-surface-variant">ŞARTLARI.</span>
+        </h1>
+        <p class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest mt-4">Yürürlük Tarihi: 26 Şubat 2026</p>
+    </div>
+
+    <!-- Featured Snippet -->
+    <div class="mb-16 max-w-3xl mx-auto glass-card rounded-xl p-10">
+        <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-6">Trendyol Fiyat Takip Botu Nedir?</h2>
+        <p class="font-body-md text-body-md text-on-surface-variant mb-8">Trendcord, Trendyol fiyat takip botu olarak kullanıcılarına kesintisiz hizmet sunmayı hedefler. Bu şartlar, botun kullanımı sırasında uyulması gereken kuralları ve sorumlulukları belirler.</p>
+        <div class="overflow-x-auto">
+            <table class="w-full font-body-md text-body-md text-on-surface-variant">
+                <thead>
+                    <tr class="border-b border-border-glass">
+                        <th class="text-left py-3 pr-6 font-label-bold text-label-bold text-on-surface uppercase">Madde</th>
+                        <th class="text-left py-3 font-label-bold text-label-bold text-on-surface uppercase">Açıklama</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b border-border-glass"><td class="py-3 pr-6">Kapsam</td><td class="py-3 text-on-surface font-bold">Trendyol fiyat takibi</td></tr>
+                    <tr class="border-b border-border-glass"><td class="py-3 pr-6">Sorumluluk</td><td class="py-3 text-on-surface font-bold">Kullanıcıya ait</td></tr>
+                    <tr><td class="py-3 pr-6">Güncelleme</td><td class="py-3 text-on-surface font-bold">Önceden bildirimsiz</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="space-y-8 relative z-10">
+        <div class="glass-card rounded-xl p-10">
+            <div class="flex items-center gap-4 mb-6">
+                <span class="material-symbols-outlined text-secondary text-2xl">assignment</span>
+                <h2 class="text-xl lg:text-2xl font-black uppercase tracking-tighter text-on-surface">1. Şartların Kabulü</h2>
+            </div>
+            <p class="font-body-md text-body-md text-on-surface-variant">Trendcord botunu sunucunuza davet ederek veya web arayüzümüze giriş yaparak, bu belgede yer alan tüm şartları <span class="text-on-surface font-bold">istisnasız kabul etmiş sayılırsınız.</span></p>
+        </div>
+
+        <div class="glass-card rounded-xl p-10">
+            <div class="flex items-center gap-4 mb-6">
+                <span class="material-symbols-outlined text-primary text-2xl">robot</span>
+                <h2 class="text-xl lg:text-2xl font-black uppercase tracking-tighter text-on-surface">2. Hizmetin Niteliği</h2>
+            </div>
+            <p class="font-body-md text-body-md text-on-surface-variant">Trendcord; kullanıcıların sağladığı Trendyol bağlantılarını düzenli aralıklarla kontrol eden ve fiyat değişimlerini raporlayan bir <span class="text-on-surface font-bold">otomasyon aracıdır.</span> Hizmet "olduğu gibi" sunulur.</p>
+        </div>
+
+        <div class="glass-card rounded-xl p-10 border-error/20">
+            <div class="flex items-center gap-4 mb-6">
+                <span class="material-symbols-outlined text-error text-2xl">warning</span>
+                <h2 class="text-xl lg:text-2xl font-black uppercase tracking-tighter text-on-surface">3. Sorumluluk Reddi</h2>
+            </div>
+            <div class="space-y-4 font-body-md text-body-md text-on-surface-variant">
+                <p>• <strong class="text-on-surface">Bağımsızlık:</strong> Trendcord, Trendyol ile resmi veya ticari bir bağa sahip değildir.</p>
+                <p>• <strong class="text-on-surface">Doğruluk:</strong> Fiyat bildirimleri verinin çekildiği anı yansıtır. Anlık değişikliklerden Trendcord sorumlu tutulamaz.</p>
+                <p>• <strong class="text-on-surface">Zarar:</strong> İndirimin kaçırılması veya hatalı fiyat nedeniyle oluşan zararlar kullanıcının sorumluluğundadır.</p>
+            </div>
+        </div>
+
+        <div class="glass-card rounded-xl p-10">
+            <div class="flex items-center gap-4 mb-6">
+                <span class="material-symbols-outlined text-on-surface-variant text-2xl">block</span>
+                <h2 class="text-xl lg:text-2xl font-black uppercase tracking-tighter text-on-surface">4. Kullanım Kısıtlamaları</h2>
+            </div>
+            <ul class="space-y-2 font-body-md text-body-md text-on-surface-variant">
+                <li>• Kasti spam ve DDoS girişimleri</li>
+                <li>• Sistemin tersine mühendislik ile kopyalanması</li>
+                <li>• Zararlı bağlantıların sisteme eklenmesi</li>
+            </ul>
+        </div>
+
+        <div class="glass-card rounded-xl p-10">
+            <div class="flex items-center gap-4 mb-6">
+                <span class="material-symbols-outlined text-tertiary text-2xl">sync</span>
+                <h2 class="text-xl lg:text-2xl font-black uppercase tracking-tighter text-on-surface">5. Şartların Güncellenmesi</h2>
+            </div>
+            <p class="font-body-md text-body-md text-on-surface-variant text-right">Trendcord yönetimi, bu şartları önceden bildirim yapmaksızın güncelleme hakkını saklı tutar. Güncel şartlar web sitemizde yayınlandığı andan itibaren <span class="text-on-surface font-bold">geçerlilik kazanır.</span></p>
+        </div>
+    </div>
+
+    <div class="mt-20 pt-12 border-t border-border-glass text-center">
+        <p class="text-on-surface-variant font-label-bold text-label-bold opacity-60 uppercase tracking-widest">Trendcord Legal Compliance v2.0</p>
+        <div class="mt-6 flex justify-center gap-6">
+            <a href="/privacy" class="text-on-surface-variant hover:text-primary text-[10px] font-bold uppercase tracking-widest transition-colors">Gizlilik Politikası</a>
+            <a href="/features" class="text-on-surface-variant hover:text-primary text-[10px] font-bold uppercase tracking-widest transition-colors">Özellikler</a>
+            <a href="/how-it-works" class="text-on-surface-variant hover:text-primary text-[10px] font-bold uppercase tracking-widest transition-colors">Nasıl Çalışır?</a>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="ty-footer px-margin-mobile md:px-margin-desktop py-12 flex flex-col md:flex-row justify-between items-center gap-gutter">
+    <div class="font-display-hero text-headline-md italic text-white">Trendcord</div>
+    <div class="flex gap-6">
+        <a href="/features" class="font-label-bold text-label-bold text-[#cfcfcf]">Özellikler</a>
+        <a href="/servers" class="font-label-bold text-label-bold text-[#cfcfcf]">Sunucular</a>
+        <a href="/users" class="font-label-bold text-label-bold text-[#cfcfcf]">Kullanıcılar</a>
+        <a href="/privacy" class="font-label-bold text-label-bold text-[#cfcfcf]">Gizlilik</a>
+    </div>
+    <div class="font-body-md text-body-md text-[#8a8a8a]">© 2025-2026 Trendcord</div>
+</footer>
+{% endblock %}

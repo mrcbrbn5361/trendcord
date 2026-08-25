@@ -1,0 +1,177 @@
+{% extends "admin_base.html" %}
+{% block title %}Admin Paneli - Trendcord{% endblock %}
+
+{% block admin_content %}
+<section class="px-margin-mobile md:px-margin-desktop py-8 md:py-12">
+    <header class="mb-8 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface tracking-tight">Hoş Geldin, Admin</h1>
+            <p class="text-on-surface-variant font-body-md text-body-md mt-1">Trendcord sistemindeki son gelişmelere göz at.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#4ade80]/10 text-[#4ade80] font-label-bold text-[10px] uppercase">
+                <span class="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse"></span> Sistem Aktif
+            </span>
+        </div>
+    </header>
+
+    <!-- Metrics Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 md:mb-12">
+        <div class="glass-panel p-5 md:p-6 rounded-lg relative overflow-hidden group">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-3 rounded-full bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">dns</span>
+                </div>
+            </div>
+            <h3 class="text-on-surface-variant font-label-bold text-[10px] uppercase tracking-wider mb-1">Toplam Sunucu</h3>
+            <div class="text-3xl md:text-4xl font-extrabold text-on-surface">{{ "{:,}".format(stats.guild_count) }}</div>
+            <div class="absolute bottom-0 right-0 opacity-5 group-hover:scale-125 transition-transform duration-500">
+                <span class="material-symbols-outlined text-8xl">dns</span>
+            </div>
+        </div>
+        <div class="glass-panel p-5 md:p-6 rounded-lg relative overflow-hidden group">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-3 rounded-full bg-secondary/10 text-secondary group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">group</span>
+                </div>
+            </div>
+            <h3 class="text-on-surface-variant font-label-bold text-[10px] uppercase tracking-wider mb-1">Toplam Kullanıcı</h3>
+            <div class="text-3xl md:text-4xl font-extrabold text-on-surface">{{ "{:,}".format(sys_stats.get('total_users', 0)) }}</div>
+            <div class="absolute bottom-0 right-0 opacity-5 group-hover:scale-125 transition-transform duration-500">
+                <span class="material-symbols-outlined text-8xl">group</span>
+            </div>
+        </div>
+        <div class="glass-panel p-5 md:p-6 rounded-lg relative overflow-hidden group border-l-4 border-primary/50">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-3 rounded-full bg-primary-container/20 text-primary">
+                    <span class="material-symbols-outlined">inventory_2</span>
+                </div>
+                <span class="flex items-center gap-1 text-primary font-label-bold text-[10px]">
+                    <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span> Canlı
+                </span>
+            </div>
+            <h3 class="text-on-surface-variant font-label-bold text-[10px] uppercase tracking-wider mb-1">Aktif Ürün</h3>
+            <div class="text-3xl md:text-4xl font-extrabold text-on-surface">{{ "{:,}".format(stats.product_count) }}</div>
+            <div class="absolute bottom-0 right-0 opacity-5 group-hover:scale-125 transition-transform duration-500">
+                <span class="material-symbols-outlined text-8xl">inventory_2</span>
+            </div>
+        </div>
+        <div class="glass-panel p-5 md:p-6 rounded-lg relative overflow-hidden group">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-3 rounded-full bg-surface-container-highest text-on-surface-variant group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">notifications_active</span>
+                </div>
+            </div>
+            <h3 class="text-on-surface-variant font-label-bold text-[10px] uppercase tracking-wider mb-1">Fiyat Kontrolü</h3>
+            <div class="text-3xl md:text-4xl font-extrabold text-on-surface">{{ "{:,}".format(stats.price_checks) }}</div>
+            <div class="absolute bottom-0 right-0 opacity-5 group-hover:scale-125 transition-transform duration-500">
+                <span class="material-symbols-outlined text-8xl">analytics</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Grid: Activity + System Health -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <!-- Recent Activity -->
+        <div class="lg:col-span-2 glass-panel rounded-lg flex flex-col">
+            <div class="p-4 md:p-6 border-b border-border-glass flex items-center justify-between">
+                <h2 class="font-headline-md text-[18px] md:text-headline-md text-on-surface">Son Aktiviteler</h2>
+                <a href="/admin/logs" class="text-primary font-label-bold text-xs hover:underline">Tümünü Gör</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-surface-container-low">
+                        <tr>
+                            <th class="px-4 md:px-6 py-3 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Zaman</th>
+                            <th class="px-4 md:px-6 py-3 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Ürün</th>
+                            <th class="px-4 md:px-6 py-3 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Fiyat</th>
+                            <th class="px-4 md:px-6 py-3 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Kullanıcı</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border-glass">
+                        {% for a in recent_activity %}
+                        <tr class="hover:bg-primary/5 transition-colors">
+                            <td class="px-4 md:px-6 py-3 text-xs text-on-surface-variant">{{ a.get('change_time', '')[:19] if a.get('change_time') else '-' }}</td>
+                            <td class="px-4 md:px-6 py-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-label-bold text-sm text-on-surface truncate max-w-[200px]">{{ a.get('name', 'Bilinmeyen')[:50] }}</span>
+                                </div>
+                            </td>
+                            <td class="px-4 md:px-6 py-3">
+                                {% set old = a.get('old_price') %}
+                                {% set new = a.get('current_price') %}
+                                {% if old and new %}
+                                <span class="font-label-bold text-sm {{ 'text-[#4ade80]' if new < old else 'text-error' }}">
+                                    ₺{{ "{:,.0f}".format(old) }} → ₺{{ "{:,.0f}".format(new) }}
+                                </span>
+                                {% else %}
+                                <span class="text-on-surface-variant text-sm">₺{{ "{:,.0f}".format(a.get('current_price', 0)) }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 md:px-6 py-3">
+                                <span class="text-xs text-on-surface-variant">{{ a.get('username', 'Bilinmeyen') }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not recent_activity %}
+                        <tr><td colspan="4" class="px-6 py-8 text-center text-on-surface-variant text-sm">Henüz aktivite yok</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- System Health + Server List -->
+        <div class="flex flex-col gap-4">
+            <div class="glass-panel p-4 md:p-6 rounded-lg">
+                <h2 class="font-label-bold text-xs text-on-surface-variant uppercase tracking-widest mb-4">Sistem Sağlığı</h2>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between py-2">
+                        <span class="font-body-md text-sm text-on-surface">Veritabanı</span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#4ade80]"></span>
+                    </div>
+                    <div class="flex items-center justify-between py-2">
+                        <span class="font-body-md text-sm text-on-surface">Discord API</span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#4ade80]"></span>
+                    </div>
+                    <div class="flex items-center justify-between py-2">
+                        <span class="font-body-md text-sm text-on-surface">Bot Durumu</span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#4ade80]"></span>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-border-glass">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-on-surface-variant">Veritabanı Boyutu</span>
+                        <span class="text-primary font-bold">{{ "{:,.1f}".format(sys_stats.get('db_size', 0) / 1024 / 1024) }} MB</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Server List -->
+            <div class="glass-panel p-4 md:p-6 rounded-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-label-bold text-xs text-on-surface-variant uppercase tracking-widest">Sunucular</h2>
+                    <a href="/admin/servers" class="text-primary font-label-bold text-[10px]">Tümü</a>
+                </div>
+                <div class="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                    {% for g in guilds[:10] %}
+                    <a href="/admin/servers/{{ g.id }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-surface-container-high transition-colors">
+                        {% if g.icon_url %}
+                        <img src="{{ g.icon_url }}" alt="{{ g.name }} ikonu" class="w-8 h-8 rounded-lg object-cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                        <div class="w-8 h-8 rounded-lg bg-primary-container text-on-primary-container items-center justify-center font-label-bold text-xs hidden">{{ g.name[:2] }}</div>
+                        {% else %}
+                        <div class="w-8 h-8 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center font-label-bold text-xs">{{ g.name[:2] }}</div>
+                        {% endif %}
+                        <div class="flex-1 min-w-0">
+                            <p class="font-label-bold text-sm text-on-surface truncate">{{ g.name }}</p>
+                            <p class="text-[10px] text-on-surface-variant">{{ g.member_count }} üye</p>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant text-sm">chevron_right</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "admin_base.html" %}
+{% block title %}Ürün Yönetimi - Trendcord Admin{% endblock %}
+
+{% block admin_content %}
+<section class="px-margin-mobile md:px-margin-desktop py-8 md:py-12">
+    <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface tracking-tight">Ürün Yönetimi</h1>
+            <p class="text-on-surface-variant font-body-md text-body-md mt-1">Takip edilen tüm Trendyol ürünleri.</p>
+        </div>
+    </header>
+
+    <div class="relative max-w-md mb-6">
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+        <input type="text" id="productSearch" placeholder="Ürün ara..." oninput="filterTable(this.value)"
+            class="w-full bg-surface-container-low border border-border-glass rounded-full py-3 pl-12 pr-6 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md text-sm">
+    </div>
+
+    <div class="glass-panel rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left" id="productsTable">
+                <thead class="bg-surface-container-low">
+                    <tr>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Ürün</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Fiyat</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden md:table-cell">İndirim</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Kullanıcı</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden lg:table-cell">Sunucu</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden lg:table-cell">Durum</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border-glass">
+                    {% for p in products %}
+                    <tr class="hover:bg-primary/5 transition-colors product-row" data-name="{{ p.name|lower }}">
+                        <td class="px-4 md:px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                {% if p.image_url %}
+                                <img src="{{ p.image_url }}" alt="{{ p.name }}" class="w-9 h-9 md:w-10 md:h-10 rounded-lg object-cover border border-border-glass" onerror="this.src='https://placehold.co/40x40/1c1b1b/dec1b1?text=?'">
+                                {% endif %}
+                                <div class="min-w-0">
+                                    <div class="font-label-bold text-sm text-on-surface truncate max-w-[200px] md:max-w-[300px]">{{ p.name }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 md:px-6 py-4 hidden md:table-cell">
+                            <div class="flex items-baseline gap-1.5">
+                                <span class="font-label-bold text-sm text-on-surface">₺{{ "{:,.0f}".format(p.current_price) }}</span>
+                                {% if p.basket_price and p.basket_price < p.current_price %}
+                                <span class="text-[10px] text-[#4ade80] font-bold">sepette ₺{{ "{:,.0f}".format(p.basket_price) }}</span>
+                                {% endif %}
+                                {% if p.original_price and p.current_price and p.original_price > p.current_price %}
+                                <span class="text-[10px] text-on-surface-variant line-through">₺{{ "{:,.0f}".format(p.original_price) }}</span>
+                                {% endif %}
+                            </div>
+                            {% if p.campaign_name %}
+                            <div class="text-[10px] text-[#4ade80] mt-0.5">{{ p.campaign_name }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 md:px-6 py-4 hidden md:table-cell">
+                            {% if p.original_price and p.current_price and p.original_price > p.current_price %}
+                            <span class="px-2 py-0.5 rounded-full bg-[#4ade80]/10 text-[#4ade80] font-label-bold text-[10px]">
+                                -{{ (((p.original_price - p.current_price) / p.original_price) * 100)|int }}%
+                            </span>
+                            {% else %}
+                            <span class="text-on-surface-variant text-xs">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 md:px-6 py-4">
+                            <span class="text-xs text-on-surface-variant">{{ p.username or p.user_name or 'Bilinmeyen' }}</span>
+                        </td>
+                        <td class="px-4 md:px-6 py-4 text-xs text-on-surface-variant hidden lg:table-cell">
+                            {{ get_guild_name(p.guild_id) if p.guild_id else '-' }}
+                        </td>
+                        <td class="px-4 md:px-6 py-4 hidden lg:table-cell">
+                            <span class="px-2 py-0.5 rounded-full bg-[#4ade80]/10 text-[#4ade80] font-label-bold text-[10px]">Aktif</span>
+                        </td>
+                        <td class="px-4 md:px-6 py-4">
+                            <a href="/admin/products/{{ p.product_id }}" class="px-3 py-1.5 rounded-full bg-primary text-on-primary font-label-bold text-[10px] hover:opacity-90 transition-all">Detay</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if not products %}
+    <div class="flex flex-col items-center justify-center py-16 glass-panel rounded-lg mt-6">
+        <span class="material-symbols-outlined text-primary text-6xl mb-4">inventory_2</span>
+        <h3 class="font-headline-md text-on-surface mb-2">Henüz ürün yok</h3>
+    </div>
+    {% endif %}
+</section>
+
+<script>
+function filterTable(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('.product-row').forEach(r => {
+        r.style.display = r.dataset.name.includes(q) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

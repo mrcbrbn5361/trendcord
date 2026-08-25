@@ -1,0 +1,112 @@
+{% extends "admin_base.html" %}
+{% block title %}{{ product.name[:40] if product else 'Ürün Detay' }} - Trendcord Admin{% endblock %}
+
+{% block admin_content %}
+<section class="px-margin-mobile md:px-margin-desktop py-8 md:py-12">
+    <div class="flex items-center gap-2 text-xs text-on-surface-variant mb-6">
+        <a href="/admin/products" class="hover:text-primary transition-colors">Ürünler</a>
+        <span class="material-symbols-outlined text-sm">chevron_right</span>
+        <span class="text-on-surface">{{ product.name[:40] if product else 'Ürün' }}</span>
+    </div>
+
+    {% if product %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Product Info -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="glass-panel rounded-lg p-5 md:p-8">
+                <div class="flex flex-col md:flex-row gap-6">
+                    {% if product.image_url %}
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}"" class="w-full md:w-48 h-48 rounded-2xl object-cover border border-border-glass" onerror="this.src='https://placehold.co/200x200/1c1b1b/dec1b1?text=?'">
+                    {% endif %}
+                    <div class="flex-1">
+                        <h1 class="font-headline-md text-lg md:text-headline-md text-on-surface mb-4">{{ product.name }}</h1>
+                        <div class="flex flex-wrap gap-4 mb-4">
+                            <div>
+                                <span class="text-on-surface-variant font-label-bold text-[10px] uppercase">Güncel Fiyat</span>
+                                <div class="text-3xl font-black text-on-surface">₺{{ "{:,.0f}".format(product.current_price) }}</div>
+                            </div>
+                            {% if product.basket_price and product.basket_price < product.current_price %}
+                            <div>
+                                <span class="text-on-surface-variant font-label-bold text-[10px] uppercase">Sepette Fiyat</span>
+                                <div class="text-2xl font-black text-[#4ade80]">₺{{ "{:,.0f}".format(product.basket_price) }}</div>
+                            </div>
+                            {% endif %}
+                            {% if product.original_price and product.current_price and product.original_price > product.current_price %}
+                            <div>
+                                <span class="text-on-surface-variant font-label-bold text-[10px] uppercase">Orijinal Fiyat</span>
+                                <div class="text-xl font-bold ty-price-old">₺{{ "{:,.0f}".format(product.original_price) }}</div>
+                            </div>
+                            <div>
+                                <span class="text-on-surface-variant font-label-bold text-[10px] uppercase">İndirim</span>
+                                <div class="text-xl font-bold text-[#4ade80]">-%{{ (((product.original_price - product.current_price) / product.original_price) * 100)|int }}</div>
+                            </div>
+                            {% endif %}
+                            {% if product.campaign_name %}
+                            <div>
+                                <span class="text-on-surface-variant font-label-bold text-[10px] uppercase">Kampanya</span>
+                                <div class="text-sm font-bold text-[#4ade80]">{{ product.campaign_name }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <a href="{{ product.url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-on-primary font-label-bold text-xs hover:opacity-90 transition-all">
+                            <span class="material-symbols-outlined text-sm">open_in_new</span> Trendyol'da Aç
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price History -->
+            <div class="glass-panel rounded-lg p-5 md:p-6">
+                <h2 class="font-headline-md text-lg text-on-surface mb-4">Fiyat Geçmişi</h2>
+                {% if price_history %}
+                <div class="space-y-2">
+                    {% for h in price_history %}
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low">
+                        <span class="text-xs text-on-surface-variant">{{ h.timestamp[:19] if h.timestamp else '-' }}</span>
+                        <span class="font-label-bold text-sm text-on-surface">₺{{ "{:,.0f}".format(h.price) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-on-surface-variant text-sm text-center py-8">Henüz fiyat geçmişi yok</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar Info -->
+        <div class="space-y-4">
+            <div class="glass-panel rounded-lg p-5 md:p-6">
+                <h3 class="font-label-bold text-xs text-on-surface-variant uppercase tracking-widest mb-4">Ürün Bilgileri</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-on-surface-variant">ID</span>
+                        <span class="text-on-surface font-mono">{{ product.product_id[:20] }}...</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-on-surface-variant">Ekleyen</span>
+                        <span class="text-on-surface">{{ product.username or 'Bilinmeyen' }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-on-surface-variant">Sunucu</span>
+                        <span class="text-on-surface">{{ get_guild_name(product.guild_id) if product.guild_id else '-' }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-on-surface-variant">Son Kontrol</span>
+                        <span class="text-on-surface">{{ product.last_checked[:16] if product.last_checked else '-' }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-on-surface-variant">Durum</span>
+                        <span class="px-2 py-0.5 rounded-full bg-[#4ade80]/10 text-[#4ade80] font-label-bold text-[10px]">Aktif</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="flex flex-col items-center justify-center py-16 glass-panel rounded-lg">
+        <span class="material-symbols-outlined text-primary text-6xl mb-4">inventory_2</span>
+        <h3 class="font-headline-md text-on-surface mb-2">Ürün bulunamadı</h3>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

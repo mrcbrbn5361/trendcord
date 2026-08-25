@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+{% block body_start %}
+{% if is_owner %}
+<!-- Admin Sidebar -->
+<aside class="hidden lg:flex fixed left-0 top-0 h-full w-64 z-40 bg-surface border-r border-border-glass shadow-lg pt-0 flex-col">
+    <div class="h-20 flex items-center px-6 border-b border-border-glass bg-surface-glass backdrop-blur-md">
+        <div>
+            <h2 class="font-headline-md text-headline-md font-black text-primary tracking-tighter">Admin</h2>
+            <p class="text-on-surface-variant font-label-bold text-[10px] uppercase tracking-widest">Sistem Yönetimi</p>
+        </div>
+    </div>
+    <nav class="flex flex-col gap-1 px-3 py-4 flex-1 overflow-y-auto">
+        <a href="/admin" class="flex items-center gap-3 px-4 py-3 rounded-full font-label-bold text-label-bold transition-all {{ 'bg-primary-container text-on-primary-container' if active_page == 'dashboard' else 'text-on-surface-variant hover:bg-surface-container-high hover:translate-x-1' }}">
+            <span class="material-symbols-outlined {{ 'font-variation-settings:\"FILL\" 1' if active_page == 'dashboard' }}">dashboard</span> Genel Bakış
+        </a>
+        <a href="/admin/servers" class="flex items-center gap-3 px-4 py-3 rounded-full font-label-bold text-label-bold transition-all {{ 'bg-primary-container text-on-primary-container' if active_page == 'servers' else 'text-on-surface-variant hover:bg-surface-container-high hover:translate-x-1' }}">
+            <span class="material-symbols-outlined {{ 'font-variation-settings:\"FILL\" 1' if active_page == 'servers' }}">dns</span> Sunucular
+        </a>
+        <a href="/admin/users" class="flex items-center gap-3 px-4 py-3 rounded-full font-label-bold text-label-bold transition-all {{ 'bg-primary-container text-on-primary-container' if active_page == 'users' else 'text-on-surface-variant hover:bg-surface-container-high hover:translate-x-1' }}">
+            <span class="material-symbols-outlined {{ 'font-variation-settings:\"FILL\" 1' if active_page == 'users' }}">group</span> Kullanıcılar
+        </a>
+        <a href="/admin/products" class="flex items-center gap-3 px-4 py-3 rounded-full font-label-bold text-label-bold transition-all {{ 'bg-primary-container text-on-primary-container' if active_page == 'products' else 'text-on-surface-variant hover:bg-surface-container-high hover:translate-x-1' }}">
+            <span class="material-symbols-outlined {{ 'font-variation-settings:\"FILL\" 1' if active_page == 'products' }}">inventory_2</span> Ürünler
+        </a>
+        <a href="/admin/logs" class="flex items-center gap-3 px-4 py-3 rounded-full font-label-bold text-label-bold transition-all {{ 'bg-primary-container text-on-primary-container' if active_page == 'logs' else 'text-on-surface-variant hover:bg-surface-container-high hover:translate-x-1' }}">
+            <span class="material-symbols-outlined {{ 'font-variation-settings:\"FILL\" 1' if active_page == 'logs' }}">receipt_long</span> Günlükler
+        </a>
+        <a href="/admin/system" class="flex items-center gap-3 px-4 py-3 rounded-full font-label-bold text-label-bold transition-all {{ 'bg-primary-container text-on-primary-container' if active_page == 'system' else 'text-on-surface-variant hover:bg-surface-container-high hover:translate-x-1' }}">
+            <span class="material-symbols-outlined {{ 'font-variation-settings:\"FILL\" 1' if active_page == 'system' }}">monitoring</span> Sistem
+        </a>
+    </nav>
+    <div class="px-4 py-4 border-t border-border-glass">
+        <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant rounded-full font-label-bold text-label-bold hover:bg-surface-container-high transition-all">
+            <span class="material-symbols-outlined">arrow_back</span> Ana Paneli Dön
+        </a>
+    </div>
+</aside>
+
+<!-- Mobile: Admin bottom bar indicator -->
+<div class="lg:hidden fixed bottom-20 right-4 z-50">
+    <span class="px-3 py-1.5 rounded-full bg-primary-container text-on-primary-container font-label-bold text-[10px] uppercase shadow-lg">Admin</span>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="{% if is_owner %}lg:ml-64{% endif %} min-h-screen">
+    {% block admin_content %}{% endblock %}
+</div>
+{% endblock %}

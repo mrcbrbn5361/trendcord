@@ -1,0 +1,153 @@
+{% extends "layout.html" %}
+{% block title %}{{ guild.name }} İstatistikleri - Trendcord{% endblock %}
+{% block description %}{{ guild.name }} sunucusunun Trendyol ürün takip istatistikleri ve analiz raporu.{% endblock %}
+
+{% block content %}
+<section class="min-h-screen px-margin-mobile md:px-margin-desktop py-12 md:py-24">
+    <div class="max-w-container-max mx-auto">
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-2 text-sm text-on-surface-variant mb-6 md:mb-8">
+            <a href="/servers" class="hover:text-primary transition-colors">Sunucular</a>
+            <span class="material-symbols-outlined text-sm">chevron_right</span>
+            <a href="/servers/{{ guild.id }}" class="hover:text-primary transition-colors">{{ guild.name }}</a>
+            <span class="material-symbols-outlined text-sm">chevron_right</span>
+            <span class="text-on-surface">İstatistikler</span>
+        </div>
+
+        <!-- Sunucu Başlığı -->
+        <div class="glass-panel rounded-lg p-6 md:p-10 mb-8 md:mb-12">
+            <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+                {% if guild.icon_url %}
+                    <img src="{{ guild.icon_url }}" alt="{{ guild.name }} ikonu" class="w-20 h-20 md:w-28 md:h-28 rounded-2xl object-cover border-[3px] border-border-glass shadow-xl" loading="lazy" width="112" height="112" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                    <div class="w-20 h-20 md:w-28 md:h-28 rounded-2xl bg-primary-container text-on-primary-container items-center justify-center font-label-bold text-3xl md:text-4xl border-[3px] border-border-glass hidden">
+                        {{ guild.name[:2] }}
+                    </div>
+                {% else %}
+                    <div class="w-20 h-20 md:w-28 md:h-28 rounded-2xl bg-primary-container text-on-primary-container flex items-center justify-center font-label-bold text-3xl md:text-4xl border-[3px] border-border-glass">
+                        {{ guild.name[:2] }}
+                    </div>
+                {% endif %}
+                <div class="flex-1 text-center md:text-left">
+                    <h1 class="font-headline-md text-[24px] md:text-headline-md text-on-surface mb-2">{{ guild.name }} İstatistikleri</h1>
+                    <div class="flex flex-wrap justify-center md:justify-start gap-3 md:gap-4">
+                        <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary font-label-bold text-xs">
+                            <span class="material-symbols-outlined text-sm">group</span>
+                            {{ guild.member_count }} Üye
+                        </div>
+                        <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary/10 text-tertiary font-label-bold text-xs">
+                            <span class="material-symbols-outlined text-sm">inventory_2</span>
+                            {{ stats.total_products }} Takip
+                        </div>
+                        <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary/10 text-secondary font-label-bold text-xs">
+                            <span class="material-symbols-outlined text-sm">person</span>
+                            {{ stats.unique_users }} Kullanıcı
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Özet Kartları -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8 md:mb-12">
+            <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
+                <div class="font-stat-giant text-primary text-3xl md:text-4xl italic">{{ stats.total_products }}</div>
+                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">Toplam Ürün</div>
+            </div>
+            <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
+                <div class="font-stat-giant text-on-surface text-3xl md:text-4xl italic">{{ stats.unique_users }}</div>
+                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">Aktif Kullanıcı</div>
+            </div>
+            <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
+                <div class="font-stat-giant text-[#4ade80] text-3xl md:text-4xl italic">₺{{ "{:,.0f}".format(stats.total_savings) }}</div>
+                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">Toplam Tasarruf</div>
+            </div>
+            <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
+                <div class="font-stat-giant text-tertiary text-3xl md:text-4xl italic">{{ stats.price_drops }}</div>
+                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">İndirimli Ürün</div>
+            </div>
+        </div>
+
+        <!-- En Pahalı Ürünler -->
+        {% if stats.top_products %}
+        <div class="mb-8 md:mb-12">
+            <h2 class="font-headline-md text-[18px] md:text-headline-md text-on-surface mb-4 md:mb-6">🏆 En Pahalı Ürünler</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for p in stats.top_products %}
+                <div class="glass-card rounded-lg p-4 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-headline-md font-black text-lg">
+                        {{ loop.index }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-label-bold text-on-surface text-sm truncate">{{ p.name }}</h4>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-on-surface font-black text-sm">₺{{ "{:,.0f}".format(p.current_price) }}</span>
+                            {% if p.basket_price and p.basket_price < p.current_price %}
+                            <span class="text-[#3BB143] text-[10px] font-bold">sepette ₺{{ "{:,.0f}".format(p.basket_price) }}</span>
+                            {% endif %}
+                            {% if p.original_price and p.original_price > p.current_price %}
+                            <span class="ty-price-old">₺{{ "{:,.0f}".format(p.original_price) }}</span>
+                            {% endif %}
+                        </div>
+                        {% if p.campaign_name %}
+                        <div class="text-[10px] text-[#4ade80] mt-0.5">{{ p.campaign_name }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Son Kontrol Edilenler -->
+        {% if stats.recent_products %}
+        <div class="mb-8 md:mb-12">
+            <h2 class="font-headline-md text-[18px] md:text-headline-md text-on-surface mb-4 md:mb-6">🕐 Son Kontrol Edilenler</h2>
+            <div class="glass-panel rounded-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-border-glass">
+                                <th class="text-left p-4 font-label-bold text-label-bold text-on-surface-variant text-xs">Ürün</th>
+                                <th class="text-right p-4 font-label-bold text-label-bold text-on-surface-variant text-xs">Fiyat</th>
+                                <th class="text-right p-4 font-label-bold text-label-bold text-on-surface-variant text-xs">Orijinal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in stats.recent_products %}
+                            <tr class="border-b border-border-glass/50 hover:bg-surface-variant/20 transition-colors">
+                                <td class="p-4 font-label-bold text-on-surface text-sm truncate max-w-[300px]">{{ p.name }}</td>
+                                <td class="p-4 text-right text-on-surface font-bold text-sm">₺{{ "{:,.0f}".format(p.current_price) }}</td>
+                                <td class="p-4 text-right ty-price-old">₺{{ "{:,.0f}".format(p.original_price or 0) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Aksiyonlar -->
+        <div class="flex flex-wrap gap-4 justify-center">
+            <a href="/servers/{{ guild.id }}" class="px-6 py-3 rounded-full border border-border-glass bg-surface-glass backdrop-blur-md text-on-surface font-label-bold text-label-bold hover:bg-surface-variant/50 transition-all active:scale-95">
+                Ürün Listesine Dön
+            </a>
+            <a href="/compare?guild_id={{ guild.id }}" class="px-6 py-3 rounded-full bg-primary-container text-on-primary-container font-label-bold text-label-bold hover:opacity-90 transition-all active:scale-95">
+                Karşılaştır
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="ty-footer px-margin-mobile md:px-margin-desktop py-12 flex flex-col md:flex-row justify-between items-center gap-gutter">
+    <div class="font-display-hero text-headline-md italic text-white">Trendcord</div>
+    <div class="flex gap-6">
+        <a href="/features" class="font-label-bold text-label-bold text-[#cfcfcf]">Özellikler</a>
+        <a href="/users" class="font-label-bold text-label-bold text-[#cfcfcf]">Kullanıcılar</a>
+        <a href="/privacy" class="font-label-bold text-label-bold text-[#cfcfcf]">Gizlilik</a>
+        <a href="/terms" class="font-label-bold text-label-bold text-[#cfcfcf]">Şartlar</a>
+    </div>
+    <div class="font-body-md text-body-md text-[#8a8a8a]">© 2025-2026 Trendcord</div>
+</footer>
+{% endblock %}

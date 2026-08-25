@@ -1,0 +1,190 @@
+{% extends "layout.html" %}
+{% block title %}Nasıl Çalışır? - Trendcord Trendyol Fiyat Takip Rehberi{% endblock %}
+{% block description %}Trendcord 3 adımda çalışır: Discord ile giriş yap, Trendyol ürün linkini ekle, fiyat düşüşlerini anında Discord bildirimi al. Hemen başlayın.{% endblock %}
+{% block og_title %}Nasıl Çalışır? - Trendcord Trendyol Fiyat Takip Rehberi{% endblock %}
+{% block og_description %}Trendcord 3 adımda çalışır: Discord ile giriş yap, Trendyol ürün linkini ekle, fiyat düşüşlerini anında Discord bildirimi al.{% endblock %}
+
+{% block content %}
+<section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-16 relative">
+    <div class="absolute -top-24 -left-24 w-96 h-96 bg-primary-container/10 blur-[100px] rounded-full pointer-events-none"></div>
+
+    <!-- Hero -->
+    <header class="relative pt-16 pb-16 text-center">
+        <h1 class="font-display-hero text-headline-lg-mobile md:text-display-hero mb-6">
+            Nasıl <span class="text-primary italic">Çalışır?</span>
+        </h1>
+        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">Fiyat takibi hiç bu kadar kolay olmamıştı. 3 adımda hemen başlayın.</p>
+    </header>
+
+    <!-- Featured Snippet -->
+    <div class="mb-24 max-w-3xl mx-auto glass-card rounded-xl p-10">
+        <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-6">Trendyol Fiyat Takip Botu Nedir?</h2>
+        <p class="font-body-md text-body-md text-on-surface-variant mb-8">Trendcord, Discord sunucunuzda çalışan, Trendyol ürün fiyatlarını 7/24 analiz eden ve anında bildirim gönderen bir fiyat takip botudur. Kullanımı için mühendis olmanıza gerek yok.</p>
+        <div class="overflow-x-auto">
+            <table class="w-full font-body-md text-body-md text-on-surface-variant">
+                <thead>
+                    <tr class="border-b border-border-glass">
+                        <th class="text-left py-3 pr-6 font-label-bold text-label-bold text-on-surface uppercase">Özellik</th>
+                        <th class="text-left py-3 font-label-bold text-label-bold text-on-surface uppercase">Detay</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b border-border-glass"><td class="py-3 pr-6">Kurulum</td><td class="py-3 text-on-surface font-bold">3 Adım</td></tr>
+                    <tr class="border-b border-border-glass"><td class="py-3 pr-6">Giriş</td><td class="py-3 text-on-surface font-bold">Discord OAuth2</td></tr>
+                    <tr class="border-b border-border-glass"><td class="py-3 pr-6">Takip</td><td class="py-3 text-on-surface font-bold">Trendyol Linkleri</td></tr>
+                    <tr><td class="py-3 pr-6">Bildirim</td><td class="py-3 text-on-surface font-bold">Anlık Kart</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3-Step Bento Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 max-w-container-max mx-auto">
+        <!-- Step 1: Login -->
+        <div class="md:col-span-4 glass-card rounded-lg p-6 md:p-8 flex flex-col justify-between group hover:border-primary/50 transition-colors">
+            <div>
+                <div class="flex justify-between items-start mb-8 md:mb-12">
+                    <span class="step-number font-display-hero text-6xl md:text-8xl leading-none">01</span>
+                    <div class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-secondary-container/20 flex items-center justify-center text-secondary border border-border-glass group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined text-2xl md:text-4xl">login</span>
+                    </div>
+                </div>
+                <h3 class="font-headline-md text-headline-md mb-4">Discord ile Giriş</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant mb-6 md:mb-8">Discord hesabınızı tek tıkla bağlayın. Şifre gerekmez, güvenli OAuth2 entegrasyonu.</p>
+            </div>
+            <div class="mt-auto">
+                <div class="bg-[#5865F2]/20 border border-[#5865F2]/40 rounded-xl p-3 md:p-4 flex items-center gap-3 md:gap-4">
+                    <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#5865F2] flex items-center justify-center shadow-lg flex-shrink-0">
+                        <span class="material-symbols-outlined text-white text-sm md:text-base" style="font-variation-settings:'FILL' 1">diamond</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="h-2 w-20 md:w-24 bg-white/20 rounded-full mb-2"></div>
+                        <div class="h-2 w-14 md:w-16 bg-white/10 rounded-full"></div>
+                    </div>
+                    <div class="text-[10px] md:text-xs text-white/40 uppercase font-bold flex-shrink-0">Yetkilendirildi</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Add Product -->
+        <div class="md:col-span-8 glass-card rounded-lg p-6 md:p-8 grid md:grid-cols-2 gap-6 md:gap-8 group hover:border-primary/50 transition-colors overflow-hidden">
+            <div class="flex flex-col justify-center">
+                <div class="flex justify-between items-start mb-8 md:mb-12">
+                    <span class="step-number font-display-hero text-6xl md:text-8xl leading-none">02</span>
+                    <div class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary-container/20 flex items-center justify-center text-primary border border-border-glass group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined text-2xl md:text-4xl">add_link</span>
+                    </div>
+                </div>
+                <h3 class="font-headline-md text-headline-md mb-4">Link Ekle</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant">Takip etmek istediğiniz Trendyol ürün linkini panoya kopyalayıp web panelimize veya Discord sunucunuza yapıştırın.</p>
+            </div>
+            <div class="relative flex items-center justify-center py-4 md:py-8">
+                <div class="w-full max-w-sm bg-surface-container-high rounded-xl p-3 md:p-4 border border-border-glass shadow-2xl transform md:rotate-3">
+                    <div class="flex items-center gap-2 mb-3 md:mb-4">
+                        <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-error/50"></div>
+                        <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-primary/50"></div>
+                        <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-secondary/50"></div>
+                    </div>
+                    <div class="bg-black/40 rounded p-2 md:p-3 mb-3 md:mb-4 text-[10px] md:text-xs font-mono text-primary/80 truncate">trendyol.com/p/nike-air-max-270-react-p-321455...</div>
+                    <div class="flex justify-between items-end">
+                        <div class="h-3 md:h-4 w-1/2 bg-on-surface-variant/20 rounded"></div>
+                        <div class="h-6 md:h-8 w-16 md:w-20 bg-primary-container rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Notification -->
+        <div class="md:col-span-12 glass-card rounded-lg p-6 md:p-8 lg:p-12 group hover:border-primary/50 transition-colors relative overflow-hidden">
+            <div class="relative z-10 grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+                <div>
+                    <div class="flex items-center gap-4 md:gap-6 mb-6 md:mb-8">
+                        <span class="step-number font-display-hero text-6xl md:text-8xl leading-none">03</span>
+                        <div class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-tertiary-container/20 flex items-center justify-center text-tertiary border border-border-glass group-hover:scale-110 transition-transform">
+                            <span class="material-symbols-outlined text-2xl md:text-4xl" style="font-variation-settings:'FILL' 1">notifications_active</span>
+                        </div>
+                    </div>
+                    <h3 class="font-headline-lg text-headline-lg mb-4 md:mb-6">Anında <span class="italic text-primary">Bildirim Al</span></h3>
+                    <p class="font-body-lg text-body-lg text-on-surface-variant mb-6 md:mb-8 max-w-md">Fiyat hedef fiyatın altına düştüğü an, Discord'da özel bir bildirim kartı belirir.</p>
+                    <div class="flex flex-wrap gap-3 md:gap-4">
+                        <div class="px-3 md:px-4 py-1.5 md:py-2 glass-card rounded-full flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary text-xs md:text-sm">bolt</span>
+                            <span class="font-label-bold text-[10px] md:text-label-bold uppercase">Ultra Hızlı</span>
+                        </div>
+                        <div class="px-3 md:px-4 py-1.5 md:py-2 glass-card rounded-full flex items-center gap-2">
+                            <span class="material-symbols-outlined text-secondary text-xs md:text-sm">verified</span>
+                            <span class="font-label-bold text-[10px] md:text-label-bold uppercase">%100 Doğru</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Notification Preview -->
+                <div class="relative">
+                    <div class="bg-[#2B2D31] rounded-lg p-4 md:p-6 shadow-2xl orange-glow animate-float">
+                        <div class="flex items-start gap-3 md:gap-4">
+                            <div class="w-10 h-10 md:w-12 md:h-12 rounded-full flex-shrink-0 bg-primary-container flex items-center justify-center overflow-hidden">
+                                <div class="font-display-hero text-lg md:text-xl italic font-black text-on-primary">T</div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                    <span class="font-bold text-white text-sm">Trendcord Bot</span>
+                                    <span class="bg-[#5865F2] text-[10px] md:text-xs px-1.5 py-0.5 rounded font-bold text-white uppercase">Bot</span>
+                                    <span class="text-[10px] md:text-xs text-on-surface-variant/50">Az önce</span>
+                                </div>
+                                <div class="bg-[#1E1F22] border-l-4 border-primary rounded p-3 md:p-4 mt-2">
+                                    <h4 class="font-bold text-white mb-1 text-sm">FİYAT DÜŞÜŞ BİLDİRİMİ!</h4>
+                                    <p class="text-xs md:text-sm text-on-surface-variant mb-3 md:mb-4">Takip ettiğiniz ürünün fiyatı düştü!</p>
+                                    <div class="flex gap-3 md:gap-4 items-center">
+                                        <div class="w-12 h-12 md:w-16 md:h-16 rounded bg-white overflow-hidden flex-shrink-0">
+                                            <img class="w-full h-full object-cover" src="https://placehold.co/64x64/1c1b1b/dec1b1?text=Urun" alt="Ürün görseli">
+                                        </div>
+                                        <div>
+                                            <div class="text-[10px] md:text-xs text-on-surface-variant">Örnek Ürün</div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-error line-through text-[10px] md:text-xs">₺2.499</span>
+                                                <span class="text-on-surface font-black text-sm md:text-lg">₺1.899</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <section class="mt-16 md:mt-32 max-w-4xl mx-auto text-center py-12 md:py-20 glass-card rounded-xl border-primary/20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5"></div>
+        <div class="relative z-10 px-4 md:px-8">
+            <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-6 md:mb-8">Fırsatları yakalamaya hazır mısın?</h2>
+            {% if user %}
+            <a href="/dashboard" class="active:scale-95 transition-transform bg-primary-container text-on-primary-container font-label-bold text-sm md:text-label-bold px-8 md:px-12 py-4 md:py-6 rounded-full shadow-[0_20px_50px_rgba(242,122,26,0.3)] hover:shadow-[0_20px_60px_rgba(242,122,26,0.5)] hover:scale-[1.03] transition-transform duration-200 inline-flex items-center gap-2 md:gap-3">
+                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">dashboard</span> PANELE GİT
+            </a>
+            {% else %}
+            <a href="/login" class="active:scale-95 transition-transform bg-primary-container text-on-primary-container font-label-bold text-sm md:text-label-bold px-8 md:px-12 py-4 md:py-6 rounded-full shadow-[0_20px_50px_rgba(242,122,26,0.3)] hover:shadow-[0_20px_60px_rgba(242,122,26,0.5)] hover:scale-[1.03] transition-transform duration-200 inline-flex items-center gap-2 md:gap-3">
+                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">add_circle</span> BAŞLA
+            </a>
+            {% endif %}
+            <p class="mt-6 md:mt-8 font-label-bold text-[10px] md:text-label-bold text-on-surface-variant flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xs md:text-sm" style="font-variation-settings:'FILL' 1">bolt</span>
+                {{ stats.product_count }}+ ürün takip ediliyor
+            </p>
+        </div>
+    </section>
+</section>
+
+<!-- Footer -->
+<footer class="ty-footer px-margin-mobile md:px-margin-desktop py-12 flex flex-col md:flex-row justify-between items-center gap-gutter">
+    <div class="font-display-hero text-headline-md italic text-white">Trendcord</div>
+    <div class="flex gap-6">
+        <a href="/servers" class="font-label-bold text-label-bold text-[#cfcfcf]">Sunucular</a>
+        <a href="/users" class="font-label-bold text-label-bold text-[#cfcfcf]">Kullanıcılar</a>
+        <a href="/privacy" class="font-label-bold text-label-bold text-[#cfcfcf]">Gizlilik</a>
+        <a href="/terms" class="font-label-bold text-label-bold text-[#cfcfcf]">Şartlar</a>
+    </div>
+    <div class="font-body-md text-body-md text-[#8a8a8a]">© 2025-2026 Trendcord</div>
+</footer>
+{% endblock %}

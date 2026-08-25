@@ -1,0 +1,89 @@
+{% extends "admin_base.html" %}
+{% block title %}Kullanıcı Yönetimi - Trendcord Admin{% endblock %}
+
+{% block admin_content %}
+<section class="px-margin-mobile md:px-margin-desktop py-8 md:py-12">
+    <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface tracking-tight">Kullanıcı Yönetimi</h1>
+            <p class="text-on-surface-variant font-body-md text-body-md mt-1">Kayıtlı tüm kullanıcıları görüntüle ve yönet.</p>
+        </div>
+    </header>
+
+    <!-- Search -->
+    <div class="relative max-w-md mb-6">
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+        <input type="text" id="userSearch" placeholder="Kullanıcı ara..." oninput="filterTable(this.value)"
+            class="w-full bg-surface-container-low border border-border-glass rounded-full py-3 pl-12 pr-6 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md text-sm">
+    </div>
+
+    <!-- Users Table -->
+    <div class="glass-panel rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left" id="usersTable">
+                <thead class="bg-surface-container-low">
+                    <tr>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Kullanıcı</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden md:table-cell">ID</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Ürün</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Sunucu</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden lg:table-cell">Tasarruf</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden lg:table-cell">Son Giriş</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border-glass">
+                    {% for u in admin_users %}
+                    <tr class="hover:bg-primary/5 transition-colors user-row" data-name="{{ u.username|lower }}">
+                        <td class="px-4 md:px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                {% if u.avatar_url %}
+                                <img src="{{ u.avatar_url }}" alt="{{ u.username }} avatarı" class="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover border border-border-glass" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                                {% else %}
+                                <div class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-bold text-sm">{{ u.username[:2] }}</div>
+                                {% endif %}
+                                <div class="min-w-0">
+                                    <div class="font-label-bold text-sm text-on-surface truncate max-w-[150px]">{{ u.username }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 md:px-6 py-4 text-xs text-on-surface-variant font-mono hidden md:table-cell">{{ u.user_id }}</td>
+                        <td class="px-4 md:px-6 py-4">
+                            <span class="px-2.5 py-1 rounded-full bg-primary/10 text-primary font-label-bold text-[10px]">{{ u.product_count }}</span>
+                        </td>
+                        <td class="px-4 md:px-6 py-4 text-xs text-on-surface-variant hidden md:table-cell">{{ u.guild_count }}</td>
+                        <td class="px-4 md:px-6 py-4 hidden lg:table-cell">
+                            {% if u.savings > 0 %}
+                            <span class="text-[#4ade80] font-label-bold text-sm">₺{{ "{:,.0f}".format(u.savings) }}</span>
+                            {% else %}
+                            <span class="text-on-surface-variant text-xs">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 md:px-6 py-4 text-xs text-on-surface-variant hidden lg:table-cell">{{ u.last_login[:10] if u.last_login else '-' }}</td>
+                        <td class="px-4 md:px-6 py-4">
+                            <a href="/users/{{ u.user_id }}" class="px-3 py-1.5 rounded-full bg-primary text-on-primary font-label-bold text-[10px] hover:opacity-90 transition-all">Detay</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if not admin_users %}
+    <div class="flex flex-col items-center justify-center py-16 glass-panel rounded-lg mt-6">
+        <span class="material-symbols-outlined text-primary text-6xl mb-4">group</span>
+        <h3 class="font-headline-md text-on-surface mb-2">Henüz kullanıcı yok</h3>
+    </div>
+    {% endif %}
+</section>
+
+<script>
+function filterTable(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('.user-row').forEach(r => {
+        r.style.display = r.dataset.name.includes(q) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

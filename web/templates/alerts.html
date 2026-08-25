@@ -1,0 +1,111 @@
+{% extends "layout.html" %}
+{% block title %}Fiyat Alarmı - Trendcord{% endblock %}
+{% block description %}Trendyol ürünleri için fiyat alarmı kurun. Fiyat düştüğünde veya yükseldiğinde Discord bildirimi alın.{% endblock %}
+
+{% block content %}
+<section class="min-h-screen px-margin-mobile md:px-margin-desktop py-12 md:py-24">
+    <div class="max-w-container-max mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12 md:mb-20">
+            <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary font-label-bold text-label-bold mb-6">
+                <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1">notifications_active</span>
+                FİYAT ALARMLARI
+            </div>
+            <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-4">Fiyat Alarmı</h1>
+            <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">Ürünleriniz belirli bir fiyata ulaştığında Discord bildirimi alın.</p>
+        </div>
+
+        <!-- Yeni Alarm Formu -->
+        <div class="glass-panel rounded-lg p-6 md:p-10 mb-8 md:mb-12 max-w-2xl mx-auto">
+            <h2 class="font-headline-md text-[20px] md:text-headline-md text-on-surface mb-6">Yeni Alarm Ekle</h2>
+            <form action="/alert/add" method="POST" class="space-y-4">
+                <div>
+                    <label class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Ürün ID</label>
+                    <input type="text" name="product_id" placeholder="Ürün ID'si (ör: 12345678)" required
+                        class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Hedef Fiyat (TL)</label>
+                        <input type="number" name="target_price" step="0.01" placeholder="199.99" required
+                            class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md">
+                    </div>
+                    <div>
+                        <label class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Yön</label>
+                        <select name="direction"
+                            class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface focus:outline-none focus:border-primary transition-colors font-body-md">
+                            <option value="below">📉 Fiyat Düşünce</option>
+                            <option value="above">📈 Fiyat Yükseldiğinde</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Sunucu</label>
+                        <input type="text" name="guild_id" placeholder="Sunucu ID"
+                            class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md">
+                    </div>
+                    <div>
+                        <label class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Kanal ID</label>
+                        <input type="text" name="channel_id" placeholder="Kanal ID"
+                            class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-4 rounded-xl bg-primary-container text-on-primary-container font-label-bold text-label-bold shadow-lg active:scale-95 transition-all">
+                    🔔 Alarm Kur
+                </button>
+            </form>
+        </div>
+
+        <!-- Aktif Alarmlar -->
+        <div class="max-w-2xl mx-auto">
+            <h2 class="font-headline-md text-[20px] md:text-headline-md text-on-surface mb-6">Aktif Alarmlarım</h2>
+            {% if alerts %}
+            <div class="space-y-3">
+                {% for a in alerts %}
+                <div class="glass-card rounded-lg p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-label-bold text-on-surface text-sm truncate">{{ a.product_name or 'Ürün' }}</h3>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-bold text-[10px]">
+                                Mevcut: {{ "{:.2f}".format(a.current_price or 0) }} TL
+                            </span>
+                            <span class="px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary font-label-bold text-[10px]">
+                                Hedef: {{ "{:.2f}".format(a.target_price) }} TL
+                            </span>
+                            <span class="px-2 py-0.5 rounded-full {% if a.direction == 'below' %}bg-[#4ade80]/10 text-[#4ade80]{% else %}bg-[#ef4444]/10 text-[#ef4444]{% endif %} font-label-bold text-[10px]">
+                                {% if a.direction == 'below' %}📉 Düşünce{% else %}📈 Yükseldiğinde{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <form action="/alert/delete/{{ a.id }}" method="POST" onsubmit="return confirm('Alarmı silmek istediğinize emin misiniz?')">
+                        <button type="submit" class="px-4 py-2 rounded-full bg-error/10 text-error font-label-bold text-xs hover:bg-error/20 transition-colors active:scale-95">
+                            Sil
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="flex flex-col items-center justify-center py-16 glass-panel rounded-lg border-dashed border-border-glass">
+                <span class="material-symbols-outlined text-primary text-[60px] md:text-[80px] mb-4">notifications_off</span>
+                <h3 class="font-headline-md text-[20px] md:text-headline-md text-on-surface mb-2">Henüz alarm yok</h3>
+                <p class="text-on-surface-variant font-body-md text-[13px] md:text-body-md max-w-md text-center mb-6 px-4">Yukarıdaki formu kullanarak fiyat alarmı kurabilirsiniz.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="ty-footer px-margin-mobile md:px-margin-desktop py-12 flex flex-col md:flex-row justify-between items-center gap-gutter">
+    <div class="font-display-hero text-headline-md italic text-white">Trendcord</div>
+    <div class="flex gap-6">
+        <a href="/features" class="font-label-bold text-label-bold text-[#cfcfcf]">Özellikler</a>
+        <a href="/servers" class="font-label-bold text-label-bold text-[#cfcfcf]">Sunucular</a>
+        <a href="/privacy" class="font-label-bold text-label-bold text-[#cfcfcf]">Gizlilik</a>
+        <a href="/terms" class="font-label-bold text-label-bold text-[#cfcfcf]">Şartlar</a>
+    </div>
+    <div class="font-body-md text-body-md text-[#8a8a8a]">© 2025-2026 Trendcord</div>
+</footer>
+{% endblock %}

@@ -1,0 +1,93 @@
+    def _create_tables(self, conn=None):
+        # Create a temporary connection if none provided
+        close_conn = False
+        if conn is None:
+            import sqlite3
+            import os
+            db_name = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "trendyol_tracker.sqlite")
+            conn = sqlite3.connect(db_name, check_same_thread=False)
+            conn.execute("PRAGMA journal_mode=WAL;")
+            close_conn = True
+        
+        try:
+            cursor = conn.cursor()
+            # Ürünler tablosu
+            cursor.execute('''CREATE TABLE IF NOT EXISTS products (
+                product_id TEXT PRIMARY KEY, 
+                name TEXT, 
+                url TEXT, 
+                image_url TEXT,
+                current_price REAL, 
+                original_price REAL, 
+                basket_price REAL,
+                discount_pct REAL,
+                campaign_name TEXT,
+                campaign_type TEXT,
+                campaign_end TEXT,
+                last_checked TIMESTAMP,
+                gid TEXT, 
+                uid TEXT, 
+                cid TEXT,
+                username TEXT DEFAULT '',
+                avatar_url TEXT DEFAULT '')''')
+            
+            # Fiyat geçmişi tablosu (İstatistikler için)
+            cursor.execute('''CREATE TABLE IF NOT EXISTS price_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                product_id TEXT,
+                price REAL,
+                basket_price REAL,
+                timestamp DATETIME,
+                FOREIGN KEY(product_id) REFERENCES products(product_id))''')
+            
+            # Migration: yeni sütunlar
+            migrations = [
+                ("price_history", "timestamp", "DATETIME"),
+                ("products", "username", "TEXT DEFAULT ''"),
+                ("products", "avatar_url", "TEXT DEFAULT ''"),
+                ("products", "basket_price", "REAL"),
+                ("products", "discount_pct", "REAL"),
+                ("products", "campaign_name", "TEXT"),
+                ("products", "campaign_type", "TEXT"),
+                ("products", "campaign_end", "TEXT"),
+                ("price_history", "basket_price", "REAL"),
+            ]
+            for table, col, typ in migrations:
+                try:
+                    cursor.execute(f"SELECT {col} FROM {table} LIMIT 1")
+                except:
+                    try:
+                        cursor.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
+                    except:
+                        pass
+            
+            # Kullanıcılar tablosu
+            cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+                user_id TEXT PRIMARY KEY,
+                username TEXT DEFAULT '',
+                avatar_url TEXT DEFAULT '',
+                last_login TIMESTAMP
+            )''')
+            
+            # Performans index'leri (sık kullanılan sorgular için)
+            try:
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_products_guild ON products(guild_id)')
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_products_user ON products(user_id)')
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_price_history_product ON product_history(product_id)')
+            except: pass
+            
+            # Alerts tablosu (lazy creation ile tutarlı olması için burada da oluştur)
+            self._create_alerts_table()
+            self._create_prefs_table()
+            
+            # Alert/Preference index'leri
+            try:
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_alerts_user ON alerts(user_id)')
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_alerts_product ON alerts(product_id)')
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_alerts_active ON alerts(triggered, user_id)')
+            except: pass
+            
+            conn.commit()
+        finally:
+            if close_conn:
+                conn.close()

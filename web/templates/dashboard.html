@@ -1,0 +1,293 @@
+{% extends "layout.html" %}
+{% block title %}Canlı Panel - Trendcord Trendyol Fiyat Takip Paneli{% endblock %}
+{% block description %}Trendcord kullanıcı paneli: takip ettiğiniz Trendyol ürünlerini görüntüleyin, yeni ürün ekleyin ve fiyat değişimlerini izleyin.{% endblock %}
+{% block og_title %}Canlı Panel - Trendcord Trendyol Fiyat Takip Paneli{% endblock %}
+{% block og_description %}Trendcord kullanıcı paneli: takip ettiğiniz Trendyol ürünlerini görüntüleyin, yeni ürün ekleyin ve fiyat değişimlerini izleyin.{% endblock %}
+
+{% block body_start %}
+<!-- Sidebar: Server List (Desktop) -->
+<aside class="hidden lg:flex fixed left-0 top-0 h-full w-[88px] bg-surface-container-lowest border-r border-border-glass flex-col items-center py-6 gap-6 z-50">
+    <a href="/" class="font-display-hero text-headline-md italic uppercase font-black text-primary mb-2 tracking-tighter">TC</a>
+    <div class="flex flex-col gap-4 overflow-y-auto custom-scrollbar flex-grow px-2">
+        <a href="/dashboard" class="w-14 h-14 rounded-2xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center {{ 'bg-primary-container text-on-primary-container' if not current_guild else 'glass-panel text-on-surface-variant hover:border-primary/50' }}" title="Tümü">
+            <span class="material-symbols-outlined {{ 'font-variation-settings:\"FILL\" 1' if not current_guild }}">grid_view</span>
+        </a>
+        <div class="w-10 h-px bg-border-glass mx-auto my-2"></div>
+        {% for g in guilds %}
+        <a href="/dashboard?guild_id={{ g.id }}" class="w-14 h-14 rounded-2xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center {{ 'bg-primary-container text-on-primary-container' if current_guild and current_guild.id == g.id else 'glass-panel text-on-surface-variant hover:border-primary/50' }}" title="{{ g.name }}">
+            {% if g.icon_url %}
+                <img src="{{ g.icon_url }}" alt="{{ g.name }} ikonu" class="w-8 h-8 rounded-lg object-cover" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                <span class="font-label-bold text-sm hidden">{{ g.name[:2] }}</span>
+            {% else %}
+                <span class="font-label-bold text-sm">{{ g.name[:2] }}</span>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    <a href="{{ invite_url }}" target="_blank" rel="noopener noreferrer" class="w-14 h-14 rounded-2xl bg-secondary-container/20 border border-secondary/30 text-secondary flex items-center justify-center transition-all hover:bg-secondary/20 hover:scale-105 active:scale-95" title="Bot Ekle" aria-label="Bot Ekle">
+        <span class="material-symbols-outlined">add</span>
+    </a>
+</aside>
+{% endblock %}
+
+{% block content %}
+<div class="lg:ml-[88px] flex flex-col min-h-screen">
+    <!-- Top Bar -->
+    <header class="sticky top-0 z-40 bg-surface-glass backdrop-blur-xl border-b border-border-glass px-margin-mobile md:px-margin-desktop py-3 md:py-4 flex items-center justify-between gap-3">
+        <div class="hidden md:flex items-center gap-gutter flex-grow max-w-4xl">
+            <div class="relative flex-grow">
+                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+                <input class="w-full bg-surface-container-low border border-border-glass rounded-full py-3 pl-12 pr-6 text-on-surface focus:outline-none focus:border-primary transition-colors font-body-md" placeholder="Takip edilen ürünlerde ara..." type="text" id="productSearch" oninput="filterProducts(this.value)">
+            </div>
+            {% if current_guild %}
+            <div class="hidden md:flex items-center gap-2 px-4 py-2 bg-surface-glass rounded-full border border-border-glass">
+                <span class="material-symbols-outlined text-sm">filter_list</span>
+                <span class="font-label-bold text-on-surface-variant text-sm">{{ current_guild.name }}</span>
+            </div>
+            {% endif %}
+        </div>
+        <!-- Mobile top bar: search icon + avatar -->
+        <div class="flex md:hidden items-center gap-3 w-full">
+            <div class="relative flex-1">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
+                <input class="w-full bg-surface-container-low border border-border-glass rounded-full py-2 pl-9 pr-3 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors font-body-md" placeholder="Ara..." type="text" id="productSearchMobile" oninput="filterProducts(this.value)">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <section class="p-margin-mobile md:p-margin-desktop space-y-4 md:space-y-gutter">
+
+        {% set total_savings_val = namespace(value=0) %}
+        {% for p in products %}
+            {% if p.original_price and p.current_price and p.original_price > p.current_price %}
+                {% set total_savings_val.value = total_savings_val.value + (p.original_price - p.current_price) %}
+            {% endif %}
+        {% endfor %}
+
+        <!-- Mobile: Welcome + Mini Stats -->
+        <section class="md:hidden">
+            <h1 class="font-headline-md text-[22px] text-on-surface">Hoş geldin{% if user %}, <span class="text-primary">{{ user.username.split('#')[0] }}</span>{% endif %}</h1>
+            <p class="font-body-md text-body-md text-on-surface-variant">{% set active = products|length %}Şu an <span class="text-primary font-bold">{{ active }}</span> ürün takip ediliyor.</p>
+        </section>
+
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-gutter">
+            <div class="glass-panel p-4 md:p-8 rounded-lg orange-glow flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="material-symbols-outlined text-primary hidden md:block">monitoring</span>
+                    <span class="font-label-bold text-[10px] md:text-sm text-on-surface-variant">AKTİF</span>
+                </div>
+                <div>
+                    <div class="font-stat-giant text-stat-giant text-primary italic text-3xl md:text-6xl">{{ products|length }}</div>
+                    <div class="font-label-bold text-[10px] md:text-sm text-on-surface-variant uppercase mt-1">Takip</div>
+                </div>
+            </div>
+            <div class="glass-panel p-4 md:p-8 rounded-lg flex flex-col justify-between {% if total_savings_val.value > 0 %}orange-glow border-primary/30{% endif %}">
+                <div class="flex items-center justify-between">
+                    <span class="material-symbols-outlined text-primary-container hidden md:block" style="font-variation-settings:'FILL' 1">savings</span>
+                    <span class="font-label-bold text-[10px] md:text-sm text-on-surface-variant">TASARRUF</span>
+                </div>
+                <div>
+                    <div class="font-stat-giant text-stat-giant text-on-surface italic text-3xl md:text-6xl">₺{{ "{:,.0f}".format(total_savings_val.value) }}</div>
+                    <div class="font-label-bold text-[10px] md:text-sm text-on-surface-variant uppercase mt-1">Kazanç</div>
+                </div>
+            </div>
+            <div class="hidden md:flex glass-panel p-8 rounded-lg border-dashed border-primary/30 flex-col items-center justify-center gap-3 cursor-pointer hover:bg-primary/5 transition-all col-span-1" onclick="toggleModal('addProductModal')">
+                <span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings:'FILL' 1">add_circle</span>
+                <span class="font-label-bold text-primary">YENİ ÜRÜN EKLE</span>
+            </div>
+        </div>
+
+        <!-- Mobile: Price Alert Banner -->
+        {% if products %}
+        <section class="md:hidden glass-panel p-3 rounded-lg flex items-center gap-3 bg-primary/5">
+            <div class="bg-primary p-2 rounded-full flex items-center justify-center">
+                <span class="material-symbols-outlined text-on-primary text-lg" style="font-variation-settings:'FILL' 1">notifications_active</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-label-bold text-sm text-on-surface truncate">Takip Edilen Ürünler</p>
+                <p class="text-[11px] text-on-surface-variant">{{ products|length }} ürün aktif olarak izleniyor</p>
+            </div>
+            <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+        </section>
+        {% endif %}
+
+        <!-- Header with Tabs -->
+        <div class="flex items-center justify-between pt-2 md:pt-6">
+            <h2 class="font-headline-md text-[20px] md:text-headline-md text-on-surface">Takip Edilen Ürünler</h2>
+            <div class="flex gap-2">
+                <button onclick="filterBy('all')" class="px-4 md:px-5 py-1.5 md:py-2 rounded-full bg-primary text-on-primary font-label-bold text-[11px] md:text-label-bold active:scale-95 transition-transform filter-btn touch-scale" data-filter="all">Tümü</button>
+            </div>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter" id="product-grid">
+            {% for p in products %}
+            <!-- Mobile: horizontal card | Desktop: vertical card -->
+            <div class="flex md:flex-col gap-4 glass-panel p-3 md:p-4 rounded-lg group product-card touch-scale" data-name="{{ p.name|lower }}">
+                <div class="relative w-24 h-24 md:w-full md:aspect-square rounded-xl overflow-hidden shrink-0 border border-border-glass bg-surface-container-low">
+                    <img src="{{ p.image_url }}" alt="{{ p.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x600/1c1b1b/dec1b1?text=G%C3%B6rsel+Yok'">
+                    {% if p.original_price and p.current_price and p.original_price > p.current_price %}
+                    <div class="absolute top-2 left-2">
+                        <span class="ty-badge-discount">-{{ (((p.original_price - p.current_price) / p.original_price) * 100)|int }}%</span>
+                    </div>
+                    {% endif %}
+                    <form action="/product/delete/{{ p.product_id }}" method="POST" class="absolute top-2 right-2 z-10">
+                        <input type="hidden" name="guild_id" value="{{ current_guild.id if current_guild else '' }}">
+                        <button type="submit" class="w-7 h-7 rounded-full bg-black/40 hover:bg-error text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
+                            <span class="material-symbols-outlined text-xs">delete</span>
+                        </button>
+                    </form>
+                </div>
+                <div class="flex-1 min-w-0 space-y-1">
+                    <h3 class="font-label-bold text-on-surface text-sm truncate">{{ p.name }}</h3>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-on-surface font-black text-lg md:text-xl">₺{{ "{:,.0f}".format(p.current_price) }}</span>
+                        {% if p.basket_price and p.basket_price < p.current_price %}
+                        <span class="text-[#3BB143] text-xs font-bold">sepette ₺{{ "{:,.0f}".format(p.basket_price) }}</span>
+                        {% endif %}
+                        {% if p.original_price and p.current_price and p.original_price > p.current_price %}
+                        <span class="ty-price-old">₺{{ "{:,.0f}".format(p.original_price) }}</span>
+                        {% endif %}
+                    </div>
+                    {% if p.campaign_name %}
+                    <div class="flex items-center gap-1 pt-1">
+                        <span class="bg-[#4ade80]/15 text-[#4ade80] px-1.5 py-0.5 rounded-full text-[10px] font-bold">{{ p.campaign_name }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex items-center gap-2 pt-2">
+                        {% set avatar_url = user_avatars.get(p.user_id, p.avatar_url or '') %}
+                        {% if p.username %}
+                            {% if avatar_url %}
+                            <img src="{{ avatar_url }}" alt="Kullanıcı avatarı" class="w-4 h-4 rounded-full object-cover" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                            {% else %}
+                            <div class="w-4 h-4 rounded-full bg-surface-container-highest flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[10px]">person</span>
+                            </div>
+                            {% endif %}
+                            <span class="text-[10px] text-on-surface-variant">{{ p.username }}</span>
+                        {% endif %}
+                        {% if is_owner and p.guild_id and (not current_guild) %}
+                        <span class="text-xs ml-auto uppercase font-black text-on-surface-variant tracking-widest">{{ get_guild_name(p.guild_id) }}</span>
+                        {% endif %}
+                        <a href="{{ p.url }}" target="_blank" rel="noopener noreferrer" class="ml-auto material-symbols-outlined text-on-surface-variant text-lg">open_in_new</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Empty State -->
+        {% if not products %}
+        <div class="flex flex-col items-center justify-center py-16 md:py-24 glass-panel rounded-lg border-dashed border-border-glass">
+            <div class="w-32 h-32 md:w-64 md:h-64 relative mb-6 md:mb-8">
+                <div class="absolute inset-0 bg-primary/20 blur-[60px] md:blur-[80px] rounded-full"></div>
+                <span class="material-symbols-outlined text-primary text-[60px] md:text-[120px] relative z-10 block text-center">shopping_cart_off</span>
+            </div>
+            <h3 class="font-headline-md text-[20px] md:text-headline-md text-on-surface mb-2">Henüz ürün eklenmemiş</h3>
+            <p class="text-on-surface-variant font-body-md text-[13px] md:text-body-md max-w-md text-center mb-6 md:mb-8 px-4">Takip etmek istediğiniz Trendyol ürünlerini ekleyerek anlık fiyat değişimlerini Discord'da takip etmeye başlayın.</p>
+            <button onclick="toggleModal('addProductModal')" class="px-8 md:px-10 py-3 md:py-4 rounded-full bg-primary-container text-on-primary-container font-label-bold text-[12px] md:text-label-bold orange-glow hover:scale-[1.03] active:scale-95 transition-transform duration-200 touch-scale">İlk Ürünü Ekle</button>
+        </div>
+        {% endif %}
+
+        <!-- Mobile: FAB for quick add -->
+        <button onclick="toggleModal('addProductModal')" class="md:hidden fixed right-5 bottom-[calc(88px+env(safe-area-inset-bottom,16px))] z-40 w-14 h-14 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-xl orange-glow active:scale-90 transition-transform border-[3px] border-background">
+            <span class="material-symbols-outlined text-3xl" style="font-variation-settings:'FILL' 1">add_circle</span>
+        </button>
+
+        <!-- Nasıl Çalışır -->
+        <h2 class="font-headline-md text-[20px] md:text-headline-md text-on-surface text-center pt-12 md:pt-16 pb-6 md:pb-8">Trendyol Fiyat Takip Nasıl Çalışır?</h2>
+        <div class="flex flex-wrap justify-center gap-3 md:gap-4 pb-16">
+            <div class="glass-card rounded-2xl p-4 md:p-6 text-center flex-1 min-w-[140px] md:min-w-[200px] max-w-[280px]">
+                <span class="material-symbols-outlined text-primary text-2xl md:text-3xl mb-2 md:mb-3">add_link</span>
+                <p class="font-label-bold text-[10px] md:text-label-bold text-on-surface-variant uppercase tracking-widest mb-1 md:mb-2">1. Adım</p>
+                <p class="font-body-md text-[13px] md:text-body-md text-on-surface">Link ekleyin</p>
+            </div>
+            <div class="glass-card rounded-2xl p-4 md:p-6 text-center flex-1 min-w-[140px] md:min-w-[200px] max-w-[280px]">
+                <span class="material-symbols-outlined text-primary text-2xl md:text-3xl mb-2 md:mb-3">sync</span>
+                <p class="font-label-bold text-[10px] md:text-label-bold text-on-surface-variant uppercase tracking-widest mb-1 md:mb-2">2. Adım</p>
+                <p class="font-body-md text-[13px] md:text-body-md text-on-surface">Takip başlasın</p>
+            </div>
+            <div class="glass-card rounded-2xl p-4 md:p-6 text-center flex-1 min-w-[140px] md:min-w-[200px] max-w-[280px]">
+                <span class="material-symbols-outlined text-primary text-2xl md:text-3xl mb-2 md:mb-3">notifications_active</span>
+                <p class="font-label-bold text-[10px] md:text-label-bold text-on-surface-variant uppercase tracking-widest mb-1 md:mb-2">3. Adım</p>
+                <p class="font-body-md text-[13px] md:text-body-md text-on-surface">Haber alın</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="ty-footer mt-auto px-margin-mobile md:px-margin-desktop py-12 flex flex-col md:flex-row justify-between items-center gap-gutter">
+        <div class="font-display-hero text-headline-md italic text-white">Trendcord</div>
+        <div class="flex gap-6">
+            <a href="/features" class="font-label-bold text-label-bold text-[#cfcfcf]">Özellikler</a>
+            <a href="/privacy" class="font-label-bold text-label-bold text-[#cfcfcf]">Gizlilik</a>
+            <a href="/terms" class="font-label-bold text-label-bold text-[#cfcfcf]">Şartlar</a>
+        </div>
+        <div class="font-body-md text-body-md text-[#8a8a8a]">© 2025-2026 Trendcord</div>
+    </footer>
+</div>
+
+<!-- Add Product Modal -->
+<div id="addProductModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center px-6" data-modal-open="false">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm overlay-fade" onclick="toggleModal('addProductModal')"></div>
+    <div class="relative w-full max-w-lg bg-surface-container-high rounded-[2rem] p-8 shadow-2xl border border-border-glass modal-scale">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="font-headline-md text-headline-md text-on-surface">Yeni Ürün Ekle</h3>
+            <button onclick="toggleModal('addProductModal')" class="material-symbols-outlined text-on-surface-variant hover:text-on-surface">close</button>
+        </div>
+        <form action="/product/add" method="POST" onsubmit="return validateGuild(this)">
+            <input type="hidden" name="guild_id" value="{{ current_guild.id if current_guild else '' }}">
+            <div class="mb-6">
+                <label class="font-label-bold text-label-bold text-on-surface-variant mb-2 block">Trendyol Ürün Linki</label>
+                <input type="url" name="url" placeholder="https://www.trendyol.com/..." required
+                    class="w-full bg-surface-container-low border border-border-glass rounded-2xl p-4 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md">
+            </div>
+            <button type="submit" class="w-full py-4 rounded-2xl bg-primary-container text-on-primary-container font-label-bold text-label-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">add_circle</span> Takibi Başlat
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- BAŞARI MODALI -->
+{% if request.query_params.get('added') %}
+<div id="addedSuccess" class="fixed inset-0 z-[200] flex items-center justify-center px-6">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="this.remove()"></div>
+    <div class="relative w-full max-w-sm bg-surface-container-high rounded-[2rem] p-10 text-center shadow-2xl border border-border-glass">
+        <div class="w-20 h-20 rounded-full bg-[#4ade80]/10 flex items-center justify-center text-[#4ade80] mx-auto mb-6">
+            <span class="material-symbols-outlined text-4xl" style="font-variation-settings:'FILL' 1">check_circle</span>
+        </div>
+        <h2 class="font-headline-md text-headline-md text-on-surface mb-2">İşlem Başarılı</h2>
+        <p class="font-body-md text-body-md text-on-surface-variant mb-8">Ürün başarıyla listeye eklendi ve takibe alındı.</p>
+        <button onclick="this.parentElement.parentElement.remove()" class="w-full py-4 rounded-2xl bg-primary-container text-on-primary-container font-label-bold text-label-bold shadow-lg active:scale-95 transition-all">Tamamdır</button>
+    </div>
+</div>
+{% endif %}
+
+<!-- HATA MODALI -->
+{% if request.query_params.get('error') %}
+<div id="errorModal" class="fixed inset-0 z-[200] flex items-center justify-center px-6">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="this.remove()"></div>
+    <div class="relative w-full max-w-sm bg-surface-container-high rounded-[2rem] p-10 text-center shadow-2xl border border-border-glass">
+        <div class="w-20 h-20 rounded-full bg-error-container/30 flex items-center justify-center text-error mx-auto mb-6">
+            <span class="material-symbols-outlined text-4xl">error</span>
+        </div>
+        <h2 class="font-headline-md text-headline-md text-on-surface mb-2">İşlem Başarısız</h2>
+        <p class="font-body-md text-body-md text-on-surface-variant mb-8">Ürün taranamadı. Linki kontrol edip tekrar deneyin.</p>
+        <button onclick="this.parentElement.parentElement.remove()" class="w-full py-4 rounded-2xl bg-primary-container text-on-primary-container font-label-bold text-label-bold shadow-lg active:scale-95 transition-all">Tamamdır</button>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function filterProducts(query) {
+    const cards = document.querySelectorAll('.product-card');
+    const q = query.toLowerCase();
+    cards.forEach(c => {
+        c.style.display = c.dataset.name.includes(q) ? 'flex' : 'none';
+    });
+}
+</script>
+{% endblock %}

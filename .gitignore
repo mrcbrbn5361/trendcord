@@ -1,6 +1,11 @@
 # Veritabanı
 *.db
 *.sqlite3
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+data/
+dump.rdb
 
 # Ortam değişkenleri
 .env
@@ -53,6 +58,13 @@ npm-debug.log*
 
 # Logs
 *.log
+logs/
 tunnel.log
 run.log
 bot.log
+
+# Geçici / çalışma dosyaları
+tmp/
+.pytest_cache/
+proxies.txt
+current

@@ -1,0 +1,203 @@
+{% extends "layout.html" %}
+{% block title %}Özellikler - Trendcord Gelişmiş Fiyat Takip Teknolojisi{% endblock %}
+{% block description %}Trendcord özellikleri: Gerçek zamanlı fiyat bildirimi, 7/24 bulut altyapısı, görsel web paneli, sınırsız ürün takibi ve daha fazlası.{% endblock %}
+{% block og_title %}Özellikler - Trendcord Gelişmiş Fiyat Takip Teknolojisi{% endblock %}
+{% block og_description %}Gerçek zamanlı fiyat bildirimi, 7/24 bulut altyapısı, görsel web paneli ve sınırsız ürün takibi.{% endblock %}
+
+{% block content %}
+<section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-16 relative">
+    <div class="absolute top-0 right-0 w-[40vw] h-[40vw] bg-primary-container/5 blur-[120px] rounded-full pointer-events-none"></div>
+
+    <!-- Hero -->
+    <header class="mb-20">
+        <h1 class="font-display-hero text-headline-lg-mobile md:text-display-hero text-on-surface max-w-4xl">
+            FİYAT TAKİP<br><span class="text-primary italic">TEKNOLOJİSİ</span>
+        </h1>
+        <p class="font-body-lg text-body-lg text-on-surface-variant mt-6 max-w-2xl">Discord altyapısı üzerinde çalışan, Trendyol ürün fiyatlarını 7/24 kesintisiz analiz eden ve her fiyat değişimini anında görsel rapor olarak ileten otomasyon botu.</p>
+    </header>
+
+    <!-- Featured Snippet -->
+    <div class="mb-20 max-w-3xl mx-auto glass-card rounded-xl p-10">
+        <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-6">Trendyol Fiyat Takip Botu Nedir?</h2>
+        <p class="font-body-md text-body-md text-on-surface-variant mb-8">Trendcord, Discord altyapısı üzerinde çalışan, Trendyol ürün fiyatlarını 7/24 kesintisiz analiz eden ve her fiyat değişimini anında görsel rapor olarak ileten bir otomasyon botudur.</p>
+        <div class="overflow-x-auto">
+            <table class="w-full font-body-md text-body-md text-on-surface-variant">
+                <thead>
+                    <tr class="border-b border-border-glass">
+                        <th class="text-left py-3 pr-6 font-label-bold text-label-bold text-on-surface uppercase">Özellik</th>
+                        <th class="text-left py-3 font-label-bold text-label-bold text-on-surface uppercase">Açıklama</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b border-border-glass"><td class="py-3 pr-6">Platform</td><td class="py-3 text-on-surface font-bold">Discord</td></tr>
+                    <tr class="border-b border-border-glass"><td class="py-3 pr-6">Takip</td><td class="py-3 text-on-surface font-bold">Trendyol Ürün Fiyatları</td></tr>
+                    <tr class="border-b border-border-glass"><td class="py-3 pr-6">Bildirim</td><td class="py-3 text-on-surface font-bold">Anlık Discord Mesajı</td></tr>
+                    <tr><td class="py-3 pr-6">Altyapı</td><td class="py-3 text-on-surface font-bold">7/24 Kesintisiz Bulut</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bento Features Grid -->
+    <section class="mb-32">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Large: Real-time -->
+            <div class="lg:col-span-8 group relative overflow-hidden glass-card p-6 md:p-12 rounded-lg flex flex-col justify-between md:min-h-[400px]">
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 rounded-full blur-[100px] group-hover:bg-primary/30 transition-all"></div>
+                <div class="relative z-10">
+                    <span class="material-symbols-outlined text-primary text-4xl mb-6">notifications_active</span>
+                    <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-4">Gerçek Zamanlı Bildirim</h2>
+                    <p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg">Özel tarama motorumuz, Trendyol'daki her kuruşluk değişimi anında yakalar ve Discord sunucunuza görsel rapor olarak iletir. Gecikme yok, hata yok.</p>
+                    <div class="mt-8 flex flex-wrap gap-3">
+                        <span class="px-4 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-label-bold">HASSASİYET 50ms</span>
+                        <span class="px-4 py-1 rounded-full bg-secondary/10 border border-secondary/20 text-secondary text-xs font-label-bold">DISCORD NATIVE</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cloud -->
+            <div class="lg:col-span-4 glass-card p-8 rounded-lg flex flex-col justify-between group hover:border-primary/50 transition-all">
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-surface-variant flex items-center justify-center mb-6">
+                        <span class="material-symbols-outlined text-primary">cloud_done</span>
+                    </div>
+                    <h3 class="font-headline-md text-headline-md mb-2">7/24 Bulut Mimarisi</h3>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Bilgisayarınızı açık tutma zorunluluğunu unutun. Trendcord, yüksek performanslı bulut sunucularımızda sizin için çalışır.</p>
+                </div>
+                <div class="mt-8 pt-8 border-t border-border-glass">
+                    <div class="flex items-end gap-2">
+                        <span class="font-stat-giant text-stat-giant text-primary">99.9</span>
+                        <span class="font-headline-md text-headline-md pb-2 text-primary">%</span>
+                    </div>
+                    <p class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest">Uptime</p>
+                </div>
+            </div>
+
+            <!-- Panel -->
+            <div class="lg:col-span-4 glass-card p-8 rounded-lg flex flex-col justify-between group">
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-surface-variant flex items-center justify-center mb-6">
+                        <span class="material-symbols-outlined text-primary">dashboard</span>
+                    </div>
+                    <h3 class="font-headline-md text-headline-md mb-2">Avangart Panel</h3>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Karmaşık komutlara gerek yok. Ürünlerinizi, indirimlerinizi ve istatistiklerinizi tek bir görsel arayüzden yönetin.</p>
+                </div>
+            </div>
+
+            <!-- Large: Async -->
+            <div class="lg:col-span-8 glass-card p-8 md:p-12 rounded-lg relative overflow-hidden flex flex-col justify-center orange-glow">
+                <div class="relative z-10 flex flex-col md:flex-row gap-8 md:gap-12 items-center">
+                    <div class="flex-1">
+                        <span class="material-symbols-outlined text-primary text-4xl mb-6">dynamic_feed</span>
+                        <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-4">Sınırsız Asenkron Altyapı</h2>
+                        <p class="font-body-lg text-body-lg text-on-surface-variant">Binlerce ürünü aynı anda takip edin. Python tabanlı asenkron mimarimiz sayesinde, sistem rate-limit engellerine takılmadan eşzamanlı sorgu gerçekleştirebilir.</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 md:gap-4 flex-1 w-full">
+                        <div class="bg-background/40 backdrop-blur-md border border-border-glass p-4 md:p-6 rounded-xl md:rounded-2xl">
+                            <span class="font-headline-md text-headline-md text-[22px] md:text-headline-md text-on-surface">5M+</span>
+                            <p class="font-label-bold text-[10px] md:text-label-bold text-primary mt-1">Günlük Tarama</p>
+                        </div>
+                        <div class="bg-background/40 backdrop-blur-md border border-border-glass p-4 md:p-6 rounded-xl md:rounded-2xl">
+                            <span class="font-headline-md text-headline-md text-[22px] md:text-headline-md text-on-surface">&lt;20ms</span>
+                            <p class="font-label-bold text-[10px] md:text-label-bold text-primary mt-1">Gecikme</p>
+                        </div>
+                        <div class="bg-background/40 backdrop-blur-md border border-border-glass p-4 md:p-6 rounded-xl md:rounded-2xl">
+                            <span class="font-headline-md text-headline-md text-[22px] md:text-headline-md text-on-surface">24/7</span>
+                            <p class="font-label-bold text-[10px] md:text-label-bold text-primary mt-1">Kesintisiz</p>
+                        </div>
+                        <div class="bg-background/40 backdrop-blur-md border border-border-glass p-4 md:p-6 rounded-xl md:rounded-2xl">
+                            <span class="font-headline-md text-headline-md text-[22px] md:text-headline-md text-on-surface">100k</span>
+                            <p class="font-label-bold text-[10px] md:text-label-bold text-primary mt-1">Aktif Görev</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- New Features: Alarms, Compare, Notifications -->
+    <section class="py-16 md:py-32 px-margin-mobile md:px-margin-desktop">
+        <div class="max-w-container-max mx-auto">
+            <div class="text-center mb-12 md:mb-16">
+                <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-4">Yeni <span class="text-primary">Özellikler</span></h2>
+                <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">Daha akıllı takip, daha güçlü kontrol.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                <a href="/alerts" class="glass-card rounded-lg p-6 md:p-8 group block">
+                    <div class="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4 md:mb-6">
+                        <span class="material-symbols-outlined text-2xl md:text-[32px]">notifications_active</span>
+                    </div>
+                    <h3 class="font-headline-md text-[18px] md:text-headline-md text-on-surface mb-3">Fiyat Alarmı</h3>
+                    <p class="font-body-md text-[13px] md:text-body-md text-on-surface-variant">Ürünleriniz belirli bir fiyata ulaştığında Discord bildirimi alın. Hem düşüş hem yükseliş için alarm kurabilirsiniz.</p>
+                </a>
+                <a href="/compare" class="glass-card rounded-lg p-6 md:p-8 group block">
+                    <div class="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-tertiary/10 flex items-center justify-center text-tertiary mb-4 md:mb-6">
+                        <span class="material-symbols-outlined text-2xl md:text-[32px]">compare</span>
+                    </div>
+                    <h3 class="font-headline-md text-[18px] md:text-headline-md text-on-surface mb-3">Ürün Karşılaştırma</h3>
+                    <p class="font-body-md text-[13px] md:text-body-md text-on-surface-variant">Sunucunuzdaki ürünleri fiyat, indirim oranı ve tasarruf açısından karşılaştırın.</p>
+                </a>
+                <a href="/notifications" class="glass-card rounded-lg p-6 md:p-8 group block">
+                    <div class="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary mb-4 md:mb-6">
+                        <span class="material-symbols-outlined text-2xl md:text-[32px]">settings</span>
+                    </div>
+                    <h3 class="font-headline-md text-[18px] md:text-headline-md text-on-surface mb-3">Bildirim Tercihleri</h3>
+                    <p class="font-body-md text-[13px] md:text-body-md text-on-surface-variant">Hangi kanaldan bildirim alacağınızı, düşüş/yükseliş tercihlerinizi ve eşik değerlerinizi özelleştirin.</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Trendcord -->
+    <section class="py-20 border-t border-border-glass">
+        <div class="flex flex-col md:flex-row justify-between items-start gap-12">
+            <div class="md:w-1/3">
+                <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-6">Neden <span class="text-primary italic">Trendcord?</span></h2>
+                <p class="font-body-lg text-body-lg text-on-surface-variant">Piyasadaki diğer botların aksine Trendcord, doğrudan Trendyol API katmanlarını analiz eder. En doğru ve en hızlı veriyi garanti eder.</p>
+            </div>
+            <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-gutter w-full">
+                <div class="p-8 rounded-lg border border-border-glass bg-surface-container-low group hover:bg-surface-container transition-colors">
+                    <div class="flex items-center gap-4 mb-4">
+                        <span class="material-symbols-outlined text-primary">speed</span>
+                        <h4 class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface">Hız</h4>
+                    </div>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Özel scraping modülleri ile düşük gecikme.</p>
+                </div>
+                <div class="p-8 rounded-lg border border-border-glass bg-surface-container-low group hover:bg-surface-container transition-colors">
+                    <div class="flex items-center gap-4 mb-4">
+                        <span class="material-symbols-outlined text-primary">verified_user</span>
+                        <h4 class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface">Güvenlik</h4>
+                    </div>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Anti-bot bypass ile kesintisiz bağlantı.</p>
+                </div>
+                <div class="p-8 rounded-lg border border-border-glass bg-surface-container-low group hover:bg-surface-container transition-colors">
+                    <div class="flex items-center gap-4 mb-4">
+                        <span class="material-symbols-outlined text-primary">psychology</span>
+                        <h4 class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface">Akıllı Uyarı</h4>
+                    </div>
+                    <p class="font-body-md text-body-md text-on-surface-variant">AI destekli trend analizi.</p>
+                </div>
+                <div class="p-8 rounded-lg border border-border-glass bg-surface-container-low group hover:bg-surface-container transition-colors">
+                    <div class="flex items-center gap-4 mb-4">
+                        <span class="material-symbols-outlined text-primary">dns</span>
+                        <h4 class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface">Global Düğüm</h4>
+                    </div>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Edge computing ile anlık veri.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</section>
+
+<!-- Footer -->
+<footer class="ty-footer px-margin-mobile md:px-margin-desktop py-12 flex flex-col md:flex-row justify-between items-center gap-gutter">
+    <div class="font-display-hero text-headline-md italic text-white">Trendcord</div>
+    <div class="flex gap-6">
+        <a href="/servers" class="font-label-bold text-label-bold text-[#cfcfcf]">Sunucular</a>
+        <a href="/users" class="font-label-bold text-label-bold text-[#cfcfcf]">Kullanıcılar</a>
+        <a href="/privacy" class="font-label-bold text-label-bold text-[#cfcfcf]">Gizlilik</a>
+        <a href="/terms" class="font-label-bold text-label-bold text-[#cfcfcf]">Şartlar</a>
+    </div>
+    <div class="font-body-md text-body-md text-[#8a8a8a]">© 2025-2026 Trendcord</div>
+</footer>
+{% endblock %}

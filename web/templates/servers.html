@@ -1,0 +1,113 @@
+{% extends "layout.html" %}
+{% block title %}Sunucular - Trendcord{% endblock %}
+{% block description %}Trendcord botunun bulunduğu tüm Discord sunucularını keşfedin. Her sunucuda kaç ürün takip ediliyor görün.{% endblock %}
+
+{% block content %}
+<section class="min-h-screen px-margin-mobile md:px-margin-desktop py-12 md:py-24">
+    <div class="max-w-container-max mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12 md:mb-20">
+            <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary font-label-bold text-label-bold mb-6">
+                <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1">dns</span>
+                AKTİF SUNUCULAR
+            </div>
+            <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-4">Discord Sunucuları</h1>
+            <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">Trendcord botunun bulunduğu tüm sunucuları ve her sunucudaki takip istatistiklerini görüntüleyin.</p>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-12 md:mb-16">
+            <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
+                <div class="font-stat-giant text-primary text-3xl md:text-4xl italic">{{ servers|length }}</div>
+                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">Toplam Sunucu</div>
+            </div>
+            <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
+                <div class="font-stat-giant text-on-surface text-3xl md:text-4xl italic">{{ total_members }}</div>
+                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">Toplam Üye</div>
+            </div>
+            <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
+                <div class="font-stat-giant text-primary-container text-3xl md:text-4xl italic">{{ total_products }}</div>
+                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">Takip Edilen</div>
+            </div>
+            <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
+                <div class="font-stat-giant text-tertiary text-3xl md:text-4xl italic">{{ active_users }}</div>
+                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">Aktif Kullanıcı</div>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="relative max-w-md mx-auto mb-8 md:mb-12">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+            <input type="text" id="serverSearch" placeholder="Sunucu ara..." oninput="filterServers(this.value)"
+                class="w-full bg-surface-container-low border border-border-glass rounded-full py-3 pl-12 pr-6 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md">
+        </div>
+
+        <!-- Server Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6" id="server-grid">
+            {% for s in servers %}
+            <a href="/servers/{{ s.id }}" class="glass-card rounded-lg p-5 md:p-6 group touch-scale block">
+                <div class="flex items-center gap-4 mb-4">
+                    {% if s.icon_url %}
+                        <img src="{{ s.icon_url }}" alt="{{ s.name }} ikonu" class="w-14 h-14 rounded-2xl object-cover border-2 border-border-glass group-hover:border-primary/30 transition-colors" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                        <div class="w-14 h-14 rounded-2xl bg-primary-container text-on-primary-container items-center justify-center font-label-bold text-lg border-2 border-border-glass hidden">
+                            {{ s.name[:2] }}
+                        </div>
+                    {% else %}
+                        <div class="w-14 h-14 rounded-2xl bg-primary-container text-on-primary-container flex items-center justify-center font-label-bold text-lg border-2 border-border-glass">
+                            {{ s.name[:2] }}
+                        </div>
+                    {% endif %}
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-label-bold text-on-surface text-sm truncate">{{ s.name }}</h3>
+                        <p class="text-[11px] text-on-surface-variant">{{ s.member_count }} üye</p>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between pt-3 border-t border-border-glass">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-lg">inventory_2</span>
+                        <span class="font-label-bold text-on-surface text-sm">{{ s.product_count }} ürün</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <a href="/servers/{{ s.id }}/stats" class="material-symbols-outlined text-tertiary text-lg hover:text-primary transition-colors" title="İstatistikler">analytics</a>
+                        <span class="material-symbols-outlined text-on-surface-variant text-lg group-hover:text-primary transition-colors">arrow_forward</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+
+        <!-- Empty State -->
+        {% if not servers %}
+        <div class="flex flex-col items-center justify-center py-16 md:py-24 glass-panel rounded-lg border-dashed border-border-glass">
+            <span class="material-symbols-outlined text-primary text-[60px] md:text-[80px] mb-4">dns</span>
+            <h3 class="font-headline-md text-[20px] md:text-headline-md text-on-surface mb-2">Henüz sunucu yok</h3>
+            <p class="text-on-surface-variant font-body-md text-[13px] md:text-body-md max-w-md text-center mb-6 px-4">Bot henüz hiçbir sunucuya eklenmemiş.</p>
+            <a href="/login" class="px-8 py-3 rounded-full bg-primary-container text-on-primary-container font-label-bold text-label-bold hover:scale-[1.03] active:scale-95 transition-transform duration-200">Discord ile Bağlan</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="ty-footer px-margin-mobile md:px-margin-desktop py-12 flex flex-col md:flex-row justify-between items-center gap-gutter">
+    <div class="font-display-hero text-headline-md italic text-white">Trendcord</div>
+    <div class="flex gap-6">
+        <a href="/features" class="font-label-bold text-label-bold text-[#cfcfcf]">Özellikler</a>
+        <a href="/users" class="font-label-bold text-label-bold text-[#cfcfcf]">Kullanıcılar</a>
+        <a href="/privacy" class="font-label-bold text-label-bold text-[#cfcfcf]">Gizlilik</a>
+        <a href="/terms" class="font-label-bold text-label-bold text-[#cfcfcf]">Şartlar</a>
+    </div>
+    <div class="font-body-md text-body-md text-[#8a8a8a]">© 2025-2026 Trendcord</div>
+</footer>
+
+<script>
+function filterServers(query) {
+    const cards = document.querySelectorAll('#server-grid a');
+    const q = query.toLowerCase();
+    cards.forEach(c => {
+        const name = c.querySelector('h3').textContent.toLowerCase();
+        c.style.display = name.includes(q) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

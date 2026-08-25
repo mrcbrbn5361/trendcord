@@ -1,0 +1,92 @@
+{% extends "layout.html" %}
+{% block title %}Bildirim Tercihleri - Trendcord{% endblock %}
+{% block description %}Trendcord bildirim tercihlerinizi düzenleyin. Fiyat değişimlerinde hangi kanaldan bildirim alacağınızı belirleyin.{% endblock %}
+
+{% block content %}
+<section class="min-h-screen px-margin-mobile md:px-margin-desktop py-12 md:py-24">
+    <div class="max-w-container-max mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12 md:mb-20">
+            <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary font-label-bold text-label-bold mb-6">
+                <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1">settings</span>
+                BİLDİRİM AYARLARI
+            </div>
+            <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-4">Bildirim Tercihleri</h1>
+            <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">Fiyat değişimlerinde hangi kanaldan bildirim alacağınızı düzenleyin.</p>
+        </div>
+
+        {% if guilds %}
+        <div class="max-w-2xl mx-auto space-y-6">
+            {% for g in guilds %}
+            {% set prefs = preferences.get(g.id|string, {}) %}
+            <div class="glass-panel rounded-lg p-6 md:p-8">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center font-label-bold text-lg">
+                        {{ g.name[:2] }}
+                    </div>
+                    <div>
+                        <h3 class="font-label-bold text-on-surface text-sm">{{ g.name }}</h3>
+                        <p class="text-[11px] text-on-surface-variant">Sunucu bildirim ayarları</p>
+                    </div>
+                </div>
+                <form action="/notifications/save" method="POST" class="space-y-4">
+                    <input type="hidden" name="guild_id" value="{{ g.id }}">
+                    <div>
+                        <label class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Bildirim Kanalı ID</label>
+                        <input type="text" name="channel_id" value="{{ prefs.notify_channel_id or '' }}" placeholder="Discord kanal ID'si"
+                            class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="flex items-center gap-3 p-4 rounded-xl bg-surface-container-low border border-border-glass cursor-pointer hover:border-primary/30 transition-colors">
+                            <input type="checkbox" name="notify_on_drop" value="1" {% if prefs.notify_on_drop != 0 %}checked{% endif %}
+                                class="w-5 h-5 rounded accent-primary">
+                            <div>
+                                <span class="font-label-bold text-on-surface text-sm">📉 Düşüş</span>
+                                <p class="text-[10px] text-on-surface-variant">Fiyat düşünce bildir</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-3 p-4 rounded-xl bg-surface-container-low border border-border-glass cursor-pointer hover:border-primary/30 transition-colors">
+                            <input type="checkbox" name="notify_on_rise" value="1" {% if prefs.notify_on_rise != 0 %}checked{% endif %}
+                                class="w-5 h-5 rounded accent-primary">
+                            <div>
+                                <span class="font-label-bold text-on-surface text-sm">📈 Yükseliş</span>
+                                <p class="text-[10px] text-on-surface-variant">Fiyat yükseldiğinde bildir</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div>
+                        <label class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Minimum Fiyat Farkı (%)</label>
+                        <input type="number" name="notify_threshold" value="{{ prefs.notify_threshold or 5.0 }}" step="0.1" min="0" max="100"
+                            class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md">
+                        <p class="text-[10px] text-on-surface-variant mt-1">Bu yüzdeyi aşmayan değişimlerde bildirim gönderilmez.</p>
+                    </div>
+                    <button type="submit" class="w-full py-4 rounded-xl bg-primary-container text-on-primary-container font-label-bold text-label-bold shadow-lg active:scale-95 transition-all">
+                        💾 Kaydet
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="flex flex-col items-center justify-center py-16 glass-panel rounded-lg border-dashed border-border-glass max-w-2xl mx-auto">
+            <span class="material-symbols-outlined text-primary text-[60px] md:text-[80px] mb-4">notifications_off</span>
+            <h3 class="font-headline-md text-[20px] md:text-headline-md text-on-surface mb-2">Sunucu bulunamadı</h3>
+            <p class="text-on-surface-variant font-body-md text-[13px] md:text-body-md max-w-md text-center mb-6 px-4">Botun bulunduğu bir sunucuda bildirim ayarlarınızı düzenleyebilirsiniz.</p>
+            <a href="/login" class="px-8 py-3 rounded-full bg-primary-container text-on-primary-container font-label-bold text-label-bold hover:scale-[1.03] active:scale-95 transition-transform duration-200">Discord ile Bağlan</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="ty-footer px-margin-mobile md:px-margin-desktop py-12 flex flex-col md:flex-row justify-between items-center gap-gutter">
+    <div class="font-display-hero text-headline-md italic text-white">Trendcord</div>
+    <div class="flex gap-6">
+        <a href="/features" class="font-label-bold text-label-bold text-[#cfcfcf]">Özellikler</a>
+        <a href="/servers" class="font-label-bold text-label-bold text-[#cfcfcf]">Sunucular</a>
+        <a href="/privacy" class="font-label-bold text-label-bold text-[#cfcfcf]">Gizlilik</a>
+        <a href="/terms" class="font-label-bold text-label-bold text-[#cfcfcf]">Şartlar</a>
+    </div>
+    <div class="font-body-md text-body-md text-[#8a8a8a]">© 2025-2026 Trendcord</div>
+</footer>
+{% endblock %}

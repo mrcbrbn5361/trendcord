@@ -1,0 +1,169 @@
+{% extends "layout.html" %}
+{% block title %}{{ guild.name }} - Trendcord Sunucu Detay{% endblock %}
+{% block description %}{{ guild.name }} sunucusundaki Trendyol ürün takip istatistikleri ve üye listesi.{% endblock %}
+
+{% block content %}
+<section class="min-h-screen px-margin-mobile md:px-margin-desktop py-12 md:py-24">
+    <div class="max-w-container-max mx-auto">
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-2 text-sm text-on-surface-variant mb-6 md:mb-8">
+            <a href="/servers" class="hover:text-primary transition-colors">Sunucular</a>
+            <span class="material-symbols-outlined text-sm">chevron_right</span>
+            <span class="text-on-surface">{{ guild.name }}</span>
+        </div>
+
+        <!-- Server Header -->
+        <div class="glass-panel rounded-lg p-6 md:p-10 mb-8 md:mb-12">
+            <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+                {% if guild.icon_url %}
+                    <img src="{{ guild.icon_url }}" alt="{{ guild.name }} ikonu" class="w-20 h-20 md:w-28 md:h-28 rounded-2xl object-cover border-[3px] border-border-glass shadow-xl" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                    <div class="w-20 h-20 md:w-28 md:h-28 rounded-2xl bg-primary-container text-on-primary-container items-center justify-center font-label-bold text-3xl md:text-4xl border-[3px] border-border-glass hidden">
+                        {{ guild.name[:2] }}
+                    </div>
+                {% else %}
+                    <div class="w-20 h-20 md:w-28 md:h-28 rounded-2xl bg-primary-container text-on-primary-container flex items-center justify-center font-label-bold text-3xl md:text-4xl border-[3px] border-border-glass">
+                        {{ guild.name[:2] }}
+                    </div>
+                {% endif %}
+                <div class="flex-1 text-center md:text-left">
+                    <h1 class="font-headline-md text-[24px] md:text-headline-md text-on-surface mb-2">{{ guild.name }}</h1>
+                    <div class="flex flex-wrap justify-center md:justify-start gap-3 md:gap-4">
+                        <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary font-label-bold text-xs">
+                            <span class="material-symbols-outlined text-sm">group</span>
+                            {{ guild.member_count }} Üye
+                        </div>
+                        <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary/10 text-tertiary font-label-bold text-xs">
+                            <span class="material-symbols-outlined text-sm">inventory_2</span>
+                            {{ products|length }} Takip
+                        </div>
+                        <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary/10 text-secondary font-label-bold text-xs">
+                            <span class="material-symbols-outlined text-sm">person</span>
+                            {{ unique_users }} Kullanıcı
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex gap-2 mb-6 md:mb-8 overflow-x-auto pb-2">
+            <button onclick="showTab('products')" id="tab-products" class="px-5 py-2 rounded-full bg-primary text-on-primary font-label-bold text-label-bold active:scale-95 transition-transform whitespace-nowrap">Ürünler</button>
+            <button onclick="showTab('members')" id="tab-members" class="px-5 py-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-bold text-label-bold hover:bg-surface-container-highest active:scale-95 transition-transform whitespace-nowrap">Üyeler</button>
+            <a href="/servers/{{ guild.id }}/stats" class="px-5 py-2 rounded-full bg-surface-container-high text-on-surface-variant font-label-bold text-label-bold hover:bg-surface-container-highest active:scale-95 transition-transform whitespace-nowrap inline-flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">analytics</span> İstatistikler
+            </a>
+        </div>
+
+        <!-- Products Tab -->
+        <div id="panel-products" class="tab-panel">
+            {% if products %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                {% for p in products %}
+                <div class="glass-card rounded-lg p-4 group touch-scale">
+                    <div class="relative aspect-square rounded-xl overflow-hidden mb-3 border border-border-glass bg-surface-container-low">
+                        <img src="{{ p.image_url }}" alt="{{ p.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x600/1c1b1b/dec1b1?text=G%C3%B6rsel+Yok'">
+                        {% if p.original_price and p.current_price and p.original_price > p.current_price %}
+                        <div class="absolute top-2 left-2"><span class="ty-badge-discount">-{{ (((p.original_price - p.current_price) / p.original_price) * 100)|int }}%</span></div>
+                        {% endif %}
+                    </div>
+                    <h3 class="font-label-bold text-on-surface text-sm truncate mb-1">{{ p.name }}</h3>
+                    <div class="flex items-baseline gap-2 mb-1">
+                        <span class="text-on-surface font-black text-lg">₺{{ "{:,.0f}".format(p.current_price) }}</span>
+                        {% if p.basket_price and p.basket_price < p.current_price %}
+                        <span class="text-[#3BB143] text-xs font-bold">sepette ₺{{ "{:,.0f}".format(p.basket_price) }}</span>
+                        {% endif %}
+                        {% if p.original_price and p.current_price and p.original_price > p.current_price %}
+                        <span class="ty-price-old">₺{{ "{:,.0f}".format(p.original_price) }}</span>
+                        {% endif %}
+                    </div>
+                    {% if p.campaign_name %}
+                    <div class="flex items-center gap-1 mb-2">
+                        <span class="bg-[#4ade80]/15 text-[#4ade80] px-1.5 py-0.5 rounded-full text-[10px] font-bold">{{ p.campaign_name }}</span>
+                    </div>
+                    {% else %}
+                    <div class="mb-2"></div>
+                    {% endif %}
+                    <div class="flex items-center justify-between pt-2 border-t border-border-glass">
+                        <a href="/users/{{ p.user_id }}" class="flex items-center gap-1.5 hover:text-primary transition-colors">
+                            {% set avatar_url = user_avatars.get(p.user_id, '') %}
+                            {% if avatar_url %}
+                                <img src="{{ avatar_url }}" alt="Kullanıcı avatarı" class="w-4 h-4 rounded-full object-cover" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                            {% else %}
+                                <div class="w-4 h-4 rounded-full bg-surface-container-highest flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-[8px]">person</span>
+                                </div>
+                            {% endif %}
+                            <span class="text-[10px] text-on-surface-variant">{{ p.username }}</span>
+                        </a>
+                        <a href="{{ p.url }}" target="_blank" rel="noopener noreferrer" class="material-symbols-outlined text-on-surface-variant text-sm hover:text-primary transition-colors">open_in_new</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="flex flex-col items-center justify-center py-16 glass-panel rounded-lg border-dashed border-border-glass">
+                <span class="material-symbols-outlined text-primary text-[60px] mb-4">inventory_2</span>
+                <h3 class="font-headline-md text-on-surface mb-2">Henüz ürün yok</h3>
+                <p class="text-on-surface-variant font-body-md text-sm">Bu sunucuda henüz takip edilen ürün bulunmuyor.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Members Tab -->
+        <div id="panel-members" class="tab-panel hidden">
+            {% if members %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                {% for m in members %}
+                <a href="/users/{{ m.user_id }}" class="glass-card rounded-lg p-4 flex items-center gap-3 group touch-scale block">
+                    {% if m.avatar_url %}
+                        <img src="{{ m.avatar_url }}" alt="{{ m.username }} avatarı" class="w-10 h-10 rounded-full object-cover border-2 border-border-glass group-hover:border-primary/30 transition-colors" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                    {% else %}
+                        <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+                            <span class="material-symbols-outlined text-sm">person</span>
+                        </div>
+                    {% endif %}
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-label-bold text-on-surface text-sm truncate">{{ m.username }}</h4>
+                        <p class="text-[10px] text-on-surface-variant">{{ m.product_count }} ürün takip ediyor</p>
+                    </div>
+                    <span class="material-symbols-outlined text-on-surface-variant text-sm group-hover:text-primary transition-colors">arrow_forward</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="flex flex-col items-center justify-center py-16 glass-panel rounded-lg border-dashed border-border-glass">
+                <span class="material-symbols-outlined text-primary text-[60px] mb-4">group</span>
+                <h3 class="font-headline-md text-on-surface mb-2">Henüz üye yok</h3>
+                <p class="text-on-surface-variant font-body-md text-sm">Bu sunucuda ürün takip eden üye bulunmuyor.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="ty-footer px-margin-mobile md:px-margin-desktop py-12 flex flex-col md:flex-row justify-between items-center gap-gutter">
+    <div class="font-display-hero text-headline-md italic text-white">Trendcord</div>
+    <div class="flex gap-6">
+        <a href="/features" class="font-label-bold text-label-bold text-[#cfcfcf]">Özellikler</a>
+        <a href="/users" class="font-label-bold text-label-bold text-[#cfcfcf]">Kullanıcılar</a>
+        <a href="/privacy" class="font-label-bold text-label-bold text-[#cfcfcf]">Gizlilik</a>
+        <a href="/terms" class="font-label-bold text-label-bold text-[#cfcfcf]">Şartlar</a>
+    </div>
+    <div class="font-body-md text-body-md text-[#8a8a8a]">© 2025-2026 Trendcord</div>
+</footer>
+
+<script>
+function showTab(tab) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+    document.getElementById('panel-' + tab).classList.remove('hidden');
+    document.querySelectorAll('[id^="tab-"]').forEach(t => {
+        t.classList.remove('bg-primary', 'text-on-primary');
+        t.classList.add('bg-surface-container-high', 'text-on-surface-variant');
+    });
+    const activeTab = document.getElementById('tab-' + tab);
+    activeTab.classList.remove('bg-surface-container-high', 'text-on-surface-variant');
+    activeTab.classList.add('bg-primary', 'text-on-primary');
+}
+</script>
+{% endblock %}

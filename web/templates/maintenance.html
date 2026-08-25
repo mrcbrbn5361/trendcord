@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+{% block title %}Trendcord Bakımda - Trendyol Fiyat Takip Sistemi{% endblock %}
+{% block description %}Trendcord bakım modunda. Trendyol fiyat takip sistemimiz kısa süre içinde tekrar aktif olacaktır. Otomatik yenilenme ile tekrar bağlanın.{% endblock %}
+{% block og_title %}Trendcord Bakımda - Trendyol Fiyat Takip Sistemi{% endblock %}
+{% block og_description %}Trendcord bakım modunda. Trendyol fiyat takip sistemimiz kısa süre içinde tekrar aktif olacaktır.{% endblock %}
+{% block twitter_title %}Trendcord Bakımda - Trendyol Fiyat Takip Sistemi{% endblock %}
+{% block twitter_description %}Trendcord bakım modunda. Trendyol fiyat takip sistemimiz kısa süre içinde tekrar aktif olacaktır.{% endblock %}
+{% block canonical_url %}https://trendcord.miracdeveloper.com.tr{% endblock %}
+{% block og_url %}https://trendcord.miracdeveloper.com.tr{% endblock %}
+
+{% block content %}
+<div class="min-h-[80vh] flex items-center justify-center px-margin-mobile md:px-margin-desktop py-20">
+    <div class="text-center max-w-lg">
+        <div class="mb-8 floating">
+            <div class="w-24 h-24 mx-auto rounded-full flex items-center justify-center pulse-glow glass-card">
+                <span class="material-symbols-outlined text-primary text-5xl">settings</span>
+            </div>
+        </div>
+        <h1 class="font-display-hero text-headline-lg-mobile md:text-headline-lg italic uppercase font-black text-on-surface mb-2">Trendcord</h1>
+
+        <div class="max-w-md mx-auto mb-8">
+            <h2 class="font-headline-md text-headline-md text-primary mb-2">Trendyol Fiyat Takip Botu</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant">Trendcord, Trendyol ürün fiyatlarını 7/24 analiz eden Discord fiyat takip botudur. Bakım çalışması nedeniyle geçici olarak kullanılamamaktadır.</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-6 md:p-8 border-primary/20 orange-glow mb-8">
+            <div class="flex items-center justify-center gap-2 mb-4">
+                <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                </span>
+                <span class="text-primary font-label-bold text-label-bold uppercase tracking-wider">Bakımda</span>
+            </div>
+            <p class="text-on-surface font-body-lg text-body-lg">
+                Sunucu şu anda bakım modunda.
+                <br>
+                <span class="text-primary font-bold">Yakın zamanda geri döneceğiz!</span>
+            </p>
+        </div>
+        <p class="text-on-surface-variant font-body-md text-body-md mb-6">Sayfa otomatik olarak yenileniyor...</p>
+        <div class="flex items-center justify-center gap-2 text-on-surface-variant font-body-md text-body-md mb-10">
+            <div class="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse"></div>
+            <span>Sistem izleniyor</span>
+        </div>
+
+        <div class="flex items-center justify-center gap-4 md:gap-6">
+            <a href="/" class="text-on-surface-variant hover:text-primary font-label-bold text-[10px] md:text-label-bold uppercase tracking-widest transition-colors">Ana Sayfa</a>
+            <a href="https://discord.gg/G46MFdw7R6" rel="noopener noreferrer" class="text-on-surface-variant hover:text-primary font-label-bold text-[10px] md:text-label-bold uppercase tracking-widest transition-colors">Destek</a>
+        </div>
+    </div>
+</div>
+<script>setTimeout(function(){ location.reload(); }, 30000);</script>
+<style>
+    .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+    @keyframes pulse-glow { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.05); } }
+    .floating { animation: floating 3s ease-in-out infinite; }
+    @keyframes floating { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+</style>
+{% endblock %}
