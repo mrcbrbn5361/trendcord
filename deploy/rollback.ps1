@@ -55,6 +55,7 @@ if ($Commit) {
     Write-Host "==> Commit $Commit yeni release olarak kuruluyor ($STAMP)..."
     Push-Location "$BASE\repo"
     git fetch --all --quiet
+    git reset --hard -q $Commit 2>$null
     $TMP_TAR = "$env:TEMP\tc-rb.tar"
     git archive --format=tar --output="$TMP_TAR" $Commit
     Pop-Location

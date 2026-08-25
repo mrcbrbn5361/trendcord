@@ -46,6 +46,8 @@ Write-Host "==> Deploy basliyor: $STAMP"
 Push-Location "$BASE\repo"
 git fetch --all --quiet
 $TARGET = if ($Commit) { $Commit } else { git rev-parse origin/main }
+# Scriptin kendisi de bu repodan calisiyor -> once agaci guncelle
+git reset --hard -q $TARGET
 Write-Host "    Commit: $TARGET"
 
 # 2) Temiz cikarma (git archive - kirli dosya tasinmaz)
