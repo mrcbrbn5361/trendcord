@@ -440,6 +440,8 @@ async def post_channel_content(guild, spec, db, force=False) -> bool:
             except (discord.NotFound, discord.HTTPException):
                 pass
 
+    if isinstance(ch, discord.ForumChannel):
+        return False  # forumlara intro mesaji post edilmez; tagler yeterli
     perms = ch.permissions_for(guild.me)
     if not (perms.send_messages and perms.embed_links):
         return False

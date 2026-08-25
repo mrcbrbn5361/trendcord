@@ -140,7 +140,8 @@ async def _apply_automod(guild):
     existing = {r.name for r in getattr(guild, "automod_rules", [])}
     try:
         existing = {r.name async for r in guild.fetch_automod_rules()}
-    except Exception:
+    except Exception as e:
+        logger.warning(f"[Official] automod kurallari okunamadi: {e}")
         return applied
 
     for spec in odata.AUTOMOD_RULES:
@@ -268,51 +269,52 @@ async def apply_official(guild, db=None) -> dict:
 
 
 async def reset_official(guild, db=None) -> dict:
-    """Resmi sunucuyu SIFIRLA + yeniden kur (yalnizca managed kaynaklar).
+    """Resmi sunucuyu TAMAMEN SIFIRLA + yeniden kur.
 
-    1) managed_entities'teki tum kanal/kategori silinir
-    2) blueprint rolleri (isim eslesmesi) silinir — bot rolunun altindaysa
-    3) apply_official ile sifirdan kurulur
+    1) TUM kanallar silinir (managed + eski manuel — tam temizlik)
+    2) TUM yonetilebilir roller silinir (@everyone + managed bot rolleri haric)
+    3) apply_official ile blueprint sifirdan kurulur
     """
     from provisioner.common.store import SetupStore
     from provisioner.common.ratelimit import safe_call, StepResult
     assert db is not None, 'db gerekli'
     store = SetupStore(db)
-    deleted = {"channels": [], "roles": [], "errors": []}
+    deleted = {"channels": 0, "roles": 0, "errors": []}
 
-    # 1) kanallar + kategoriler (alttan uste: once kanal sonra kategori)
-    ents = store.entities(guild.id, active_only=False)
-    chans = [e for e in ents if e["entity_type"] == "CHANNEL" and not e["deleted_at"]]
-    cats = [e for e in ents if e["entity_type"] == "CATEGORY" and not e["deleted_at"]]
-    for ent in chans + cats:
-        ch = guild.get_channel(int(ent["discord_id"]))
-        if ch:
-            async def factory(ch=ch):
-                return await ch.delete(reason="Trendcord reset (provision-official)")
-            res = await safe_call(ent["key"], factory)
-            if res.status == StepResult.CREATED:
-                deleted["channels"].append(ent["key"])
-            else:
-                deleted["errors"].append(f"{ent['key']}: {res.status}")
+    me = guild.me
+
+    # ---- 1) TUM KANALLAR (once kanallar, sonra kategoriler) ----
+    normal = [c for c in guild.channels
+              if not isinstance(c, discord.CategoryChannel)]
+    cats = [c for c in guild.channels if isinstance(c, discord.CategoryChannel)]
+    for ch in normal + cats:
+        async def factory(ch=ch):
+            return await ch.delete(reason="Trendcord reset: tam sifirlama")
+        res = await safe_call(f"purge:{ch.name}", factory)
+        if res.status == StepResult.CREATED:
+            deleted["channels"] += 1
+        else:
+            deleted["errors"].append(f"kanal {ch.name}: {res.status}")
+
+    # managed kayitlarini da temizle
+    for ent in store.entities(guild.id, active_only=False):
         store.mark_deleted(guild.id, ent["key"])
 
-    # msg kayitlarini da temizle
-    for ent in ents:
-        if ent["entity_type"] == "MESSAGE":
-            store.mark_deleted(guild.id, ent["key"])
+    # ---- 2) TUM YONETILEBILIR ROLLER ----
+    for role in list(guild.roles):
+        if role == guild.default_role or role.managed:
+            continue  # @everyone + baska botlarin rolleri dokunulmaz
+        if me and role >= me.top_role:
+            continue
+        async def factory(role=role):
+            return await role.delete(reason="Trendcord reset: tam sifirlama")
+        res = await safe_call(f"role:{role.name}", factory)
+        if res.status == StepResult.CREATED:
+            deleted["roles"] += 1
+        else:
+            deleted["errors"].append(f"rol {role.name}: {res.status}")
 
-    # 2) blueprint rollerini sil
-    me = guild.me
-    for spec in odata.OFFICIAL_ROLES:
-        role = discord.utils.find(lambda r: r.name == spec["name"], guild.roles)
-        if role and me and role < me.top_role:
-            async def factory(role=role):
-                return await role.delete(reason="Trendcord reset (provision-official)")
-            res = await safe_call(f"role:{spec['name']}", factory)
-            if res.status == StepResult.CREATED:
-                deleted["roles"].append(spec["name"])
-
-    # 3) sifirdan kur
+    # ---- 3) SIFIRDAN KUR ----
     report = await apply_official(guild, db=db)
     report["reset"] = deleted
     return report

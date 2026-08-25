@@ -89,8 +89,10 @@ class ProvisionOfficial(commands.Cog):
         if eylem == "reset":
             view = ResetConfirm()
             await ctx.reply(
-                "⚠️ **SIFIRLAMA** — yönetilen tüm kanallar/kategoriler ve "
-                "blueprint rolleri SİLİNPEN yeniden kurulacak. Emin misiniz?",
+                "⚠️ **TAM SIFIRLAMA** — sunucudaki BÜTÜN kanallar ve tüm "
+                "yönetilebilir roller silinecek (başka botların rolleri hariç), "
+                "ardından blueprint sıfırdan kurulacak.\n\n"
+                "🚨 Bu işlem geri alınamaz. Emin misiniz?",
                 view=view)
             await view.wait()
             if not view.onay:
