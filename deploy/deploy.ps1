@@ -18,7 +18,8 @@ $CFG = Get-Content "$BASE\config\app.json" | ConvertFrom-Json
 
 function Restart-App {
     switch ($CFG.Method) {
-        "task"    { schtasks /Run /TN $CFG.Name; Start-Sleep 5; return $true }
+        "task"    { schtasks /End /TN $CFG.Name 2>$null | Out-Null; Start-Sleep 2;
+                    schtasks /Run /TN $CFG.Name | Out-Null; Start-Sleep 5; return $true }
         "service" { Restart-Service $CFG.Name; Start-Sleep 5; return $true }
         default   {
             Get-Process python* -ErrorAction SilentlyContinue |
