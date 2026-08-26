@@ -1,10 +1,21 @@
 {% extends "layout.html" %}
 {% block title %}Canlı Veri Merkezi - Trendcord Trendyol Fiyat Takip İstatistikleri{% endblock %}
-{% block description %}Trendcord canlı istatistikleri: takip edilen ürün sayısı, yakalanan fiyat değişiklikleri ve aktif sunucu istatistiklerini görüntüleyin.{% endblock %}
+{% block description %}Trendcord canlı istatistikleri: {{ "{:,}".format(stats.product_count) }} ürün takip ediliyor, {{ "{:,}".format(stats.guild_count ) }} sunucuda aktif. Gerçek zamanlı Trendyol fiyat takip verileri.{% endblock %}
 {% block og_title %}Canlı Veri Merkezi - Trendcord Trendyol Fiyat Takip İstatistikleri{% endblock %}
-{% block og_description %}Trendcord canlı istatistikleri: takip edilen ürün sayısı, yakalanan fiyat değişiklikleri ve aktif sunucu istatistikleri.{% endblock %}
+{% block og_description %}{{ "{:,}".format(stats.product_count) }} ürün takip ediliyor, {{ "{:,}".format(stats.guild_count) }} sunucuda aktif. Gerçek zamanlı Trendyol fiyat takip verileri.{% endblock %}
 
 {% block content %}
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Trendcord Canlı İstatistikler",
+    "description": "Trendcord canlı istatistikleri: {{ "{:,}".format(stats.product_count) }} ürün takip, {{ "{:,}".format(stats.guild_count) }} sunucu.",
+    "url": "https://trendcord.miracdeveloper.com.tr/stats",
+    "dateModified": "2026-08-26"
+}
+</script>
 <div class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-16">
     <!-- Hero -->
     <div class="text-center mb-16">

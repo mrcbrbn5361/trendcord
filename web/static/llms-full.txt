@@ -1,0 +1,56 @@
+# Trendcord - Trendyol Fiyat Takip Botu
+> Trendcord, Trendyol ürün fiyatlarını 7/24 takip eden, fiyat değişikliklerini anında Discord'a bildiren ücretsiz bir bot ve web paneli sunar.
+
+## Nedir?
+Trendcord, Türkiye'nin en popüler Trendyol fiyat takip botudur. Discord sunucularına entegre edilerek, takip edilen ürünlerin fiyat değişimlerini gerçek zamanlı olarak raporlar. Kullanıcılar Trendyol ürün linklerini ekleyerek, indirimleri kaçırmadan takip edebilir.
+
+## Temel Özellikler
+- **Gerçek Zamanlı Fiyat Bildirimi:** Fiyat değiştiği anda Discord kanalına otomatik bildirim gönderilir
+- **7/24 Kesintisiz Altyapı:** Bulut tabanlı sistem, sunucu açık kalmadan çalışır
+- **Görsel Web Paneli:** Kullanıcı dostu arayüzden ürünleri yönetme,grafikleri görüntüleme
+- **Sınırsız Ürün Takibi:** Herhangi bir limit olmadan ürün ekleme
+- **Ürün Karşılaştırma:** Aynı anda birden fazla ürünün fiyat trendlerini grafik üzerinde karşılaştırma
+- **Fiyat Alarmı:** Belirlediğiniz fiyat eşiğinin altına düştüğünde anlık bildirim
+- **Ürün İsimleri:** Takip ettiğiniz ürünlere özel isim vererek tanımlama kolaylığı
+
+## Nasıl Çalışır?
+### Adım 1: Discord ile Giriş Yapın
+Trendcord web sitesine gidin ve Discord hesabınızla güvenli OAuth2 ile giriş yapın.
+
+### Adım 2: Trendyol Ürün Linkini Ekleyin
+Takip etmek istediğiniz Trendyol ürün linkini kopyalayın ve Trendcord paneline yapıştırın.
+
+### Adım 3: Bildirimleri Almaya Başlayın
+Ürünün fiyatı düştüğünde Discord sunucunuzda anında bildirim alırsınız.
+
+## Teknik Altyapı
+- Dil: Python 3.11+
+- Framework: FastAPI, discord.py
+- Veritabanı: SQLite (WAL modu)
+- Altyapı: AsyncIO, 7/24 kesintisiz polling
+- Güvenlik: OAuth2, AES-256-GCM şifreleme
+- Mimari: ASGI, multi-worker
+
+## Topluluk ve Kullanım İstatistikleri
+- Aktif Discord sunucularında çalışıyor
+- Binlerce ürün takip ediliyor
+- Gerçek zamanlı fiyat hareketleri analiz ediliyor
+- Toplam tasarruf hesaplaması yapılıyor
+
+## Sayfalar
+- [Ana Sayfa](https://trendcord.miracdeveloper.com.tr): Ürün tanıtımı ve başlangıç
+- [Özellikler](https://trendcord.miracdeveloper.com.tr/features): Tüm özelliklerin detaylı açıklaması
+- [Nasıl Çalışır?](https://trendcord.miracdeveloper.com.tr/how-it-works): Kurulum ve kullanım rehberi
+- [İstatistikler](https://trendcord.miracdeveloper.com.tr/stats): Canlı kullanım verileri
+- [Sunucular](https://trendcord.miracdeveloper.com.tr/servers): Aktif Discord sunucuları
+- [Kullanıcılar](https://trendcord.miracdeveloper.com.tr/users): Kayıtlı takipçiler
+- [Gizlilik](https://trendcord.miracdeveloper.com.tr/privacy): Veri koruma politikası
+- [Şartlar](https://trendcord.miracdeveloper.com.tr/terms): Hizmet şartları
+
+## Kaynak Kodu
+Trendcord MIT lisansı altında açık kaynak olarak geliştirilmektedir.
+- GitHub: https://github.com/AgriciDaniel/claude-seo
+- Lisans: MIT
+
+## İletişim
+- Discord Destek Sunucusu: https://discord.gg/G46MFdw7R6

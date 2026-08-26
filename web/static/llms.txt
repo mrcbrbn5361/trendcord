@@ -1,0 +1,31 @@
+# Trendcord
+> Trendyol fiyat takip botu. Discord sunucularında 7/24 fiyat takibi yapar, indirimleri anında bildirir.
+
+## Ana Sayfa
+- [Trendcord](https://trendcord.miracdeveloper.com.tr): Türkiye'nin en gelişmiş Trendyol fiyat takip çözümü
+
+## Özellikler
+- [Özellikler](https://trendcord.miracdeveloper.com.tr/features): Gerçek zamanlı fiyat bildirimi, görsel web paneli, sınırsız ürün takibi, ürün karşılaştırma ve fiyat alarmı
+
+## Nasıl Çalışır?
+- [Nasıl Çalışır?](https://trendcord.miracdeveloper.com.tr/how-it-works): 3 adımda Trendyol fiyat takibi: Discord ile giriş yap, ürün linkini ekle, bildirimleri al
+
+## Canlı İstatistikler
+- [İstatistikler](https://trendcord.miracdeveloper.com.tr/stats): Takip edilen ürün sayısı, yakalanan fiyat hareketleri ve aktif sunucu verileri
+
+## Topluluk
+- [Sunucular](https://trendcord.miracdeveloper.com.tr/servers): Trendcord botunun bulunduğu Discord sunucuları
+- [Kullanıcılar](https://trendcord.miracdeveloper.com.tr/users): Aktif takipçiler ve istatistikleri
+
+## Kurumsal
+- [Gizlilik Politikası](https://trendcord.miracdeveloper.com.tr/privacy): KVKK ve GDPR uyumlu veri koruma politikası
+- [Hizmet Şartları](https://trendcord.miracdeveloper.com.tr/terms): Kullanım koşulları ve sorumluluk reddi
+- [Discord Destek](https://discord.gg/G46MFdw7R6): Resmi Discord destek sunucusu
+
+## Temel Bilgiler
+- Platform: Discord (bot) + Web paneli
+- Fiyat: Ücretsiz
+- Kategori: E-ticaret fiyat takibi, Trendyol
+- Dil: Türkçe
+- Lisans: MIT
+- Kaynak: https://github.com/AgriciDaniel/claude-seo

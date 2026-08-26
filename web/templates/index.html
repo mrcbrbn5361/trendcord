@@ -1,13 +1,54 @@
 {% extends "layout.html" %}
 
-{% block title %}Trendcord - Trendyol Fiyat Takip Botu | Anlık Discord Bildirimi{% endblock %}
-{% block description %}Trendyol ürün fiyatlarını 7/24 kesintisiz takip eden, anında Discord bildirimi gönderen akıllı otomasyon botu. İndirimleri kaçırmayın, alışveriş deneyiminizi şansa bırakmayın.{% endblock %}
-{% block og_title %}Trendcord - Trendyol Fiyat Takip ve Anında Discord Bildirimi{% endblock %}
-{% block og_description %}Trendyol ürün fiyatlarını 7/24 takip eden, anında Discord bildirimi gönderen akıllı otomasyon botu.{% endblock %}
-{% block twitter_title %}Trendcord - Trendyol Fiyat Takip Botu{% endblock %}
-{% block twitter_description %}Trendyol ürün fiyatlarını 7/24 takip eden, anında Discord bildirimi gönderen akıllı otomasyon botu.{% endblock %}
+{% block title %}Trendcord - Ücretsiz Trendyol Fiyat Takip Botu | Anlık Discord Bildirimi{% endblock %}
+{% block description %}Trendcord, Trendyol ürün fiyatlarını 7/24 kesintisiz takip eden ücretsiz Discord botudur. Fiyat düşünce anında bildirim al, indirimleri kaçırmayın. Kurulumu 3 adımda tamamla, ücretsiz kullan.{% endblock %}
+{% block og_title %}Trendcord - Ücretsiz Trendyol Fiyat Takip Botu{% endblock %}
+{% block og_description %}Trendyol ürün fiyatlarını 7/24 takip eden ücretsiz Discord botu. Fiyat düşünce anında bildirim al, bütçeni koru.{% endblock %}
+{% block twitter_title %}Trendcord - Ücretsiz Trendyol Fiyat Takip Botu{% endblock %}
+{% block twitter_description %}Trendyol ürün fiyatlarını 7/24 takip eden ücretsiz Discord botu. Fiyat düşünce anında bildirim al.{% endblock %}
 
 {% block content %}
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "Trendcord nedir?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Trendcord, Trendyol ürün fiyatlarını 7/24 kesintisiz takip eden ücretsiz bir Discord botudur. Favori ürünlerinizin fiyatı düştüğünde size ve topluluğunuza anında Discord bildirimi gönderir. Kurulumu 3 adımda tamamlanır: Discord ile giriş yapın, Trendyol ürün linkini ekleyin, bildirimleri almaya başlayın."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Trendcord ücretsiz mi?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Evet, Trendcord tamamen ücretsizdir. Trendyol fiyat takibi, bildirimler, fiyat geçmişi grafikleri, ürün karşılaştırma ve fiyat alarmı özellikleri ücretsiz sunulur."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Trendcord nasıl çalışır?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Trendcord 3 adımda çalışır: 1) Discord hesabınızla giriş yapın (OAuth2 ile güvenli). 2) Takip etmek istediğiniz Trendyol ürün linkini panelye yapıştırın. 3) Fiyat değişikliği olduğunda anında Discord bildirimi alın. 7/24 bulut altyapısı çalışır, bilgisayarınızı açık tutmanıza gerek yoktur."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Trendcord hangi platformlarda çalışır?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Trendcord yalnızca Discord platformunda çalışır. Discord sunucunuza botu ekleyerek Trendyol fiyat takibine başlayabilirsiniz. Web paneli üzerinden de ürünlerinizi ve alarm tercihlerinizi yönetebilirsiniz."
+            }
+        }
+    ]
+}
+</script>
 <!-- Hero: Trendyol Kampanya Banner Tarzı -->
 <section class="px-margin-mobile md:px-margin-desktop pt-6 md:pt-10 pb-10 md:pb-16 relative">
     <div class="max-w-container-max mx-auto">
@@ -146,9 +187,10 @@
             <div class="absolute -top-6 left-4 md:-top-8 md:left-16 px-4 py-2 md:px-6 md:py-3 bg-primary text-on-primary font-label-bold text-[10px] md:text-label-bold rounded-lg uppercase tracking-widest shadow-xl">
                 Sıkça Sorulan Sorular
             </div>
-            <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-6 md:mb-8 mt-4">Trendyol Fiyat Takip Botu Nedir?</h2>
-            <div class="space-y-4 md:space-y-6 font-body-md text-[14px] md:text-body-lg text-on-surface-variant leading-relaxed">
+            <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-6 md:mb-8 mt-4" itemprop="name">Trendyol Fiyat Takip Botu Nedir?</h2>
+            <div class="space-y-4 md:space-y-6 font-body-md text-[14px] md:text-body-lg text-on-surface-variant leading-relaxed" itemprop="description">
                 <p>Trendcord, Trendyol üzerindeki milyonlarca ürünü saniyeler içerisinde tarayan profesyonel bir <span class="text-on-surface font-bold">fiyat takip motorudur</span>. Discord sunucunuz ile entegre çalışarak, favori ürünlerinizin fiyatı düştüğünde size ve topluluğunuza anında bildirim gönderir.</p>
+                <p>Trendcord ile trend olan ürünlerin fiyat geçmişini görüntüleyebilir, fiyat alarmı kurabilir ve ürünlerinizi diğer sunucu üyeleriyle karşılaştırabilirsiniz. 7/24 kesintisiz bulut altyapısı sayesinde bilgisayarınızı açık tutmanıza gerek yoktur.</p>
             </div>
             <div class="mt-8 md:mt-12 p-4 md:p-6 rounded-2xl bg-surface-variant/30 border border-border-glass">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">

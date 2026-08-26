@@ -1,8 +1,21 @@
 {% extends "layout.html" %}
 {% block title %}Kullanıcılar - Trendcord Takipçi Listesi{% endblock %}
-{% block description %}Trendcord botunu kullanan tüm takipçileri görüntüleyin. Hangi kullanıcılar ürün takip ediyor, istatistikleri nedir.{% endblock %}
+{% block description %}Trendcord botunu kullanan {{ users|length }} takipçi. Toplam {{ "{:,}".format(total_products) }} ürün takip ediliyor, {{ "{:,}".format(total_savings) }} TL tasarruf sağlandı.{% endblock %}
+{% block og_title %}Kullanıcılar - Trendcord Takipçi Listesi{% endblock %}
+{% block og_description %}{{ users|length }} takipçi, {{ "{:,}".format(total_products) }} ürün, {{ "{:,}".format(total_savings) }} TL tasarruf.{% endblock %}
 
 {% block content %}
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Trendcord Takipçileri",
+    "description": "{{ users|length }} aktif kullanıcı. {{ "{:,}".format(total_products) }} ürün takip ediliyor.",
+    "url": "https://trendcord.miracdeveloper.com.tr/users",
+    "dateModified": "2026-08-26"
+}
+</script>
 <section class="min-h-screen px-margin-mobile md:px-margin-desktop py-12 md:py-24">
     <div class="max-w-container-max mx-auto">
         <!-- Header -->

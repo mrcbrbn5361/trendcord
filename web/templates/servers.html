@@ -1,8 +1,21 @@
 {% extends "layout.html" %}
 {% block title %}Sunucular - Trendcord{% endblock %}
-{% block description %}Trendcord botunun bulunduğu tüm Discord sunucularını keşfedin. Her sunucuda kaç ürün takip ediliyor görün.{% endblock %}
+{% block description %}Trendcord botunun bulunduğu tüm Discord sunucularını keşfedin. {{ servers|length }} sunucuda {{ total_products }} ürün takip ediliyor.{% endblock %}
+{% block og_title %}Sunucular - Trendcord{% endblock %}
+{% block og_description %}Trendcord botunun bulunduğu {{ servers|length }} Discord sunucunu ve takip istatistiklerini görüntüleyin.{% endblock %}
 
 {% block content %}
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Trendcord Aktif Discord Sunucuları",
+    "description": "{{ servers|length }} Discord sunucusunda aktif olarak çalışıyor.",
+    "url": "https://trendcord.miracdeveloper.com.tr/servers",
+    "dateModified": "2026-08-26"
+}
+</script>
 <section class="min-h-screen px-margin-mobile md:px-margin-desktop py-12 md:py-24">
     <div class="max-w-container-max mx-auto">
         <!-- Header -->

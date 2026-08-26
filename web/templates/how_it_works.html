@@ -1,10 +1,40 @@
 {% extends "layout.html" %}
 {% block title %}Nasıl Çalışır? - Trendcord Trendyol Fiyat Takip Rehberi{% endblock %}
-{% block description %}Trendcord 3 adımda çalışır: Discord ile giriş yap, Trendyol ürün linkini ekle, fiyat düşüşlerini anında Discord bildirimi al. Hemen başlayın.{% endblock %}
+{% block description %}Trendcord 3 adımda çalışır: Discord ile giriş yap, Trendyol ürün linkini ekle, fiyat düşüşlerinde anında Discord bildirimi al. Kurulum 2 dakika, ücretsiz başla.{% endblock %}
 {% block og_title %}Nasıl Çalışır? - Trendcord Trendyol Fiyat Takip Rehberi{% endblock %}
-{% block og_description %}Trendcord 3 adımda çalışır: Discord ile giriş yap, Trendyol ürün linkini ekle, fiyat düşüşlerini anında Discord bildirimi al.{% endblock %}
+{% block og_description %}Trendcord 3 adımda çalışır: Discord ile giriş yap, Trendyol ürün linkini ekle, anında bildirim al.{% endblock %}
 
 {% block content %}
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "Trendcord ile Trendyol Fiyat Takibi Nasıl Yapılır?",
+    "description": "Trendcord ile Trendyol ürün fiyatlarını 3 adımda takip etmeye başlayın.",
+    "totalTime": "PT2M",
+    "step": [
+        {
+            "@type": "HowToStep",
+            "name": "Discord ile Giriş Yapın",
+            "text": "Trendcord web sitesine gidin ve Discord hesabınızla güvenli OAuth2 ile giriş yapın.",
+            "url": "https://trendcord.miracdeveloper.com.tr/how-it-works#step-1"
+        },
+        {
+            "@type": "HowToStep",
+            "name": "Trendyol Ürün Linkini Ekleyin",
+            "text": "Takip etmek istediğiniz Trendyol ürün linkini kopyalayın ve Trendcord paneline yapıştırın.",
+            "url": "https://trendcord.miracdeveloper.com.tr/how-it-works#step-2"
+        },
+        {
+            "@type": "HowToStep",
+            "name": "Bildirimleri Almaya Başlayın",
+            "text": "Ürünün fiyatı düştüğünde Discord sunucunuzda anında bildirim alırsınız.",
+            "url": "https://trendcord.miracdeveloper.com.tr/how-it-works#step-3"
+        }
+    ]
+}
+</script>
 <section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-16 relative">
     <div class="absolute -top-24 -left-24 w-96 h-96 bg-primary-container/10 blur-[100px] rounded-full pointer-events-none"></div>
 

@@ -2,16 +2,17 @@
 <html class="dark" lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Trendcord - Trendyol Fiyat Takip Botu{% endblock %}</title>
     <link rel="icon" href="/static/img/favicon.ico" sizes="48x32">
     <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon-32.png">
     <link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
-    <meta name="description" content="{% block description %}Trendyol fiyat takip botu. 7/24 kesintisiz fiyat analizi, anlık indirim bildirimleri, güvenli altyapı. Discord sunucunuzda fiyat düşüşlerini kaçırmayın.{% endblock %}">
+    <meta name="description" content="{% block description %}Trendcord, Trendyol ürün fiyatlarını 7/24 kesintisiz takip eden ücretsiz Discord botudur. Fiyat düşünce anında bildirim al, indirimleri kaçırma. Kurulumu 3 adımda tamamla.{% endblock %}">
     <link rel="canonical" href="{% block canonical_url %}{{ request.url._url }}{% endblock %}">
-    <meta property="og:title" content="{% block og_title %}Trendcord - Trendyol Fiyat Takip ve Anında Discord Bildirimi{% endblock %}">
-    <meta property="og:description" content="{% block og_description %}Discord sunucunuzda Trendyol fiyat takibi ve anında indirim bildirimi. 7/24 kesintisiz fiyat analizi.{% endblock %}">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta property="og:title" content="{% block og_title %}Trendcord - Trendyol Fiyat Takip Botu | Anlık Discord Bildirimi{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Trendyol ürün fiyatlarını 7/24 takip eden ücretsiz Discord botu. Fiyat düşünce anında bildirim al, bütçeni koru. Kurulum 3 adımda biter.{% endblock %}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Trendcord">
     <meta property="og:url" content="{% block og_url %}{{ request.url._url }}{% endblock %}">
@@ -19,10 +20,12 @@
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="Trendcord - Trendyol fiyat takip botu logosu">
+    <meta property="og:locale" content="tr_TR">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@trendcord">
     <meta name="twitter:image" content="https://trendcord.miracdeveloper.com.tr/static/img/og-image.png">
-    <meta name="twitter:title" content="{% block twitter_title %}Trendcord - Trendyol Fiyat Takip ve Anında Discord Bildirimi{% endblock %}">
-    <meta name="twitter:description" content="{% block twitter_description %}Discord sunucunuzda Trendyol fiyat takibi ve anında indirim bildirimi. 7/24 kesintisiz fiyat analizi.{% endblock %}">
+    <meta name="twitter:title" content="{% block twitter_title %}Trendcord - Trendyol Fiyat Takip Botu | Anlık Discord Bildirimi{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Trendyol ürün fiyatlarını 7/24 takip eden ücretsiz Discord botu. Fiyat düşünce anında bildirim al.{% endblock %}">
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -30,13 +33,49 @@
         "name": "Trendcord",
         "alternateName": "Trendyol Fiyat Takip Botu",
         "url": "https://trendcord.miracdeveloper.com.tr",
-        "description": "Trendyol fiyat takip botu. 7/24 kesintisiz fiyat analizi, anlık indirim bildirimleri, güvenli altyapı.",
+        "description": "Trendcord, Trendyol ürün fiyatlarını 7/24 kesintisiz takip eden ücretsiz Discord botudur. Fiyat düşünce anında Discord bildirimi gönderir. Kurulumu 3 adımda tamamla.",
         "applicationCategory": "UtilitiesApplication",
         "operatingSystem": "Discord",
         "offers": {
             "@type": "Offer",
             "price": "0",
             "priceCurrency": "TRY"
+        },
+        "featureList": [
+            "Gerçek zamanlı fiyat bildirimi",
+            "7/24 kesintisiz bulut altyapısı",
+            "Fiyat geçmişi grafikleri",
+            "Ürün karşılaştırma",
+            "Fiyat alarm sistemi",
+            "Discord sunucu entegrasyonu"
+        ],
+        "screenshot": "https://trendcord.miracdeveloper.com.tr/static/img/og-image.png",
+        "softwareHelp": {
+            "@type": "CreativeWork",
+            "url": "https://trendcord.miracdeveloper.com.tr/how-it-works"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "Trendcord",
+            "url": "https://trendcord.miracdeveloper.com.tr"
+        },
+        "datePublished": "2025-01-01",
+        "dateModified": "2026-08-26"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Trendcord",
+        "url": "https://trendcord.miracdeveloper.com.tr",
+        "logo": "https://trendcord.miracdeveloper.com.tr/static/img/favicon.svg",
+        "description": "Trendyol fiyat takip botu ve Discord otomasyon platformu.",
+        "sameAs": [],
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "customer service",
+            "availableLanguage": "Turkish"
         }
     }
     </script>

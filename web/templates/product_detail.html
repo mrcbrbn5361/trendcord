@@ -1,10 +1,75 @@
 {% extends "layout.html" %}
-{% block title %}{{ product.name[:50] }} - Fiyat Takibi | Trendcord{% endblock %}
-{% block description %}{{ product.name[:80] }} ürününün fiyat geçmişi, en düşük/en yüksek fiyat analizi ve anlık takip durumu.{% endblock %}
+{% block title %}{{ product.name[:50] }} Fiyat Takibi | Trendcord{% endblock %}
+{% block description %}{{ product.name[:80] }} fiyat takibi: güncel fiyat ₺{{ "{:,.0f}".format(product.current_price) if product.current_price else '-' }}{% if stats.min %}, en düşük ₺{{ "{:,.0f}".format(stats.min) }}{% endif %}. Fiyat geçmişi ve indirim analizi.{% endblock %}
 {% block og_title %}{{ product.name[:60] }} — ₺{{ "{:,.0f}".format(product.current_price) if product.current_price else 'Fiyat Takibi' }}{% endblock %}
-{% block og_description %}Trendcord ile takip ediliyor. En düşük: {% if stats.min %}₺{{ "{:,.0f}".format(stats.min) }} · {% endif %}Fiyat geçmişi ve analiz.{% endblock %}
+{% block og_description %}Trendcord ile takip ediliyor. Güncel fiyat: ₺{{ "{:,.0f}".format(product.current_price) if product.current_price else '-' }}{% if stats.min %}, en düşük: ₺{{ "{:,.0f}".format(stats.min) }}{% endif %}.{% endblock %}
 
 {% block content %}
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "{{ product.name }}",
+    "image": "{{ product.image_url }}",
+    "description": "{{ product.name }} fiyat takibi. Trendcord ile 7/24 fiyat takibi yapın.",
+    "brand": {
+        "@type": "Brand",
+        "name": "Trendyol"
+    },
+    "offers": {
+        "@type": "Offer",
+        "url": "{{ product.url }}",
+        "priceCurrency": "TRY",
+        "price": "{{ product.current_price if product.current_price else '' }}",
+        "availability": "https://schema.org/InStock",
+        "seller": {
+            "@type": "Organization",
+            "name": "Trendyol"
+        }
+        {% if product.original_price and product.original_price > product.current_price %}
+        ,"priceValidUntil": "2026-12-31"
+        {% endif %}
+    }
+    {% if product.current_price and product.original_price and product.original_price > product.current_price %}
+    ,"priceSpecification": {
+        "@type": "PriceSpecification",
+        "price": "{{ product.current_price }}",
+        "priceCurrency": "TRY",
+        "eligibleQuantity": {
+            "@type": "QuantitativeValue",
+            "value": "1"
+        }
+    }
+    {% endif %}
+}
+</script>
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Ana Sayfa",
+            "item": "https://trendcord.miracdeveloper.com.tr"
+        },
+        {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Panel",
+            "item": "https://trendcord.miracdeveloper.com.tr/dashboard"
+        },
+        {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "{{ product.name[:40] }}"
+        }
+    ]
+}
+</script>
 <section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-6 md:py-10">
 
     <!-- Breadcrumb -->

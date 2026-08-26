@@ -43,6 +43,23 @@ async def static_files(filepath: str):
     media_type, _ = mimetypes.guess_type(str(file_path))
     return FileResponse(str(file_path), media_type=media_type)
 
+# --- LLM crawler files (served at domain root per llms.txt convention) ---
+@app.get("/llms.txt")
+async def llms_txt():
+    file_path = STATIC_DIR / "llms.txt"
+    if not file_path.is_file():
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse("Not Found", status_code=404)
+    return FileResponse(str(file_path), media_type="text/plain")
+
+@app.get("/llms-full.txt")
+async def llms_full_txt():
+    file_path = STATIC_DIR / "llms-full.txt"
+    if not file_path.is_file():
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse("Not Found", status_code=404)
+    return FileResponse(str(file_path), media_type="text/plain")
+
 # --- Security Headers Middleware ---
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -203,6 +220,64 @@ async def privacy(request: Request):
 @app.get("/terms")
 async def terms(request: Request):
     return templates.TemplateResponse("terms.html", template_context(request))
+
+@app.get("/sitemap.xml")
+async def sitemap(request: Request):
+    base_url = "https://trendcord.miracdeveloper.com.tr"
+    from datetime import datetime
+    now = datetime.now().strftime("%Y-%m-%d")
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>{base_url}/</loc>
+        <lastmod>{now}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>{base_url}/features</loc>
+        <lastmod>{now}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    <url>
+        <loc>{base_url}/how-it-works</loc>
+        <lastmod>{now}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    <url>
+        <loc>{base_url}/stats</loc>
+        <lastmod>{now}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc>{base_url}/servers</loc>
+        <lastmod>{now}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>{base_url}/users</loc>
+        <lastmod>{now}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc>{base_url}/privacy</loc>
+        <lastmod>{now}</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.3</priority>
+    </url>
+    <url>
+        <loc>{base_url}/terms</loc>
+        <lastmod>{now}</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.3</priority>
+    </url>
+</urlset>"""
+    return Response(content=xml, media_type="application/xml")
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, guild_id: str = Query(None)):
