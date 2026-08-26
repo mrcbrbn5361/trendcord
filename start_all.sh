@@ -17,7 +17,7 @@ sleep 2
 
 # Bot'u başlat
 cd "$TRENDCORD_DIR"
-nohup python3 main.py > "$LOG_DIR/bot.log" 2>&1 &
+nohup "$TRENDCORD_DIR/venv/bin/python" main.py > "$LOG_DIR/bot.log" 2>&1 &
 BOT_PID=$!
 echo "Bot PID: $BOT_PID"
 disown $BOT_PID
