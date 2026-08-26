@@ -138,10 +138,11 @@ class TrendyolScraper:
                     )
                     if resp.status_code == 200 and len(resp.text) > 500:
                         return resp.text, resp.status_code, resp.url
-                    elif resp.status_code == 404 or resp.status_code == 410:
-                        # Product deleted, try anyway with whatever we got
-                        if len(resp.text) > 1000:
-                            return resp.text, resp.status_code, resp.url
+                    elif resp.status_code in (404, 410):
+                        # Urun satistan kalkmis/silinmis — coklama parse
+                        # yapma, cikti sayfasindan cop veri uretme
+                        logger.info(f"Urun bulunamior ({resp.status_code}): {url[:80]}")
+                        return None, resp.status_code, resp.url
                 except Exception as e:
                     last_error = f"curl_cffi: {e}"
                     logger.debug(f"fetch attempt {attempt+1} curl_cffi: {e}")

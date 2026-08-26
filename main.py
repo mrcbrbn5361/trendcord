@@ -132,6 +132,10 @@ async def check_prices():
                 
                 if price_changed and new_p > 0 and old_p > 0:
                     bot.db.update_product_price(p['product_id'], new_p, orig_p, basket_p, disc_pct, camp_name, camp_type, camp_end)
+                elif new_p > 0:
+                    # Fiyat degismedi: son kontrol zamanini guncelle + saatlik
+                    # gecmis noktasi (grafik canli kalsin)
+                    bot.db.update_product_price(p['product_id'], new_p, orig_p, basket_p, disc_pct, camp_name, camp_type, camp_end)
                     
                     active_alerts = bot.db.get_active_alerts()
                     for alert in active_alerts:
