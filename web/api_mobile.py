@@ -14,6 +14,8 @@ Guvenlik onlemleri:
 import os
 import re
 import time
+import asyncio
+import functools
 import hashlib
 import secrets
 import sqlite3
@@ -274,6 +276,32 @@ class AlertIn(BaseModel):
         return v
 
 
+class ProductAddIn(BaseModel):
+    url: str = Field(..., min_length=10, max_length=500)
+    guild_id: str = Field(..., min_length=5, max_length=25)
+    channel_id: Optional[str] = Field(None, min_length=5, max_length=25)
+    discord_id: Optional[str] = Field(None, min_length=5, max_length=25)
+    username: Optional[str] = Field(None, max_length=64)
+    avatar_url: Optional[str] = Field(None, max_length=500)
+
+    @field_validator("url")
+    @classmethod
+    def url_fmt(cls, v):
+        if not URL_RE.match(v):
+            raise ValueError("invalid url")
+        return v
+
+    if not PYDANTIC_V2:
+        url = Field(..., regex=URL_RE.pattern)
+
+    @field_validator("guild_id", "channel_id", "discord_id")
+    @classmethod
+    def ids(cls, v):
+        if v is not None and not DISCORD_ID_RE.match(v):
+            raise ValueError("invalid id")
+        return v
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -372,6 +400,68 @@ async def product_detail(product_id: str):
         (pid,),
     )
     return {"product": public_product(rows[0]), "price_history": history}
+
+
+@router.post("/products")
+async def add_product(request: Request, body: ProductAddIn):
+    """Yeni urun takibe alir.
+
+    Bearer token sahibi OWNER_ID ise ve discord_id verilmisse urun o
+    Discord kullanicisina atanir (selfbot kanal komutlari icin). Aksi halde
+    urun token sahibine atanir.
+    """
+    user = await get_current_user(request)
+    owner_id = str(os.getenv("OWNER_ID", "") or "")
+    target_uid = user["user_id"]
+    is_owner = bool(owner_id) and user["user_id"] == owner_id
+
+    if body.discord_id:
+        if not is_owner:
+            raise HTTPException(403, "not_authorized")
+        target_uid = body.discord_id
+
+    from web.app import bot_instance
+    if bot_instance is None or not hasattr(bot_instance, "scraper"):
+        raise HTTPException(503, "unavailable")
+
+    loop = asyncio.get_event_loop()
+    data = await loop.run_in_executor(
+        None, functools.partial(bot_instance.scraper.scrape_product, body.url)
+    )
+    if not data or not data.get("success"):
+        raise HTTPException(422, "scrape_failed")
+
+    cid = body.channel_id or "0"
+    uname = (body.username or "")[:64]
+    avatar = (body.avatar_url or "")[:500]
+
+    from web.app import db_instance
+    if db_instance is None:
+        raise HTTPException(503, "unavailable")
+    if not db_instance.add_product(data, body.guild_id, target_uid, cid,
+                                   username=uname, avatar_url=avatar):
+        raise HTTPException(500, "db_error")
+
+    return {"product": public_product({**data, "guild_id": body.guild_id,
+                                       "user_id": target_uid})}
+
+
+@router.delete("/products/{product_id}")
+async def delete_product(product_id: str, request: Request):
+    user = await get_current_user(request)
+    from web.app import db_instance
+    owner_id = str(os.getenv("OWNER_ID", "") or "")
+    is_owner = bool(owner_id) and user["user_id"] == owner_id
+
+    rows = q("SELECT user_id FROM products WHERE product_id=? LIMIT 1", (product_id,))
+    if not rows:
+        raise HTTPException(404, "not_found")
+    if not is_owner and rows[0]["user_id"] != user["user_id"]:
+        raise HTTPException(403, "not_your_product")
+
+    if db_instance is None or not db_instance.delete_product(product_id):
+        raise HTTPException(500, "db_error")
+    return {"ok": True}
 
 
 @router.get("/guilds")
