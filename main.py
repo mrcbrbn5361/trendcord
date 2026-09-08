@@ -248,14 +248,62 @@ async def main():
         except NotImplementedError:
             pass
 
+    retry = 0
     while True:
         try:
             await bot.start(TOKEN)
+            # bot.start() normal sekilde donerse (logout) tekrar baglanma
+            logger.info("Bot oturumu kapandi, cikiliyor.")
+            break
         except KeyboardInterrupt:
             logger.info("Sistem kapatıldı.")
             break
+        except SystemExit as e:
+            raise
         except Exception as e:
-            logger.error(f"Bağlantı hatası: {e}. 30 sn sonra yeniden bağlanılıyor...")
+            msg = f"{e} {type(e).__name__}".lower()
+            auth_markers = (
+                "4004", "401", "unauthorized", "authentication failed",
+                "invalid token", "incorrect token", "login failure",
+            )
+            # Discord auth hatalari tekrar denenmemeli - sonsuz donguye girer
+            is_auth_error = isinstance(e, discord.LoginFailure)
+            if not is_auth_error:
+                try:
+                    is_auth_error = any(m in msg for m in auth_markers)
+                except Exception:
+                    pass
+            if is_auth_error:
+                logger.critical(
+                    f"Token/auth hatasi: {e}. Yeniden denenmiyor - "
+                    "DISCORD_TOKEN'i kontrol edin. Cikis (kod 1)."
+                )
+                try:
+                    await bot.close()
+                except Exception:
+                    pass
+                sys.exit(1)
+            retry += 1
+            # 20 basarisiz deneme (~10 dk) -> temiz restart icin cik.
+            # Task Scheduler RestartOnFailure ile taze process baslatir,
+            # sizmis session/event-loop ile sonsuz spam engellenir.
+            if retry >= 20:
+                logger.critical(
+                    f"20 kez art arda baglanti basarisiz (son: {e}). "
+                    "Temiz restart icin cikiliyor (kod 1)."
+                )
+                try:
+                    if not bot.is_closed():
+                        await bot.close()
+                except Exception:
+                    pass
+                sys.exit(1)
+            logger.error(f"Bağlantı hatası (deneme {retry}): {e}. 30 sn sonra yeniden bağlanılıyor...")
+            try:
+                if not bot.is_closed():
+                    await bot.close()
+            except Exception:
+                pass
             await asyncio.sleep(30)
 
 async def shutdown(bot_instance):
