@@ -147,11 +147,11 @@ async def not_found(request: Request, exc):
     if path.startswith("/static/") or path.startswith("/.well-known/"):
         from fastapi.responses import PlainTextResponse
         return PlainTextResponse("Not Found", status_code=404)
-    return templates.TemplateResponse("index.html", template_context(request), status_code=404)
+    return templates.TemplateResponse("404.html", template_context(request, {"noindex": True}), status_code=404)
 
 @app.get("/.well-known/maintenance")
 async def maintenance_page(request: Request):
-    return templates.TemplateResponse("maintenance.html", {"request": request})
+    return templates.TemplateResponse("maintenance.html", template_context(request, {"noindex": True}))
 
 def get_global_stats():
     """Tüm sayfalarda kullanılacak ortak sayısal verileri toplar."""
@@ -164,6 +164,13 @@ def get_global_stats():
         stats["price_checks"] = data["price_checks"]
     return stats
 
+def canonical_for(request: Request) -> str:
+    """SEO canonical URL: production domain + query'siz + slash-normalize path."""
+    path = request.url.path
+    if len(path) > 1 and path.endswith("/"):
+        path = path.rstrip("/")
+    return f"https://trendcord.miracdeveloper.com.tr{path}"
+
 def template_context(request: Request, extra: dict = None):
     """Tüm sayfalar için ortak template context'i oluşturur."""
     user_data = request.session.get("user") or {}
@@ -173,7 +180,9 @@ def template_context(request: Request, extra: dict = None):
         "stats": get_global_stats(),
         "is_owner": str(user_data.get("id", "")) == OWNER_ID,
         "bot_invite_url": BOT_INVITE_URL,
-        "support_server": SUPPORT_SERVER
+        "support_server": SUPPORT_SERVER,
+        "canonical_url": canonical_for(request),
+        "noindex": False,
     }
     if extra:
         ctx.update(extra)
@@ -226,56 +235,69 @@ async def sitemap(request: Request):
     base_url = "https://trendcord.miracdeveloper.com.tr"
     from datetime import datetime
     now = datetime.now().strftime("%Y-%m-%d")
+    urls = []
+
+    def add(loc, lastmod=None, changefreq="weekly", priority="0.5"):
+        urls.append((loc, lastmod or now, changefreq, priority))
+
+    # Statik sayfalar
+    add(f"{base_url}/", now, "weekly", "1.0")
+    add(f"{base_url}/features", now, "monthly", "0.9")
+    add(f"{base_url}/how-it-works", now, "monthly", "0.9")
+    add(f"{base_url}/compare", now, "weekly", "0.7")
+    add(f"{base_url}/stats", now, "daily", "0.7")
+    add(f"{base_url}/servers", now, "daily", "0.8")
+    add(f"{base_url}/users", now, "daily", "0.7")
+    add(f"{base_url}/privacy", now, "yearly", "0.3")
+    add(f"{base_url}/terms", now, "yearly", "0.3")
+
+    # Dinamik: ürün detay sayfaları
+    try:
+        if db_instance:
+            for p in db_instance.get_all_products()[:5000]:
+                pid = p.get("product_id")
+                if not pid:
+                    continue
+                lm = (p.get("last_checked") or "")[:10] or now
+                add(f"{base_url}/product/{pid}", lm, "daily", "0.6")
+    except Exception:
+        pass
+
+    # Dinamik: sunucu detay sayfaları
+    try:
+        guild_ids = []
+        if bot_instance:
+            guild_ids = [str(g.id) for g in bot_instance.guilds]
+        elif db_instance:
+            guild_ids = [g.get("guild_id") for g in (db_instance.get_all_guilds_from_db() or []) if g.get("guild_id")]
+        for gid in guild_ids[:2000]:
+            add(f"{base_url}/servers/{gid}", now, "daily", "0.6")
+    except Exception:
+        pass
+
+    # Dinamik: kullanıcı profil sayfaları
+    try:
+        if db_instance:
+            for u in (db_instance.get_all_users() or [])[:5000]:
+                uid = u.get("user_id")
+                if not uid:
+                    continue
+                lm = (u.get("last_login") or "")[:10] or now
+                add(f"{base_url}/users/{uid}", lm, "weekly", "0.5")
+    except Exception:
+        pass
+
+    items = "\n".join(
+        f"""    <url>
+        <loc>{loc}</loc>
+        <lastmod>{lm}</lastmod>
+        <changefreq>{cf}</changefreq>
+        <priority>{pr}</priority>
+    </url>""" for loc, lm, cf, pr in urls
+    )
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    <url>
-        <loc>{base_url}/</loc>
-        <lastmod>{now}</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>1.0</priority>
-    </url>
-    <url>
-        <loc>{base_url}/features</loc>
-        <lastmod>{now}</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc>{base_url}/how-it-works</loc>
-        <lastmod>{now}</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc>{base_url}/stats</loc>
-        <lastmod>{now}</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.7</priority>
-    </url>
-    <url>
-        <loc>{base_url}/servers</loc>
-        <lastmod>{now}</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc>{base_url}/users</loc>
-        <lastmod>{now}</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.7</priority>
-    </url>
-    <url>
-        <loc>{base_url}/privacy</loc>
-        <lastmod>{now}</lastmod>
-        <changefreq>yearly</changefreq>
-        <priority>0.3</priority>
-    </url>
-    <url>
-        <loc>{base_url}/terms</loc>
-        <lastmod>{now}</lastmod>
-        <changefreq>yearly</changefreq>
-        <priority>0.3</priority>
-    </url>
+{items}
 </urlset>"""
     return Response(content=xml, media_type="application/xml")
 
@@ -349,7 +371,7 @@ async def dashboard(request: Request, guild_id: str = Query(None)):
         "request": request, "user": user, "products": products, 
         "guilds": active_guilds, "current_guild": current_guild, "invite_url": invite_url,
         "is_owner": is_owner, "get_guild_name": get_guild_name,
-        "user_avatars": user_avatars
+        "user_avatars": user_avatars, "noindex": True
     })
     return templates.TemplateResponse("dashboard.html", ctx)
 
@@ -379,7 +401,7 @@ async def product_detail(request: Request, pid: str):
     _ensure_db()
     product = db_instance.get_product(pid) if db_instance else None
     if not product:
-        return templates.TemplateResponse("index.html", template_context(request), status_code=404)
+        return templates.TemplateResponse("404.html", template_context(request, {"noindex": True}), status_code=404)
 
     history_desc = db_instance.get_product_price_history(pid, limit=300) or []
     chrono = list(reversed(history_desc))
@@ -1099,7 +1121,7 @@ async def alerts_page(request: Request):
     if db_instance:
         alerts_data = db_instance.get_user_alerts(user_id)
 
-    ctx = template_context(request, {"alerts": alerts_data})
+    ctx = template_context(request, {"alerts": alerts_data, "noindex": True})
     return templates.TemplateResponse("alerts.html", ctx)
 
 
@@ -1191,7 +1213,8 @@ async def notifications_page(request: Request):
 
     ctx = template_context(request, {
         "guilds": guilds,
-        "preferences": preferences
+        "preferences": preferences,
+        "noindex": True
     })
     return templates.TemplateResponse("notifications.html", ctx)
 
@@ -1246,7 +1269,8 @@ async def guild_stats_page(request: Request, guild_id: str):
     ctx = template_context(request, {
         "guild": {"id": guild.id, "name": guild.name, "member_count": guild.member_count, "icon_url": icon_url},
         "stats": stats,
-        "products": products
+        "products": products,
+        "noindex": True
     })
     return templates.TemplateResponse("guild_stats.html", ctx)
 
@@ -1255,5 +1279,5 @@ async def guild_stats_page(request: Request, guild_id: str):
 async def logout(request: Request):
     user = request.session.get("user")
     request.session.clear()
-    ctx = template_context(request)
+    ctx = template_context(request, {"noindex": True})
     return templates.TemplateResponse("logout.html", ctx)

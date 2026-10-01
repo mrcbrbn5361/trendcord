@@ -13,7 +13,21 @@
     "name": "Trendcord Takipçileri",
     "description": "{{ users|length }} aktif kullanıcı. {{ "{:,}".format(total_products) }} ürün takip ediliyor.",
     "url": "https://trendcord.miracdeveloper.com.tr/users",
-    "dateModified": "2026-08-26"
+    "dateModified": "2026-08-26",
+    "mainEntity": {
+        "@type": "ItemList",
+        "numberOfItems": {{ users|length }},
+        "itemListElement": [
+            {% for u in users[:50] %}
+            {
+                "@type": "ListItem",
+                "position": {{ loop.index }},
+                "url": "https://trendcord.miracdeveloper.com.tr/users/{{ u.user_id }}",
+                "name": "{{ u.username }}"
+            }{{ "," if not loop.last }}
+            {% endfor %}
+        ]
+    }
 }
 </script>
 <section class="min-h-screen px-margin-mobile md:px-margin-desktop py-12 md:py-24">

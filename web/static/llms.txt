@@ -28,4 +28,10 @@
 - Kategori: E-ticaret fiyat takibi, Trendyol
 - Dil: Türkçe
 - Lisans: MIT
-- Kaynak: https://github.com/AgriciDaniel/claude-seo
+- Kaynak: https://github.com/mrcbrbn5361/trendcord
+
+## Sık Sorulan Sorular (Özet)
+- Trendcord nedir? Trendyol ürün fiyatlarını 7/24 takip eden ücretsiz Discord botudur.
+- Ücretli mi? Hayır, tüm özellikler ücretsizdir.
+- Nasıl başlarım? Discord ile giriş yap, Trendyol linkini ekle, bildirimleri al.
+- Bilgisayarım açık kalmalı mı? Hayır, 7/24 bulut altyapısı çalışır.

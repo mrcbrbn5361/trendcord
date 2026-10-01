@@ -49,8 +49,21 @@ Takip etmek istediğiniz Trendyol ürün linkini kopyalayın ve Trendcord paneli
 
 ## Kaynak Kodu
 Trendcord MIT lisansı altında açık kaynak olarak geliştirilmektedir.
-- GitHub: https://github.com/AgriciDaniel/claude-seo
+- GitHub: https://github.com/mrcbrbn5361/trendcord
 - Lisans: MIT
+
+## Sık Sorulan Sorular
+### Trendcord nedir?
+Trendcord, Trendyol ürün fiyatlarını 7/24 kesintisiz takip eden ücretsiz bir Discord botudur. Fiyat düşünce anında Discord bildirimi gönderir.
+
+### Trendcord ücretsiz mi?
+Evet, tüm özellikler (fiyat takibi, bildirimler, grafikler, karşılaştırma, alarmlar) ücretsizdir.
+
+### Nasıl çalışır?
+1. Discord hesabınızla giriş yapın. 2. Trendyol ürün linkini panele ekleyin. 3. Fiyat değişince Discord bildirimi alın.
+
+### Bilgisayarım açık kalmak zorunda mı?
+Hayır. 7/24 bulut altyapısı sizin yerinize takip eder.
 
 ## İletişim
 - Discord Destek Sunucusu: https://discord.gg/G46MFdw7R6

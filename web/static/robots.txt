@@ -1,18 +1,37 @@
 User-agent: *
 Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
 Disallow: /admin
 Disallow: /admin/
 Disallow: /dashboard
+Disallow: /alerts
+Disallow: /notifications
+Disallow: /login
+Disallow: /logout
 Disallow: /callback
 Disallow: /mobile/
+Disallow: /product/add
+Disallow: /product/delete/
+Disallow: /alert/
+Disallow: /notifications/save
 Disallow: /.well-known/
 
 # AI Crawlers - Allow for AI search visibility
 User-agent: GPTBot
 Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /alerts
+Disallow: /notifications
+Disallow: /login
+Disallow: /logout
+Disallow: /callback
 
 User-agent: OAI-SearchBot
 Allow: /
+Disallow: /admin
+Disallow: /dashboard
 
 User-agent: ClaudeBot
 Allow: /

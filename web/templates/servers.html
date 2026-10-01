@@ -13,7 +13,21 @@
     "name": "Trendcord Aktif Discord Sunucuları",
     "description": "{{ servers|length }} Discord sunucusunda aktif olarak çalışıyor.",
     "url": "https://trendcord.miracdeveloper.com.tr/servers",
-    "dateModified": "2026-08-26"
+    "dateModified": "2026-08-26",
+    "mainEntity": {
+        "@type": "ItemList",
+        "numberOfItems": {{ servers|length }},
+        "itemListElement": [
+            {% for s in servers[:50] %}
+            {
+                "@type": "ListItem",
+                "position": {{ loop.index }},
+                "url": "https://trendcord.miracdeveloper.com.tr/servers/{{ s.id }}",
+                "name": "{{ s.name }}"
+            }{{ "," if not loop.last }}
+            {% endfor %}
+        ]
+    }
 }
 </script>
 <section class="min-h-screen px-margin-mobile md:px-margin-desktop py-12 md:py-24">

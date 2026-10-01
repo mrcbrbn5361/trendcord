@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block title %}Sayfa Bulunamadı (404) - Trendcord{% endblock %}
+{% block description %}Aradığınız sayfa bulunamadı veya kaldırıldı. Trendcord ana sayfasına dönerek Trendyol fiyat takibine devam edin.{% endblock %}
+{% block og_title %}Sayfa Bulunamadı - Trendcord{% endblock %}
+{% block og_description %}Aradığınız sayfa bulunamadı. Ana sayfaya dönerek Trendyol fiyat takibine devam edin.{% endblock %}
+{% block robots_tag %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+<section class="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-24 md:py-32 text-center">
+    <div class="max-w-xl mx-auto">
+        <div class="font-display-hero italic font-black text-primary tracking-tighter leading-none mb-6" style="font-size: clamp(4rem, 15vw, 8rem);">404</div>
+        <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-4">Sayfa Bulunamadı</h1>
+        <p class="font-body-md text-body-md text-on-surface-variant mb-10">Aradığınız sayfa taşınmış, silinmiş veya hiç var olmamış olabilir. Trendyol fiyat takibine kaldığınız yerden devam edin.</p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <a href="/" class="px-8 py-4 rounded-full bg-primary-container text-on-primary-container font-label-bold text-label-bold hover:opacity-90 transition-all active:scale-95">Ana Sayfaya Dön</a>
+            <a href="/features" class="px-8 py-4 rounded-full border border-primary/50 text-primary font-label-bold text-label-bold hover:bg-primary/10 transition-all">Özellikleri Keşfet</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
