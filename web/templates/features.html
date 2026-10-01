@@ -35,12 +35,12 @@
     <div class="absolute top-0 right-0 w-[40vw] h-[40vw] bg-primary-container/5 blur-[120px] rounded-full pointer-events-none"></div>
 
     <!-- Hero -->
-    <header class="mb-20">
+    <div class="mb-20">
         <h1 class="font-display-hero text-headline-lg-mobile md:text-display-hero text-on-surface max-w-4xl">
             FİYAT TAKİP<br><span class="text-primary italic">TEKNOLOJİSİ</span>
         </h1>
         <p class="font-body-lg text-body-lg text-on-surface-variant mt-6 max-w-2xl">Discord altyapısı üzerinde çalışan, Trendyol ürün fiyatlarını 7/24 kesintisiz analiz eden ve her fiyat değişimini anında görsel rapor olarak ileten otomasyon botu.</p>
-    </header>
+    </div>
 
     <!-- Featured Snippet -->
     <div class="mb-20 max-w-3xl mx-auto glass-card rounded-xl p-10">
@@ -71,7 +71,7 @@
             <div class="lg:col-span-8 group relative overflow-hidden glass-card p-6 md:p-12 rounded-lg flex flex-col justify-between md:min-h-[400px]">
                 <div class="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 rounded-full blur-[100px] group-hover:bg-primary/30 transition-all"></div>
                 <div class="relative z-10">
-                    <span class="material-symbols-outlined text-primary text-4xl mb-6">notifications_active</span>
+                    <svg class="icon text-primary text-4xl mb-6" aria-hidden="true" focusable="false"><use href="#i-notifications_active"/></svg>
                     <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-4">Gerçek Zamanlı Bildirim</h2>
                     <p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg">Özel tarama motorumuz, Trendyol'daki her kuruşluk değişimi anında yakalar ve Discord sunucunuza görsel rapor olarak iletir. Gecikme yok, hata yok.</p>
                     <div class="mt-8 flex flex-wrap gap-3">
@@ -85,7 +85,7 @@
             <div class="lg:col-span-4 glass-card p-8 rounded-lg flex flex-col justify-between group hover:border-primary/50 transition-all">
                 <div>
                     <div class="w-12 h-12 rounded-xl bg-surface-variant flex items-center justify-center mb-6">
-                        <span class="material-symbols-outlined text-primary">cloud_done</span>
+                        <svg class="icon text-primary" aria-hidden="true" focusable="false"><use href="#i-cloud_done"/></svg>
                     </div>
                     <h3 class="font-headline-md text-headline-md mb-2">7/24 Bulut Mimarisi</h3>
                     <p class="font-body-md text-body-md text-on-surface-variant">Bilgisayarınızı açık tutma zorunluluğunu unutun. Trendcord, yüksek performanslı bulut sunucularımızda sizin için çalışır.</p>
@@ -103,7 +103,7 @@
             <div class="lg:col-span-4 glass-card p-8 rounded-lg flex flex-col justify-between group">
                 <div>
                     <div class="w-12 h-12 rounded-xl bg-surface-variant flex items-center justify-center mb-6">
-                        <span class="material-symbols-outlined text-primary">dashboard</span>
+                        <svg class="icon text-primary" aria-hidden="true" focusable="false"><use href="#i-dashboard"/></svg>
                     </div>
                     <h3 class="font-headline-md text-headline-md mb-2">Avangart Panel</h3>
                     <p class="font-body-md text-body-md text-on-surface-variant">Karmaşık komutlara gerek yok. Ürünlerinizi, indirimlerinizi ve istatistiklerinizi tek bir görsel arayüzden yönetin.</p>
@@ -114,26 +114,26 @@
             <div class="lg:col-span-8 glass-card p-8 md:p-12 rounded-lg relative overflow-hidden flex flex-col justify-center orange-glow">
                 <div class="relative z-10 flex flex-col md:flex-row gap-8 md:gap-12 items-center">
                     <div class="flex-1">
-                        <span class="material-symbols-outlined text-primary text-4xl mb-6">dynamic_feed</span>
+                        <svg class="icon text-primary text-4xl mb-6" aria-hidden="true" focusable="false"><use href="#i-dynamic_feed"/></svg>
                         <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg mb-4">Sınırsız Asenkron Altyapı</h2>
                         <p class="font-body-lg text-body-lg text-on-surface-variant">Binlerce ürünü aynı anda takip edin. Python tabanlı asenkron mimarimiz sayesinde, sistem rate-limit engellerine takılmadan eşzamanlı sorgu gerçekleştirebilir.</p>
                     </div>
                     <div class="grid grid-cols-2 gap-3 md:gap-4 flex-1 w-full">
                         <div class="bg-background/40 backdrop-blur-md border border-border-glass p-4 md:p-6 rounded-xl md:rounded-2xl">
                             <span class="font-headline-md text-headline-md text-[22px] md:text-headline-md text-on-surface">5M+</span>
-                            <p class="font-label-bold text-[10px] md:text-label-bold text-primary mt-1">Günlük Tarama</p>
+                            <p class="font-label-bold text-xs md:text-label-bold text-primary mt-1">Günlük Tarama</p>
                         </div>
                         <div class="bg-background/40 backdrop-blur-md border border-border-glass p-4 md:p-6 rounded-xl md:rounded-2xl">
                             <span class="font-headline-md text-headline-md text-[22px] md:text-headline-md text-on-surface">&lt;20ms</span>
-                            <p class="font-label-bold text-[10px] md:text-label-bold text-primary mt-1">Gecikme</p>
+                            <p class="font-label-bold text-xs md:text-label-bold text-primary mt-1">Gecikme</p>
                         </div>
                         <div class="bg-background/40 backdrop-blur-md border border-border-glass p-4 md:p-6 rounded-xl md:rounded-2xl">
                             <span class="font-headline-md text-headline-md text-[22px] md:text-headline-md text-on-surface">24/7</span>
-                            <p class="font-label-bold text-[10px] md:text-label-bold text-primary mt-1">Kesintisiz</p>
+                            <p class="font-label-bold text-xs md:text-label-bold text-primary mt-1">Kesintisiz</p>
                         </div>
                         <div class="bg-background/40 backdrop-blur-md border border-border-glass p-4 md:p-6 rounded-xl md:rounded-2xl">
                             <span class="font-headline-md text-headline-md text-[22px] md:text-headline-md text-on-surface">100k</span>
-                            <p class="font-label-bold text-[10px] md:text-label-bold text-primary mt-1">Aktif Görev</p>
+                            <p class="font-label-bold text-xs md:text-label-bold text-primary mt-1">Aktif Görev</p>
                         </div>
                     </div>
                 </div>
@@ -151,21 +151,21 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 <a href="/alerts" class="glass-card rounded-lg p-6 md:p-8 group block">
                     <div class="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4 md:mb-6">
-                        <span class="material-symbols-outlined text-2xl md:text-[32px]">notifications_active</span>
+                        <svg class="icon text-2xl md:text-[32px]" aria-hidden="true" focusable="false"><use href="#i-notifications_active"/></svg>
                     </div>
                     <h3 class="font-headline-md text-[18px] md:text-headline-md text-on-surface mb-3">Fiyat Alarmı</h3>
                     <p class="font-body-md text-[13px] md:text-body-md text-on-surface-variant">Ürünleriniz belirli bir fiyata ulaştığında Discord bildirimi alın. Hem düşüş hem yükseliş için alarm kurabilirsiniz.</p>
                 </a>
                 <a href="/compare" class="glass-card rounded-lg p-6 md:p-8 group block">
                     <div class="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-tertiary/10 flex items-center justify-center text-tertiary mb-4 md:mb-6">
-                        <span class="material-symbols-outlined text-2xl md:text-[32px]">compare</span>
+                        <svg class="icon text-2xl md:text-[32px]" aria-hidden="true" focusable="false"><use href="#i-compare"/></svg>
                     </div>
                     <h3 class="font-headline-md text-[18px] md:text-headline-md text-on-surface mb-3">Ürün Karşılaştırma</h3>
                     <p class="font-body-md text-[13px] md:text-body-md text-on-surface-variant">Sunucunuzdaki ürünleri fiyat, indirim oranı ve tasarruf açısından karşılaştırın.</p>
                 </a>
                 <a href="/notifications" class="glass-card rounded-lg p-6 md:p-8 group block">
                     <div class="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary mb-4 md:mb-6">
-                        <span class="material-symbols-outlined text-2xl md:text-[32px]">settings</span>
+                        <svg class="icon text-2xl md:text-[32px]" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg>
                     </div>
                     <h3 class="font-headline-md text-[18px] md:text-headline-md text-on-surface mb-3">Bildirim Tercihleri</h3>
                     <p class="font-body-md text-[13px] md:text-body-md text-on-surface-variant">Hangi kanaldan bildirim alacağınızı, düşüş/yükseliş tercihlerinizi ve eşik değerlerinizi özelleştirin.</p>
@@ -184,29 +184,29 @@
             <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-gutter w-full">
                 <div class="p-8 rounded-lg border border-border-glass bg-surface-container-low group hover:bg-surface-container transition-colors">
                     <div class="flex items-center gap-4 mb-4">
-                        <span class="material-symbols-outlined text-primary">speed</span>
-                        <h4 class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface">Hız</h4>
+                        <svg class="icon text-primary" aria-hidden="true" focusable="false"><use href="#i-speed"/></svg>
+                        <h3 class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface">Hız</h3>
                     </div>
                     <p class="font-body-md text-body-md text-on-surface-variant">Özel scraping modülleri ile düşük gecikme.</p>
                 </div>
                 <div class="p-8 rounded-lg border border-border-glass bg-surface-container-low group hover:bg-surface-container transition-colors">
                     <div class="flex items-center gap-4 mb-4">
-                        <span class="material-symbols-outlined text-primary">verified_user</span>
-                        <h4 class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface">Güvenlik</h4>
+                        <svg class="icon text-primary" aria-hidden="true" focusable="false"><use href="#i-verified_user"/></svg>
+                        <h3 class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface">Güvenlik</h3>
                     </div>
                     <p class="font-body-md text-body-md text-on-surface-variant">Anti-bot bypass ile kesintisiz bağlantı.</p>
                 </div>
                 <div class="p-8 rounded-lg border border-border-glass bg-surface-container-low group hover:bg-surface-container transition-colors">
                     <div class="flex items-center gap-4 mb-4">
-                        <span class="material-symbols-outlined text-primary">psychology</span>
-                        <h4 class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface">Akıllı Uyarı</h4>
+                        <svg class="icon text-primary" aria-hidden="true" focusable="false"><use href="#i-psychology"/></svg>
+                        <h3 class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface">Akıllı Uyarı</h3>
                     </div>
                     <p class="font-body-md text-body-md text-on-surface-variant">AI destekli trend analizi.</p>
                 </div>
                 <div class="p-8 rounded-lg border border-border-glass bg-surface-container-low group hover:bg-surface-container transition-colors">
                     <div class="flex items-center gap-4 mb-4">
-                        <span class="material-symbols-outlined text-primary">dns</span>
-                        <h4 class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface">Global Düğüm</h4>
+                        <svg class="icon text-primary" aria-hidden="true" focusable="false"><use href="#i-dns"/></svg>
+                        <h3 class="font-label-bold text-label-bold uppercase tracking-widest text-on-surface">Global Düğüm</h3>
                     </div>
                     <p class="font-body-md text-body-md text-on-surface-variant">Edge computing ile anlık veri.</p>
                 </div>

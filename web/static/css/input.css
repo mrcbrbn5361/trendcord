@@ -32,14 +32,27 @@
     --color-on-surface-rgb: 51 51 51;
     --color-on-surface-variant: #666666;
     --color-on-surface-variant-rgb: 102 102 102;
-    --color-primary: #F27A1A;
-    --color-primary-rgb: 242 122 26;
+    /* Marka turuncu, WCAG AA metin-guvenli tonda (#B0410C = 5.82:1 beyaz uzerinde).
+       Canli turuncu yalnizca dekoratif buyuk yuzeyler icin `--color-primary-vivid`. */
+    --color-primary: #B0410C;
+    --color-primary-rgb: 176 65 12;
     --color-on-primary: #FFFFFF;
     --color-on-primary-rgb: 255 255 255;
-    --color-primary-container: #F27A1A;
-    --color-primary-container-rgb: 242 122 26;
+    --color-primary-container: #B0410C;
+    --color-primary-container-rgb: 176 65 12;
     --color-on-primary-container: #FFFFFF;
     --color-on-primary-container-rgb: 255 255 255;
+    /* Dekoratif / grafik: uzerinde metin tasinmaz */
+    --color-primary-vivid: #F27A1A;
+    --color-primary-vivid-rgb: 242 122 26;
+    --color-primary-soft: #FBEADF;
+    --color-primary-soft-rgb: 251 234 223;
+    --color-success: #15803D;
+    --color-success-rgb: 21 128 61;
+    --color-success-soft: #E6F4EA;
+    --color-success-soft-rgb: 230 244 234;
+    --color-on-error: #FFFFFF;
+    --color-on-error-rgb: 255 255 255;
     --color-secondary: #5A5D8F;
     --color-secondary-rgb: 90 93 143;
     --color-secondary-container: #E0DEF4;
@@ -48,10 +61,12 @@
     --color-tertiary-rgb: 0 111 155;
     --color-tertiary-container: #A1D4FF;
     --color-tertiary-container-rgb: 161 212 255;
-    --color-error: #D50032;
-    --color-error-rgb: 213 0 50;
-    --color-error-container: #FFDAD6;
-    --color-error-container-rgb: 255 218 214;
+    --color-error: #C1121F;
+    --color-error-rgb: 193 18 31;
+    --color-error-container: #FDECEE;
+    --color-error-container-rgb: 253 236 238;
+    --color-error-soft: #FDECEE;
+    --color-error-soft-rgb: 253 236 238;
     --color-outline: #999999;
     --color-outline-rgb: 153 153 153;
     --color-outline-variant: #EBEBEB;
@@ -89,14 +104,24 @@
     --color-on-surface-rgb: 229 226 225;
     --color-on-surface-variant: #b5aca6;
     --color-on-surface-variant-rgb: 181 172 166;
-    --color-primary: #ff8c3a;
-    --color-primary-rgb: 255 140 58;
-    --color-on-primary: #ffffff;
-    --color-on-primary-rgb: 255 255 255;
-    --color-primary-container: #f27a1a;
-    --color-primary-container-rgb: 242 122 26;
-    --color-on-primary-container: #ffffff;
+    --color-primary: #FF9D55;
+    --color-primary-rgb: 255 157 85;
+    --color-on-primary: #1C1B1B;
+    --color-on-primary-rgb: 28 27 27;
+    --color-primary-container: #B0410C;
+    --color-primary-container-rgb: 176 65 12;
+    --color-on-primary-container: #FFFFFF;
     --color-on-primary-container-rgb: 255 255 255;
+    --color-primary-vivid: #FF7A1A;
+    --color-primary-vivid-rgb: 255 122 26;
+    --color-primary-soft: #33200F;
+    --color-primary-soft-rgb: 51 32 15;
+    --color-success: #4ADE80;
+    --color-success-rgb: 74 222 128;
+    --color-success-soft: #10281A;
+    --color-success-soft-rgb: 16 40 26;
+    --color-on-error: #1C1B1B;
+    --color-on-error-rgb: 28 27 27;
     --color-secondary: #bec2ff;
     --color-secondary-rgb: 190 194 255;
     --color-secondary-container: #3d3f7a;
@@ -109,6 +134,8 @@
     --color-error-rgb: 255 180 171;
     --color-error-container: #93000a;
     --color-error-container-rgb: 147 0 10;
+    --color-error-soft: #3A1512;
+    --color-error-soft-rgb: 58 21 18;
     --color-outline: #6b6b6b;
     --color-outline-rgb: 107 107 107;
     --color-outline-variant: #333333;
@@ -152,10 +179,17 @@ body {
     box-shadow: 0 4px 16px rgba(242, 122, 26, 0.30);
 }
 
+/* Premium vurgu: gradyan metin yerine guvenli solid marka tonu + ince alt cizgi.
+   (Gradyan metin axe'de "incomplete" => elden gecis, skor kaybi) */
 .orange-gradient-text {
-    background: linear-gradient(135deg, #F27A1A 0%, #FF9D45 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--color-primary);
+    -webkit-text-fill-color: currentColor;
+    background: none;
+    text-decoration: underline;
+    text-decoration-color: var(--color-primary-vivid);
+    text-decoration-thickness: 0.09em;
+    text-underline-offset: 0.14em;
+    text-decoration-skip-ink: none;
 }
 
 .active-nav-item {
@@ -186,12 +220,13 @@ body {
 }
 
 /* ---- Scroll-reveal sistemi (transform + opacity only = GPU) ---- */
+/* `will-change` kalici degil: her kartta bir compositor katmani birakmak pahalidir.
+   Sinif JS tarafindan eklendigi icin JS calismazsa icerik gorunur kalir. */
 .reveal {
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.5s var(--ease-out-quart), transform 0.5s var(--ease-out-quart);
     transition-delay: var(--reveal-delay, 0ms);
-    will-change: transform, opacity;
 }
 .reveal.is-visible {
     opacity: 1;
@@ -199,12 +234,14 @@ body {
 }
 
 /* ---- Hero sahneli giriş (landing sayfası, nadir görülür → özel olabilir) ---- */
+/* NOT: LCP adayi (index.html h1) bu animasyonu kullanmaz; gecikmeli boyama
+   LCP metrigini geciktiriyor. Sadece h1 altindaki ogeler icin. */
 @keyframes hero-enter {
     from { opacity: 0; transform: translateY(24px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 .hero-enter {
-    animation: hero-enter 0.7s var(--ease-out-expo) both;
+    animation: hero-enter 0.6s var(--ease-out-expo) both;
     animation-delay: var(--hero-delay, 0ms);
 }
 
@@ -253,7 +290,7 @@ header.is-scrolled {
 
 /* ---- Trendyol e-ticaret bileşenleri ---- */
 .ty-banner {
-    background: linear-gradient(120deg, #F27A1A 0%, #FF9D45 55%, #FFB877 100%);
+    background: linear-gradient(120deg, #7A3200 0%, #93390A 38%, #A3440C 70%, #B0410C 100%);
     position: relative;
     overflow: hidden;
 }
@@ -261,8 +298,12 @@ header.is-scrolled {
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at top right, rgba(255,255,255,0.25) 0%, transparent 55%);
+    background: radial-gradient(ellipse at top right, rgba(255,122,26,0.28) 0%, transparent 58%);
     pointer-events: none;
+}
+/* Koyu temada gradyan biraz acilir; beyaz metin kontrasti yine 5:1 uzerinde kalir */
+.dark .ty-banner {
+    background: linear-gradient(120deg, #6E2C00 0%, #8A3509 38%, #9C3F0B 70%, #A8450D 100%);
 }
 
 .ty-price-old {
@@ -274,11 +315,11 @@ header.is-scrolled {
 
 .ty-badge-discount {
     background: var(--color-error);
-    color: #fff;
-    padding: 2px 8px;
-    border-radius: 4px;
+    color: var(--color-on-error);
+    padding: 3px 9px;
+    border-radius: 6px;
     font-weight: 800;
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.02em;
 }
 
@@ -287,7 +328,7 @@ header.is-scrolled {
     color: #cfcfcf;
 }
 .ty-footer a { transition: color 0.15s ease; }
-.ty-footer a:hover { color: #F27A1A; }
+.ty-footer a:hover { color: #FF9D55; }
 .dark .ty-footer {
     background: #111111;
 }
@@ -355,18 +396,9 @@ header.is-scrolled {
     font-family: 'Nunito Sans';
     font-style: normal;
     font-weight: 200 1000;
-    src: url('/static/fonts/nunito-sans-latin.woff2') format('woff2 supports variations'),
-         url('/static/fonts/nunito-sans-latin.woff2') format('woff2-variations');
-    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Nunito Sans';
-    font-style: normal;
-    font-weight: 200 1000;
-    src: url('/static/fonts/nunito-sans-latin-ext.woff2') format('woff2-variations');
-    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1EFF, U+2020, U+20A0-20AB;
+    font-stretch: 100%;
+    src: url('/static/fonts/nunito-sans.woff2?v=2') format('woff2 supports variations'),
+         url('/static/fonts/nunito-sans.woff2?v=2') format('woff2-variations');
     font-display: swap;
 }
 
@@ -374,34 +406,71 @@ header.is-scrolled {
     font-family: 'Plus Jakarta Sans';
     font-style: normal;
     font-weight: 200 800;
-    src: url('/static/fonts/plus-jakarta-sans.woff2') format('woff2 supports variations'),
-         url('/static/fonts/plus-jakarta-sans.woff2') format('woff2-variations'),
-         url('/static/fonts/plus-jakarta-sans.woff2') format('woff2');
+    font-stretch: 100%;
+    src: url('/static/fonts/plus-jakarta-sans.woff2?v=2') format('woff2 supports variations'),
+         url('/static/fonts/plus-jakarta-sans.woff2?v=2') format('woff2-variations');
     font-display: swap;
 }
 
-@font-face {
-    font-family: 'Material Symbols Outlined';
-    font-style: normal;
-    font-weight: 100 700;
-    src: url('/static/fonts/material-symbols-outlined.woff2') format('woff2');
-    font-display: block;
+/* ---- Inline SVG ikon sistemi (Material Symbols fontu yerine) ----
+   748 KB ikon fontu yerine tek <symbol> defs blogu + <use href="#i-...">.
+   Tum ikonlar dekoratif: aria-hidden + <title> icinde erisilebilir ad. */
+.icon {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+    fill: currentColor;
+    stroke: none;
+    flex: none;
+}
+.icon-lg { width: 1.25em; height: 1.25em; }
+.icon-xl { width: 1.5em; height: 1.5em; }
+.icon-2xl { width: 2em; height: 2em; }
+
+/* ---- Yardimci erisilebilirlik / etkilesim katmani ---- */
+
+/* Tailwind .hidden/.grid/.flex ile ayni ozelige sahip oldugu icin HTML
+   [hidden] niteligi her zaman kazanmali (modal yonetimi bunu kullanir). */
+[hidden] { display: none !important; }
+
+/* Klavyeyle ilk odak alinan oge olarak gizli gorunur, odak alinca gorunur */
+.skip-link {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -110%);
+    z-index: 200;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0 0 1rem 1rem;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    font-family: var(--font-label-bold);
+    font-weight: 700;
+    transition: transform 0.18s ease-out;
+}
+.skip-link:focus {
+    transform: translate(-50%, 0);
+    outline: 2px solid var(--color-on-surface);
+    outline-offset: 2px;
 }
 
-.material-symbols-outlined {
-    font-family: 'Material Symbols Outlined';
-    font-weight: normal;
-    font-style: normal;
-    font-size: 24px;
-    line-height: 1;
-    letter-spacing: normal;
-    text-transform: none;
-    display: inline-block;
-    white-space: nowrap;
-    word-wrap: normal;
-    direction: ltr;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-    font-feature-settings: 'liga';
+/* Kartin tamamini kaplayan baglanti (ic ice <a> yasak oldugu icin) */
+.card-stretched-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+/* Tema ikonunun donme gecisi */
+.theme-toggle-icon { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.theme-toggle-icon.rotate { transform: rotate(180deg); }
+
+/* Kopyalama geri bildirimi */
+[data-copy].copied { color: var(--color-success); }
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-toggle-icon { transition: none; }
+    .skip-link { transition: none; }
 }

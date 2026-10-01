@@ -1,13 +1,19 @@
 import os
 import json
+import hmac
+import base64
+import hashlib
+import re
 import asyncio
 import functools
 import httpx
 import logging
 import mimetypes
 from pathlib import Path
+from urllib.parse import parse_qsl, quote
 from fastapi import FastAPI, Request, Form, Query, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse, Response, FileResponse
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
 from web.auth import get_access_token, get_user_info, get_login_url, get_user_guilds, generate_state
@@ -61,14 +67,55 @@ async def llms_full_txt():
     return FileResponse(str(file_path), media_type="text/plain")
 
 # --- Security Headers Middleware ---
+CSP = "; ".join([
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    # Tum betikler harici dosyada; JSON-LD ve application/json veri bloklari
+    # CSP tarafindan calistirilabilir sayilmaz, bu yuzden ek izin gerekmez.
+    "script-src 'self'",
+    # Tailwind/inline CSS ve sinif ici stil nitelikleri icin 'unsafe-inline'
+    # (zorunlu: utility-first CSS, her sayfada ayri derlenmis tek dosya).
+    "style-src 'self' 'unsafe-inline'",
+    # Discord avatarlari + Trendyol urun gorselleri. Urun gorselleri
+    # scraper ile disaridan gelir (og:image / __INITIAL_STATE__.images),
+    # bu yuzden kaynak sunucu zorunlu olarak harici.
+    "img-src 'self' data: https://cdn.discordapp.com https://cdn.dsmcdn.com https://*.trendyol.com",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "manifest-src 'self'",
+    # NOT: `upgrade-insecure-requests` yalnizca HTTPS yanitlarda eklenir
+    # (asagida); HTTP uzerinden calisan yerel sunucuda tum relative
+    # kaynaklari https'e zorlar ve gelistirmeyi bozardi.
+])
+
+PERMISSIONS_POLICY = ", ".join([
+    "accelerometer=()", "autoplay=()", "camera=()", "display-capture=()",
+    "encrypted-media=()", "fullscreen=(self)", "geolocation=()", "gyroscope=()",
+    "magnetometer=()", "microphone=()", "midi=()", "payment=()",
+    "picture-in-picture=()", "publickey-credentials-get=(self)",
+    "screen-wake-lock=()", "sync-xhr=()", "usb=()", "xr-spatial-tracking=()",
+])
+
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        h = response.headers
+        h["X-Content-Type-Options"] = "nosniff"
+        h["X-Frame-Options"] = "DENY"
+        h["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        h["Permissions-Policy"] = PERMISSIONS_POLICY
         if request.url.scheme == "https":
-            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+            h["Content-Security-Policy"] = CSP + "upgrade-insecure-requests;"
+            h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        else:
+            # Yerel HTTP gelistirmesinde relative kaynaklari https'e zorlama
+            h["Content-Security-Policy"] = CSP
+        h["Cross-Origin-Opener-Policy"] = "same-origin"
+        h["X-DNS-Prefetch-Control"] = "off"
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
@@ -92,31 +139,210 @@ class SEOFixMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(SEOFixMiddleware)
 
+templates = Jinja2Templates(directory=str(BASE_DIR / "web" / "templates"))
+
+
+# --- CSRF (durumsuz: oturum kimliginden turetir, ek depolama gerektirmez) ---
+def _csrf_secret() -> bytes:
+    raw = os.getenv("SECRET_KEY") or os.getenv("DISCORD_CLIENT_SECRET") or "trendcord-dev-csrf"
+    return raw.encode("utf-8")
+
+
+def _session_id(session) -> str:
+    """Oturum nesnesinden (veya bos degerden) oturum kimligini okur."""
+    if session is None:
+        return ""
+    try:
+        return session.session_id or ""
+    except Exception:
+        return ""
+
+
+def csrf_token(request: Request) -> str:
+    """Oturum kimligine bagli deterministik CSRF belirteci."""
+    session = request.scope.get("session") if hasattr(request, "scope") else None
+    if session is None:
+        session = getattr(request, "session", None)
+    sid = _session_id(session)
+    mac = hmac.new(_csrf_secret(), sid.encode("utf-8"), hashlib.sha256).digest()
+    return base64.urlsafe_b64encode(mac).decode("ascii").rstrip("=")
+
+
+def verify_csrf(session, token) -> bool:
+    expected = base64.urlsafe_b64encode(
+        hmac.new(_csrf_secret(), _session_id(session).encode("utf-8"), hashlib.sha256).digest()
+    ).decode("ascii").rstrip("=")
+    return hmac.compare_digest(expected, token if isinstance(token, str) else "")
+
+
+
+
+class CSRFMiddleware:
+    """Durum degistiren isteklerde CSRF belirtecini dogrular.
+
+    Saf ASGI olarak yazildi: govde tamponlanir ve `receive` yeniden uretilir,
+    boylece downstream'daki `await request.form()` cagrilari govdeyi yine
+    okuyabilir. (BaseHTTPMiddleware govdeyi tuketip asagi akisi bos birakilma
+    riski tasir.)
+    """
+
+    SAFE_METHODS = frozenset(("GET", "HEAD", "OPTIONS", "TRACE"))
+    # Mobil API cookie degil, `Authorization: Bearer <token>` ile dogrulanir
+    # (bkz. web/api_mobile.py:get_current_user). Cookie tabanli oturum
+    # kullanmadigi icin tarayici kaynakli CSRF tehlikesi bulunmaz.
+    EXEMPT_PREFIXES = ("/api/",)
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        path = scope.get("path", "")
+        if (
+            scope.get("type") != "http"
+            or scope.get("method", "GET") in self.SAFE_METHODS
+            or path.startswith(self.EXEMPT_PREFIXES)
+        ):
+            await self.app(scope, receive, send)
+            return
+
+        # --- govdeyi tam olarak oku ---
+        body = b""
+        while True:
+            message = await receive()
+            if message["type"] == "http.disconnect":
+                return
+            body += message.get("body", b"")
+            if not message.get("more_body", False):
+                break
+
+        # --- belirteci cikar ---
+        ctype = ""
+        for key, value in scope.get("headers", []):
+            if key == b"content-type":
+                ctype = value.decode("latin-1").lower()
+                break
+        supplied = None
+        if ctype.startswith("application/x-www-form-urlencoded"):
+            supplied = dict(parse_qsl(body.decode("utf-8", "replace"), keep_blank_values=True)).get("csrf_token")
+        elif ctype.startswith("multipart/form-data"):
+            # multipart: ayirici cizgiden sonraki ilk bolumu kontrol et
+            raw_token = re.search(rb'name="csrf_token"\r?\n\r?\n([A-Za-z0-9_\-=]+)', body)
+            supplied = raw_token.group(1).decode() if raw_token else None
+        else:
+            for key, value in scope.get("headers", []):
+                if key == b"x-csrf-token":
+                    supplied = value.decode("latin-1")
+                    break
+
+        if not verify_csrf(scope.get("session"), supplied):
+            logger.warning("CSRF reddedildi: %s %s", scope.get("method"), scope.get("path"))
+            await self._reject(send)
+            return
+
+        # --- govdeyi downstream icin bir kez daha sun ---
+        # Onemli: tamponlanan govde bittikten sonra UYDURMA "http.disconnect"
+        # gonderilmez. Alttaki BaseHTTPMiddleware katmanlari (SecurityHeaders,
+        # RateLimit, ...) receive() ile istemci kesilmesini izler; sahte bir
+        # disconnect onlari "istemci gitti" sanip yaniti hic uretmeden
+        # bagliyor ve "No response returned" ile 500 donuyordu. Gercek
+        # receive'a iletmek ASGI sozlesmesine uygun davranistir.
+        replayed = False
+
+        async def replay_receive():
+            nonlocal replayed
+            if not replayed:
+                replayed = True
+                return {"type": "http.request", "body": body, "more_body": False}
+            return await receive()
+
+        await self.app(scope, replay_receive, send)
+
+    async def _reject(self, send):
+        payload = CSRF_ERROR_HTML.encode("utf-8")
+        await send({
+            "type": "http.response.start",
+            "status": 403,
+            "headers": [
+                (b"content-type", b"text/html; charset=utf-8"),
+                (b"content-length", str(len(payload)).encode("latin-1")),
+                (b"cache-control", b"no-store"),
+            ],
+        })
+        await send({"type": "http.response.body", "body": payload})
+
+
+CSRF_ERROR_HTML = (
+    "<!doctype html><html lang='tr'><head><meta charset='utf-8'>"
+    "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+    "<title>Guvenlik hatasi - Trendcord</title></head>"
+    "<body style=\"font-family:system-ui,sans-serif;max-width:32rem;margin:15vh auto;padding:0 1.5rem\">"
+    "<h1 style=\"font-size:1.5rem\">Guvenlik hatasi</h1>"
+    "<p>Oturum dogrulamasi basarisiz oldu. Sayfayi yenileyip tekrar deneyin.</p>"
+    "<p><a href='/'>Ana sayfaya don</a></p></body></html>"
+)
+
+templates.env.globals["csrf_token"] = csrf_token
+app.add_middleware(CSRFMiddleware)
+
 app.add_middleware(ServerSessionMiddleware,
     max_age=604800,
     cookie_name="session",
     cookie_httponly=True,
-    cookie_secure=False,  # Termux için False (localhost'ta HTTPS yok)
+    # Uretimde Cloudflare tuneli uzerinden her zaman HTTPS; guvenli cerez
+    # varsayilan. Yerel HTTP gelistirmede COOKIE_SECURE=0 ile kapatilir.
+    cookie_secure=os.getenv("COOKIE_SECURE", "1") != "0",
     cookie_samesite="lax",
 )
+
+# --- Origin Sikiştirma ---
+# Cloudflare ucte Brotli uyguluyor; origin sikiştirmesi CF -> VDS ayaklarindaki
+# bant genisligini azaltir ve CF oncesi dogrudan erisimde de hiz kazandirir.
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=6)
 
 app.add_middleware(ProxyHeadersMiddleware,
     trusted_hosts=["trendcord.miracdeveloper.com.tr", "*.miracdeveloper.com.tr"]
 )
 
-# --- Cache Headers for Static Files ---
+# --- Cache policy: statik varliklar edge'de, dinamik HTML hicbir yerde ---
+#
+# Neden HTML cache'lenmiyor? Her anonim GET bir `session` cookie'si yolluyor ve
+# CSRF belirteci bu oturum kimliginden HMAC ile turetiyor. Edge'de cache'lenen
+# bir HTML, bir sonraki ziyaretciye baska bir kullanicinin belirtecini tasir;
+# hem belirtec hem de `Set-Cookie` uyusmazligi CSRF korumasini bosluga cevirir.
+# Bu yuzden dinamik yanitlar hem bulutta hem tarayicida `no-store` ile
+# kilitlenir. Kazanc, degistirilmeyen statik varliklardan gelir (CSS/JS/font);
+# onlar `immutable` ve Cloudflare tarafından kenarda cache'lenir.
+STATIC_IMMUTABLE_SUFFIXES = (".woff2", ".woff", ".ttf", ".ico", ".svg", ".webp", ".avif")
+
+
 class CacheHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
-        if request.url.path.startswith("/static/"):
-            if ".min." in request.url.path or request.url.path.endswith((".woff2", ".woff", ".ttf")):
-                response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
-            else:
-                response.headers["Cache-Control"] = "public, max-age=86400"
+        path = request.url.path
+
+        if path.startswith("/static/"):
+            # immutable yalnizca surumlu/suresiz kaynaklarda guvenli: isim degisince
+            # URL degisir (orn. tailwind.min.css?v=9, app.js?v=2).
+            immutable = (
+                ".min." in path
+                or path.endswith(STATIC_IMMUTABLE_SUFFIXES)
+                or ("v=" in request.url.query)
+            )
+            response.headers["Cache-Control"] = (
+                "public, max-age=31536000, immutable" if immutable else "public, max-age=86400"
+            )
+        elif path.startswith("/api/"):
+            response.headers["Cache-Control"] = "no-store"
+        else:
+            # Dinamik HTML: oturum + CSRF belirteci iceriyor, asla cache'lenmez.
+            # Cloudflare bu basligi gordugu icin `cf-cache-status: DYNAMIC` verir.
+            response.headers["Cache-Control"] = "private, no-store, max-age=0"
+            response.headers.setdefault("Vary", "Cookie, Accept-Encoding")
         return response
 
 app.add_middleware(CacheHeadersMiddleware)
-templates = Jinja2Templates(directory=str(BASE_DIR / "web" / "templates"))
+
+
 
 bot_instance = None
 db_instance = None
@@ -958,37 +1184,70 @@ async def admin_server_detail(request: Request, guild_id: str):
              for r in guild.roles if r.name != "@everyone"]
     channels = [{"id": c.id, "name": c.name, "type": str(c.type), "position": c.position}
                 for c in guild.channels]
-    
+
+    products = db_instance.get_guild_products_detail(guild_id) if db_instance else []
+
+    # POST /invite basarili oldugunda `?invite=<url>` ile yonlendirir.
+    # Yalnizca beklenen Discord davet bicimini kabul et; boylece reflekte
+    # edilen herhangi bir deger ekrana basilmaz.
     invite_link = ""
-    bot_token = os.getenv('DISCORD_TOKEN', '')
+    raw_invite = request.query_params.get("invite", "")
+    if raw_invite.startswith("https://discord.gg/") and re.fullmatch(
+        r"https://discord\.gg/[A-Za-z0-9_-]{2,64}", raw_invite
+    ):
+        invite_link = raw_invite
+
+    ctx = template_context(request, {
+        "is_owner": True, "active_page": "servers",
+        "invite_link": invite_link,
+        "guild": {"id": guild.id, "name": guild.name, "member_count": guild.member_count,
+                  "icon_url": get_guild_icon_url(guild), "owner_id": guild.owner_id},
+        "members": members, "roles": roles, "channels": channels,
+        "products": products,
+        "get_guild_name": get_guild_name
+    })
+    return templates.TemplateResponse("admin_server_detail.html", ctx)
+
+
+@app.post("/admin/servers/{guild_id}/invite")
+async def admin_server_invite(request: Request, guild_id: str):
+    """Discord daveti olusturur. Durum degistirdigi icin yalnizca POST.
+
+    Sayfa goruntulemesi (GET) artik yan etki uretmez; bot her sayfa yenilemede
+    gereksiz yere Discord API'sine istek atmaz.
+    """
+    redirect = await owner_redirect(request)
+    if redirect: return redirect
+
+    guild = bot_instance.get_guild(int(guild_id)) if bot_instance else None
+    if not guild:
+        return RedirectResponse("/admin/servers")
+
+    bot_token = os.getenv("DISCORD_TOKEN", "")
     headers_a = {"Authorization": f"Bot {bot_token}"}
+    invite_link = ""
     try:
-        system_ch = guild.system_channel or next((c for c in guild.text_channels if c.permissions_for(guild.me).create_instant_invite), None)
+        system_ch = guild.system_channel or next(
+            (c for c in guild.text_channels if c.permissions_for(guild.me).create_instant_invite), None
+        )
         if system_ch:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 resp = await client.post(
                     f"https://discord.com/api/v10/channels/{system_ch.id}/invites",
                     headers=headers_a,
-                    json={"max_age": 86400, "max_uses": 0, "reason": "Admin panel invite"}
+                    json={"max_age": 86400, "max_uses": 0, "reason": "Admin panel invite"},
                 )
                 if resp.status_code == 200:
-                    code = resp.json().get('code', '')
+                    code = resp.json().get("code", "")
                     if code:
                         invite_link = f"https://discord.gg/{code}"
-    except:
-        pass
-    
-    products = db_instance.get_guild_products_detail(guild_id) if db_instance else []
-    
-    ctx = template_context(request, {
-        "is_owner": True, "active_page": "servers",
-        "guild": {"id": guild.id, "name": guild.name, "member_count": guild.member_count,
-                  "icon_url": get_guild_icon_url(guild), "owner_id": guild.owner_id},
-        "members": members, "roles": roles, "channels": channels,
-        "products": products, "invite_link": invite_link,
-        "get_guild_name": get_guild_name
-    })
-    return templates.TemplateResponse("admin_server_detail.html", ctx)
+    except Exception:
+        logger.exception("Davet olusturulamadi (guild %s)", guild_id)
+
+    return RedirectResponse(
+        f"/admin/servers/{guild_id}" + (f"?invite={quote(invite_link)}" if invite_link else "?invite=error"),
+        status_code=303,
+    )
 
 @app.get("/admin/users")
 async def admin_users(request: Request):
@@ -1275,9 +1534,32 @@ async def guild_stats_page(request: Request, guild_id: str):
     return templates.TemplateResponse("guild_stats.html", ctx)
 
 
-@app.get("/logout")
+@app.post("/logout")
 async def logout(request: Request):
-    user = request.session.get("user")
+    """Oturumu kapatir. Durum degistirdigi icin yalnizca POST (CSRF korumali).
+
+    Once GET idi; link onizleme / tarayici guvenlik tarayicilari oturumu
+    kullanici istemeden kapatabiliyordu.
+    """
     request.session.clear()
     ctx = template_context(request, {"noindex": True})
     return templates.TemplateResponse("logout.html", ctx)
+
+
+# --- RFC 9110: GET'i destekleyen her kaynak HEAD'i de desteklemelidir ---
+#
+# FastAPI'nin APIRoute'u rotalara otomatik HEAD eklemez; bu yuzden HEAD
+# istekleri 405 aliyordu (canli yanitta `allow: GET` ile dogrulandi).
+# Boylece uptime monitörleri, Cloudflare on-katman onizlemeleri ve bazi
+# crawler'lar sayfalari okuyamadan hata aliyor.
+def _enable_head_on_get_routes(application) -> int:
+    changed = 0
+    for route in application.routes:
+        methods = getattr(route, "methods", None)
+        if methods and "GET" in methods and "HEAD" not in methods:
+            route.methods = set(methods) | {"HEAD"}
+            changed += 1
+    return changed
+
+
+app.state.head_routes_enabled = _enable_head_on_get_routes(app)

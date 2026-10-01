@@ -9,11 +9,11 @@
 {% block og_url %}https://trendcord.miracdeveloper.com.tr{% endblock %}
 
 {% block content %}
-<div class="min-h-[80vh] flex items-center justify-center px-margin-mobile md:px-margin-desktop py-20">
+<div class="min-h-[80vh] flex items-center justify-center px-margin-mobile md:px-margin-desktop py-20" data-auto-reload="30000">
     <div class="text-center max-w-lg">
         <div class="mb-8 floating">
             <div class="w-24 h-24 mx-auto rounded-full flex items-center justify-center pulse-glow glass-card">
-                <span class="material-symbols-outlined text-primary text-5xl">settings</span>
+                <svg class="icon text-primary text-5xl" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg>
             </div>
         </div>
         <h1 class="font-display-hero text-headline-lg-mobile md:text-headline-lg italic uppercase font-black text-on-surface mb-2">Trendcord</h1>
@@ -39,17 +39,16 @@
         </div>
         <p class="text-on-surface-variant font-body-md text-body-md mb-6">Sayfa otomatik olarak yenileniyor...</p>
         <div class="flex items-center justify-center gap-2 text-on-surface-variant font-body-md text-body-md mb-10">
-            <div class="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse"></div>
+            <div class="w-2 h-2 rounded-full bg-success animate-pulse"></div>
             <span>Sistem izleniyor</span>
         </div>
 
         <div class="flex items-center justify-center gap-4 md:gap-6">
-            <a href="/" class="text-on-surface-variant hover:text-primary font-label-bold text-[10px] md:text-label-bold uppercase tracking-widest transition-colors">Ana Sayfa</a>
-            <a href="https://discord.gg/G46MFdw7R6" rel="noopener noreferrer" class="text-on-surface-variant hover:text-primary font-label-bold text-[10px] md:text-label-bold uppercase tracking-widest transition-colors">Destek</a>
+            <a href="/" class="text-on-surface-variant hover:text-primary font-label-bold text-xs md:text-label-bold uppercase tracking-widest transition-colors">Ana Sayfa</a>
+            <a href="https://discord.gg/G46MFdw7R6" rel="noopener noreferrer" class="text-on-surface-variant hover:text-primary font-label-bold text-xs md:text-label-bold uppercase tracking-widest transition-colors">Destek</a>
         </div>
     </div>
 </div>
-<script>setTimeout(function(){ location.reload(); }, 30000);</script>
 <style>
     .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
     @keyframes pulse-glow { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.05); } }

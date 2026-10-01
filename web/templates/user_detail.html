@@ -34,7 +34,7 @@
         <!-- Breadcrumb -->
         <div class="flex items-center gap-2 text-sm text-on-surface-variant mb-6 md:mb-8">
             <a href="/users" class="hover:text-primary transition-colors">Kullanıcılar</a>
-            <span class="material-symbols-outlined text-sm">chevron_right</span>
+            <svg class="icon text-sm" aria-hidden="true" focusable="false"><use href="#i-chevron_right"/></svg>
             <span class="text-on-surface">{{ user_data.username }}</span>
         </div>
 
@@ -42,7 +42,7 @@
         <div class="glass-panel rounded-lg p-6 md:p-10 mb-8 md:mb-12">
             <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
                 {% if user_data.avatar_url %}
-                    <img src="{{ user_data.avatar_url }}" alt="{{ user_data.username }} avatarı" class="w-20 h-20 md:w-28 md:h-28 rounded-full object-cover border-[3px] border-primary/20 shadow-xl" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                    <img src="{{ user_data.avatar_url }}" alt="{{ user_data.username }} avatarı" width="112" height="112" class="w-20 h-20 md:w-28 md:h-28 rounded-full object-cover border-[3px] border-primary/20 shadow-xl" data-hide-on-error data-show-next="flex">
                     <div class="w-20 h-20 md:w-28 md:h-28 rounded-full bg-primary-container text-on-primary-container items-center justify-center font-label-bold text-3xl md:text-4xl hidden">
                         {{ user_data.username[:2] }}
                     </div>
@@ -55,16 +55,16 @@
                     <h1 class="font-headline-md text-[24px] md:text-headline-md text-on-surface mb-2">{{ user_data.username }}</h1>
                     <div class="flex flex-wrap justify-center md:justify-start gap-3 md:gap-4">
                         <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary font-label-bold text-xs">
-                            <span class="material-symbols-outlined text-sm">inventory_2</span>
+                            <svg class="icon text-sm" aria-hidden="true" focusable="false"><use href="#i-inventory_2"/></svg>
                             {{ products|length }} Takip
                         </div>
                         <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary/10 text-tertiary font-label-bold text-xs">
-                            <span class="material-symbols-outlined text-sm">dns</span>
+                            <svg class="icon text-sm" aria-hidden="true" focusable="false"><use href="#i-dns"/></svg>
                             {{ guilds|length }} Sunucu
                         </div>
                         {% if total_savings > 0 %}
-                        <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#4ade80]/10 text-[#4ade80] font-label-bold text-xs">
-                            <span class="material-symbols-outlined text-sm">savings</span>
+                        <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-soft text-success font-label-bold text-xs">
+                            <svg class="icon text-sm" aria-hidden="true" focusable="false"><use href="#i-savings"/></svg>
                             ₺{{ "{:,.0f}".format(total_savings) }} Tasarruf
                         </div>
                         {% endif %}
@@ -81,7 +81,7 @@
                 {% for g in guilds %}
                 <a href="/servers/{{ g.id }}" class="glass-card rounded-lg px-4 py-3 flex items-center gap-3 touch-scale block">
                     {% if g.icon_url %}
-                        <img src="{{ g.icon_url }}" alt="{{ g.name }} ikonu" class="w-8 h-8 rounded-lg object-cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                        <img src="{{ g.icon_url }}" alt="{{ g.name }} ikonu" width="32" height="32" class="w-8 h-8 rounded-lg object-cover" data-hide-on-error data-show-next="flex">
                         <div class="w-8 h-8 rounded-lg bg-primary-container text-on-primary-container items-center justify-center font-label-bold text-xs hidden">
                             {{ g.name[:2] }}
                         </div>
@@ -106,7 +106,7 @@
                 <div class="glass-card rounded-lg p-4 group touch-scale">
                     <div class="relative aspect-square rounded-xl overflow-hidden mb-3 border border-border-glass bg-surface-container-low">
                         <a href="/product/{{ p.product_id }}" class="block w-full h-full" aria-label="Ürün detayına git">
-                        <img src="{{ p.image_url }}" alt="{{ p.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x600/1c1b1b/dec1b1?text=G%C3%B6rsel+Yok'">
+                        <img src="{{ p.image_url }}" alt="{{ p.name }}" width="400" height="400" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-fallback="product">
                         {% if p.original_price and p.current_price and p.original_price > p.current_price %}
                         <div class="absolute top-2 left-2"><span class="ty-badge-discount">-{{ (((p.original_price - p.current_price) / p.original_price) * 100)|int }}%</span></div>
                         {% endif %}
@@ -116,7 +116,7 @@
                     <div class="flex items-baseline gap-2 mb-1">
                         <span class="text-on-surface font-black text-lg">₺{{ "{:,.0f}".format(p.current_price) }}</span>
                         {% if p.basket_price and p.basket_price < p.current_price %}
-                        <span class="text-[#3BB143] text-xs font-bold">sepette ₺{{ "{:,.0f}".format(p.basket_price) }}</span>
+                        <span class="text-success text-xs font-bold">sepette ₺{{ "{:,.0f}".format(p.basket_price) }}</span>
                         {% endif %}
                         {% if p.original_price and p.current_price and p.original_price > p.current_price %}
                         <span class="ty-price-old">₺{{ "{:,.0f}".format(p.original_price) }}</span>
@@ -124,24 +124,24 @@
                     </div>
                     {% if p.campaign_name %}
                     <div class="flex items-center gap-1 mb-2">
-                        <span class="bg-[#4ade80]/15 text-[#4ade80] px-1.5 py-0.5 rounded-full text-[10px] font-bold">{{ p.campaign_name }}</span>
+                        <span class="bg-success-soft text-success px-1.5 py-0.5 rounded-full text-xs font-bold">{{ p.campaign_name }}</span>
                     </div>
                     {% else %}
                     <div class="mb-2"></div>
                     {% endif %}
                     <div class="flex items-center justify-between pt-2 border-t border-border-glass">
-                        <a href="/servers/{{ p.guild_id }}" class="text-[10px] text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[10px]">dns</span>
+                        <a href="/servers/{{ p.guild_id }}" class="text-xs text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
+                            <svg class="icon text-xs" aria-hidden="true" focusable="false"><use href="#i-dns"/></svg>
                             {{ get_guild_name(p.guild_id) }}
                         </a>
-                        <a href="{{ p.url }}" target="_blank" rel="noopener noreferrer" class="material-symbols-outlined text-on-surface-variant text-sm hover:text-primary transition-colors">open_in_new</a>
+                        <a href="{{ p.url }}" target="_blank" rel="noopener noreferrer" class="text-on-surface-variant text-sm hover:text-primary transition-colors" aria-label="Trendyol'da aç: {{ p.name }}"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-open_in_new"/></svg></a>
                     </div>
                 </div>
                 {% endfor %}
             </div>
             {% else %}
             <div class="flex flex-col items-center justify-center py-16 glass-panel rounded-lg border-dashed border-border-glass">
-                <span class="material-symbols-outlined text-primary text-[60px] mb-4">inventory_2</span>
+                <svg class="icon text-primary text-[60px] mb-4" aria-hidden="true" focusable="false"><use href="#i-inventory_2"/></svg>
                 <h3 class="font-headline-md text-on-surface mb-2">Henüz ürün yok</h3>
                 <p class="text-on-surface-variant font-body-md text-sm">Bu kullanıcı henüz ürün takip etmiyor.</p>
             </div>

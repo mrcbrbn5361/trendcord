@@ -8,9 +8,9 @@
         <!-- Breadcrumb -->
         <div class="flex items-center gap-2 text-sm text-on-surface-variant mb-6 md:mb-8">
             <a href="/servers" class="hover:text-primary transition-colors">Sunucular</a>
-            <span class="material-symbols-outlined text-sm">chevron_right</span>
+            <svg class="icon text-sm" aria-hidden="true" focusable="false"><use href="#i-chevron_right"/></svg>
             <a href="/servers/{{ guild.id }}" class="hover:text-primary transition-colors">{{ guild.name }}</a>
-            <span class="material-symbols-outlined text-sm">chevron_right</span>
+            <svg class="icon text-sm" aria-hidden="true" focusable="false"><use href="#i-chevron_right"/></svg>
             <span class="text-on-surface">İstatistikler</span>
         </div>
 
@@ -18,7 +18,7 @@
         <div class="glass-panel rounded-lg p-6 md:p-10 mb-8 md:mb-12">
             <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
                 {% if guild.icon_url %}
-                    <img src="{{ guild.icon_url }}" alt="{{ guild.name }} ikonu" class="w-20 h-20 md:w-28 md:h-28 rounded-2xl object-cover border-[3px] border-border-glass shadow-xl" loading="lazy" width="112" height="112" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                    <img src="{{ guild.icon_url }}" alt="{{ guild.name }} ikonu" class="w-20 h-20 md:w-28 md:h-28 rounded-2xl object-cover border-[3px] border-border-glass shadow-xl" loading="lazy" width="112" height="112" data-hide-on-error data-show-next="flex">
                     <div class="w-20 h-20 md:w-28 md:h-28 rounded-2xl bg-primary-container text-on-primary-container items-center justify-center font-label-bold text-3xl md:text-4xl border-[3px] border-border-glass hidden">
                         {{ guild.name[:2] }}
                     </div>
@@ -31,15 +31,15 @@
                     <h1 class="font-headline-md text-[24px] md:text-headline-md text-on-surface mb-2">{{ guild.name }} İstatistikleri</h1>
                     <div class="flex flex-wrap justify-center md:justify-start gap-3 md:gap-4">
                         <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary font-label-bold text-xs">
-                            <span class="material-symbols-outlined text-sm">group</span>
+                            <svg class="icon text-sm" aria-hidden="true" focusable="false"><use href="#i-group"/></svg>
                             {{ guild.member_count }} Üye
                         </div>
                         <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary/10 text-tertiary font-label-bold text-xs">
-                            <span class="material-symbols-outlined text-sm">inventory_2</span>
+                            <svg class="icon text-sm" aria-hidden="true" focusable="false"><use href="#i-inventory_2"/></svg>
                             {{ stats.total_products }} Takip
                         </div>
                         <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary/10 text-secondary font-label-bold text-xs">
-                            <span class="material-symbols-outlined text-sm">person</span>
+                            <svg class="icon text-sm" aria-hidden="true" focusable="false"><use href="#i-person"/></svg>
                             {{ stats.unique_users }} Kullanıcı
                         </div>
                     </div>
@@ -51,19 +51,19 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8 md:mb-12">
             <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
                 <div class="font-stat-giant text-primary text-3xl md:text-4xl italic">{{ stats.total_products }}</div>
-                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">Toplam Ürün</div>
+                <div class="font-label-bold text-xs md:text-xs text-on-surface-variant uppercase mt-1">Toplam Ürün</div>
             </div>
             <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
                 <div class="font-stat-giant text-on-surface text-3xl md:text-4xl italic">{{ stats.unique_users }}</div>
-                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">Aktif Kullanıcı</div>
+                <div class="font-label-bold text-xs md:text-xs text-on-surface-variant uppercase mt-1">Aktif Kullanıcı</div>
             </div>
             <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
-                <div class="font-stat-giant text-[#4ade80] text-3xl md:text-4xl italic">₺{{ "{:,.0f}".format(stats.total_savings) }}</div>
-                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">Toplam Tasarruf</div>
+                <div class="font-stat-giant text-success text-3xl md:text-4xl italic">₺{{ "{:,.0f}".format(stats.total_savings) }}</div>
+                <div class="font-label-bold text-xs md:text-xs text-on-surface-variant uppercase mt-1">Toplam Tasarruf</div>
             </div>
             <div class="glass-panel p-4 md:p-6 rounded-lg text-center">
                 <div class="font-stat-giant text-tertiary text-3xl md:text-4xl italic">{{ stats.price_drops }}</div>
-                <div class="font-label-bold text-[10px] md:text-xs text-on-surface-variant uppercase mt-1">İndirimli Ürün</div>
+                <div class="font-label-bold text-xs md:text-xs text-on-surface-variant uppercase mt-1">İndirimli Ürün</div>
             </div>
         </div>
 
@@ -82,14 +82,14 @@
                         <div class="flex items-center gap-2 mt-1">
                             <span class="text-on-surface font-black text-sm">₺{{ "{:,.0f}".format(p.current_price) }}</span>
                             {% if p.basket_price and p.basket_price < p.current_price %}
-                            <span class="text-[#3BB143] text-[10px] font-bold">sepette ₺{{ "{:,.0f}".format(p.basket_price) }}</span>
+                            <span class="text-success text-xs font-bold">sepette ₺{{ "{:,.0f}".format(p.basket_price) }}</span>
                             {% endif %}
                             {% if p.original_price and p.original_price > p.current_price %}
                             <span class="ty-price-old">₺{{ "{:,.0f}".format(p.original_price) }}</span>
                             {% endif %}
                         </div>
                         {% if p.campaign_name %}
-                        <div class="text-[10px] text-[#4ade80] mt-0.5">{{ p.campaign_name }}</div>
+                        <div class="text-xs text-success mt-0.5">{{ p.campaign_name }}</div>
                         {% endif %}
                     </div>
                 </div>

@@ -79,46 +79,38 @@
         }
     }
     </script>
-    <script>
-        (function() {
-            const saved = localStorage.getItem('trendcord-theme');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (saved === 'light' || (!saved && !prefersDark)) {
-                document.documentElement.classList.remove('dark');
-            }
-        })();
-    </script>
     <meta name="theme-color" content="#F27A1A" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#131313" media="(prefers-color-scheme: dark)">
     <link rel="preload" href="/static/fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/static/fonts/material-symbols-outlined.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="/static/css/tailwind.min.css?v=7">
+    <link rel="stylesheet" href="/static/css/tailwind.min.css?v=9">
     <link rel="preconnect" href="https://cdn.discordapp.com">
 </head>
 <body class="bg-background text-on-surface antialiased selection:bg-primary selection:text-on-primary">
 
+    <a href="#main-content" class="skip-link">Ana icerige atla</a>
+
     {% block body_start %}{% endblock %}
 
     <!-- [MASAÜSTÜ] Üst Header -->
-    <header class="hidden lg:block sticky top-0 z-50 bg-background border-b border-outline-variant">
+    <header data-site-header class="hidden lg:block sticky top-0 z-50 bg-background border-b border-outline-variant">
         <div class="max-w-container-max mx-auto px-margin-desktop h-[72px] flex items-center justify-between">
             <div class="flex items-center gap-10">
                 <a href="/" class="font-display-hero text-headline-md italic uppercase font-black text-primary tracking-tighter">Trendcord</a>
-                <nav class="flex gap-7">
-                    <a href="/features" class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-on-surface transition-colors" aria-current="{{ 'page' if request.url.path == '/features' else none }}">Özellikler</a>
-                    <a href="/servers" class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-on-surface transition-colors" aria-current="{{ 'page' if request.url.path.startswith('/servers') else none }}">Sunucular</a>
-                    <a href="/users" class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-on-surface transition-colors" aria-current="{{ 'page' if request.url.path.startswith('/users') else none }}">Kullanıcılar</a>
-                    <a href="/compare" class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-on-surface transition-colors" aria-current="{{ 'page' if request.url.path.startswith('/compare') else none }}">Karşılaştır</a>
-                    <a href="/alerts" class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-on-surface transition-colors" aria-current="{{ 'page' if request.url.path.startswith('/alerts') else none }}">Alarm</a>
-                    <a href="/stats" class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-on-surface transition-colors" aria-current="{{ 'page' if request.url.path.startswith('/stats') else none }}">Veriler</a>
+                <nav aria-label="Ana menü" class="flex gap-7">
+                    <a href="/features" class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-on-surface transition-colors" {% if request.url.path == '/features' %}aria-current="page"{% endif %}">Özellikler</a>
+                    <a href="/servers" class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-on-surface transition-colors" {% if request.url.path.startswith('/servers') %}aria-current="page"{% endif %}">Sunucular</a>
+                    <a href="/users" class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-on-surface transition-colors" {% if request.url.path.startswith('/users') %}aria-current="page"{% endif %}">Kullanıcılar</a>
+                    <a href="/compare" class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-on-surface transition-colors" {% if request.url.path.startswith('/compare') %}aria-current="page"{% endif %}">Karşılaştır</a>
+                    <a href="/alerts" class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-on-surface transition-colors" {% if request.url.path.startswith('/alerts') %}aria-current="page"{% endif %}">Alarm</a>
+                    <a href="/stats" class="nav-link font-label-bold text-label-bold text-on-surface-variant hover:text-on-surface transition-colors" {% if request.url.path.startswith('/stats') %}aria-current="page"{% endif %}">Veriler</a>
                     {% if is_owner %}<a href="/admin" class="font-label-bold text-label-bold text-primary hover:text-primary transition-colors">Admin</a>{% endif %}
                     <a href="{{ support_server }}" target="_blank" rel="noopener noreferrer" class="font-label-bold text-label-bold text-on-surface-variant hover:text-on-surface transition-colors">Destek</a>
                     <a href="{{ bot_invite_url }}" target="_blank" rel="noopener noreferrer" class="px-4 py-1.5 rounded-full bg-primary-container text-on-primary-container font-label-bold text-label-bold hover:opacity-90 transition-all active:scale-95">Botu Ekle</a>
                 </nav>
             </div>
             <div class="flex items-center gap-3">
-                <button onclick="toggleTheme()" class="w-10 h-10 rounded-full glass-panel flex items-center justify-center active:scale-90 transition-all hover:border-primary/30" title="Temayı Değiştir" aria-label="Temayı Değiştir">
-                    <span class="material-symbols-outlined text-on-surface-variant theme-toggle-icon text-xl">light_mode</span>
+                <button type="button" data-theme-toggle class="w-10 h-10 rounded-full glass-panel flex items-center justify-center active:scale-90 transition-all hover:border-primary/30" title="Temayı Değiştir" aria-label="Temayı Değiştir">
+                    <svg class="icon text-on-surface-variant theme-toggle-icon text-xl" aria-hidden="true" focusable="false"><use href="#i-light_mode"/></svg>
                 </button>
                 {% if user %}
                     <div class="flex items-center gap-4">
@@ -127,9 +119,12 @@
                             <p class="text-xs text-primary">{{ user.username }}</p>
                         </div>
                         <div class="w-10 h-10 rounded-full glass-panel border-2 border-primary/20 overflow-hidden cursor-pointer active:scale-95 transition-transform">
-                            <img src="{{ user.avatar_url }}" alt="Profil fotoğrafınız" class="w-full h-full object-cover" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                            <img src="{{ user.avatar_url }}" alt="Profil fotoğrafınız" width="400" height="400" class="w-full h-full object-cover" data-fallback="avatar">
                         </div>
-                        <a href="/logout" class="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors" title="Çıkış" aria-label="Çıkış Yap">logout</a>
+                        <form action="/logout" method="POST" class="contents">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+                            <button type="submit" class="text-on-surface-variant hover:text-error transition-colors" title="Çıkış" aria-label="Çıkış Yap"><svg class="icon text-on-surface-variant hover:text-error transition-colors" aria-hidden="true" focusable="false"><use href="#i-logout"/></svg></button>
+                        </form>
                     </div>
                 {% else %}
                     <a href="/login" class="px-6 py-2.5 rounded-full bg-primary-container text-on-primary-container font-label-bold text-label-bold hover:opacity-90 transition-all active:scale-95">Discord ile Bağlan</a>
@@ -139,116 +134,120 @@
     </header>
 
     <!-- [MOBİL] Üst Header -->
-    <header class="lg:hidden fixed top-0 w-full z-50 bg-background border-b border-outline-variant">
+    <div data-site-header class="lg:hidden fixed top-0 w-full z-50 bg-background border-b border-outline-variant">
         <div class="flex items-center justify-between px-margin-mobile h-16">
             <a href="/" class="font-display-hero text-xl italic uppercase font-black text-primary tracking-tighter">Trendcord</a>
             <div class="flex items-center gap-2">
-                <button onclick="toggleTheme()" class="w-8 h-8 rounded-full glass-panel flex items-center justify-center active:scale-90 transition-all" title="Temayı Değiştir" aria-label="Temayı Değiştir">
-                    <span class="material-symbols-outlined text-on-surface-variant theme-toggle-icon text-lg">light_mode</span>
+                <button type="button" data-theme-toggle class="w-8 h-8 rounded-full glass-panel flex items-center justify-center active:scale-90 transition-all" title="Temayı Değiştir" aria-label="Temayı Değiştir">
+                    <svg class="icon text-on-surface-variant theme-toggle-icon text-lg" aria-hidden="true" focusable="false"><use href="#i-light_mode"/></svg>
                 </button>
                 {% if user %}
                     <div class="w-8 h-8 rounded-full glass-panel border border-primary/20 overflow-hidden">
-                        <img src="{{ user.avatar_url }}" alt="Profil fotoğrafınız" class="w-full h-full object-cover" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                        <img src="{{ user.avatar_url }}" alt="Profil fotoğrafınız" width="400" height="400" class="w-full h-full object-cover" data-fallback="avatar">
                     </div>
                 {% else %}
                     <a href="/login" class="px-4 py-2 rounded-full bg-primary-container text-on-primary-container font-label-bold text-xs">Giriş</a>
                 {% endif %}
-                <button onclick="toggleModal('mobileMenuDrawer')" class="material-symbols-outlined text-on-surface-variant" aria-label="Menüyü Aç">menu</button>
+                <button type="button" data-modal-open-btn="mobileMenuDrawer" class="text-on-surface-variant" aria-haspopup="dialog" aria-controls="mobileMenuDrawer" aria-expanded="false" aria-label="Menüyü Aç"><svg class="icon text-on-surface-variant" aria-hidden="true" focusable="false"><use href="#i-menu"/></svg></button>
             </div>
         </div>
-    </header>
+    </div>
 
     <!-- Ana İçerik -->
-    <main class="lg:pt-0 pt-16 mobile-safe-bottom min-h-screen">
+    <main id="main-content" tabindex="-1" class="lg:pt-0 pt-16 mobile-safe-bottom min-h-screen focus:outline-none">
         {% block content %}{% endblock %}
     </main>
 
     <!-- [MOBİL] Alt Menü (App-style Bottom Bar) -->
-    <nav class="lg:hidden fixed bottom-0 left-0 w-full z-50 bg-background border-t border-outline-variant" style="padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: 0 -2px 12px rgba(0,0,0,0.05);">
+    <nav aria-label="Alt menü" class="lg:hidden fixed bottom-0 left-0 w-full z-50 bg-background border-t border-outline-variant" style="padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: 0 -2px 12px rgba(0,0,0,0.05);">
         <div class="flex justify-around items-center px-2 pt-2 pb-1">
-            <a href="/" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-[11px] transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if request.url.path == '/' else 'text-on-surface-variant hover:text-primary' }}" style="min-width:48px">
-                <span class="material-symbols-outlined text-xl {{ 'font-variation-settings:\"FILL\" 1' if request.url.path == '/' }}">home</span>
+            <a href="/" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if request.url.path == '/' else 'text-on-surface-variant hover:text-primary' }}" {% if request.url.path == '/' %}aria-current="page"{% endif %}> style="min-width:48px">
+                <svg class="icon text-xl " aria-hidden="true" focusable="false"><use href="#i-home"/></svg>
                 <span class="mt-0.5">Ana Sayfa</span>
             </a>
-            <a href="/dashboard" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-[11px] transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/dashboard' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" style="min-width:48px">
-                <span class="material-symbols-outlined text-xl {{ 'font-variation-settings:\"FILL\" 1' if '/dashboard' in request.url.path }}">dashboard</span>
+            <a href="/dashboard" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/dashboard' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" {% if '/dashboard' in request.url.path %}aria-current="page"{% endif %}> style="min-width:48px">
+                <svg class="icon text-xl " aria-hidden="true" focusable="false"><use href="#i-dashboard"/></svg>
                 <span class="mt-0.5">Takipte</span>
             </a>
-            <button onclick="toggleModal('mobileAddModal')" class="flex flex-col items-center justify-center relative -top-3 active:scale-90 transition-transform">
+            <button type="button" data-modal-open-btn="mobileAddModal" aria-haspopup="dialog" aria-controls="mobileAddModal" aria-expanded="false" aria-label="Ürün ekle" class="flex flex-col items-center justify-center relative -top-3 active:scale-90 transition-transform">
                 <div class="w-14 h-14 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-xl orange-glow border-[3px] border-background">
-                    <span class="material-symbols-outlined text-3xl" style="font-variation-settings:'FILL' 1">add_circle</span>
+                    <svg class="icon text-3xl" aria-hidden="true" focusable="false"><use href="#i-add_circle"/></svg>
                 </div>
             </button>
-            <a href="/servers" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-[11px] transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/servers' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" style="min-width:48px">
-                <span class="material-symbols-outlined text-xl {{ 'font-variation-settings:\"FILL\" 1' if '/servers' in request.url.path }}">dns</span>
+            <a href="/servers" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/servers' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" {% if '/servers' in request.url.path %}aria-current="page"{% endif %}> style="min-width:48px">
+                <svg class="icon text-xl " aria-hidden="true" focusable="false"><use href="#i-dns"/></svg>
                 <span class="mt-0.5">Sunucular</span>
             </a>
-            <a href="/users" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-[11px] transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/users' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" style="min-width:48px">
-                <span class="material-symbols-outlined text-xl {{ 'font-variation-settings:\"FILL\" 1' if '/users' in request.url.path }}">group</span>
+            <a href="/users" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/users' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" {% if '/users' in request.url.path %}aria-current="page"{% endif %}> style="min-width:48px">
+                <svg class="icon text-xl " aria-hidden="true" focusable="false"><use href="#i-group"/></svg>
                 <span class="mt-0.5">Kullanıcılar</span>
             </a>
-            <a href="/alerts" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-[11px] transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/alerts' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" style="min-width:48px">
-                <span class="material-symbols-outlined text-xl {{ 'font-variation-settings:\"FILL\" 1' if '/alerts' in request.url.path }}">notifications_active</span>
+            <a href="/alerts" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/alerts' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" {% if '/alerts' in request.url.path %}aria-current="page"{% endif %}> style="min-width:48px">
+                <svg class="icon text-xl " aria-hidden="true" focusable="false"><use href="#i-notifications_active"/></svg>
                 <span class="mt-0.5">Alarm</span>
             </a>
         </div>
     </nav>
 
     <!-- Mobil Menü Drawer (Full Screen Overlay) -->
-    <div id="mobileMenuDrawer" class="fixed inset-0 z-[100] hidden" data-modal-open="false" onclick="if(event.target===this) toggleModal('mobileMenuDrawer')">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm overlay-fade" onclick="toggleModal('mobileMenuDrawer')"></div>
+    <div id="mobileMenuDrawer" class="fixed inset-0 z-[100]" data-modal-open="false" hidden
+         role="dialog" aria-modal="true" aria-labelledby="mobileMenuDrawerTitle">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm overlay-fade" data-modal-backdrop></div>
         <div class="relative w-full h-full bg-surface-container-high overflow-y-auto drawer-slide">
             <div class="sticky top-0 z-10 bg-surface-container-high flex items-center justify-between px-6 pt-12 pb-4">
-                <span class="font-display-hero text-xl italic uppercase font-black text-primary tracking-tighter">Menü</span>
-                <button onclick="toggleModal('mobileMenuDrawer')" class="material-symbols-outlined text-on-surface-variant hover:text-on-surface text-2xl">close</button>
+                <h2 id="mobileMenuDrawerTitle" class="font-display-hero text-xl italic uppercase font-black text-primary tracking-tighter">Menü</h2>
+                <button type="button" data-modal-close class="text-on-surface-variant hover:text-on-surface text-2xl" aria-label="Menüyü Kapat"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-close"/></svg></button>
             </div>
             <div class="px-6 pb-12">
                 <div class="grid grid-cols-1 gap-2">
                     {% if user %}
-                    <a href="/dashboard" onclick="toggleModal('mobileMenuDrawer')" class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
-                        <span class="material-symbols-outlined text-primary">dashboard</span> Panel
+                    <a href="/dashboard" data-modal-close class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
+                        <svg class="icon text-primary" aria-hidden="true" focusable="false"><use href="#i-dashboard"/></svg> Panel
                     </a>
                     {% if is_owner %}
-                    <a href="/admin" onclick="toggleModal('mobileMenuDrawer')" class="flex items-center gap-4 py-3 px-4 rounded-xl text-primary font-bold text-lg hover:bg-surface-variant/30 transition-colors">
-                        <span class="material-symbols-outlined text-primary">shield</span> Admin Paneli
+                    <a href="/admin" data-modal-close class="flex items-center gap-4 py-3 px-4 rounded-xl text-primary font-bold text-lg hover:bg-surface-variant/30 transition-colors">
+                        <svg class="icon text-primary" aria-hidden="true" focusable="false"><use href="#i-shield"/></svg> Admin Paneli
                     </a>
                     {% endif %}
                     <div class="h-px bg-border-glass my-2"></div>
                     {% endif %}
-                    <a href="/servers" onclick="toggleModal('mobileMenuDrawer')" class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
-                        <span class="material-symbols-outlined text-tertiary">dns</span> Sunucular
+                    <a href="/servers" data-modal-close class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
+                        <svg class="icon text-tertiary" aria-hidden="true" focusable="false"><use href="#i-dns"/></svg> Sunucular
                     </a>
-                    <a href="/users" onclick="toggleModal('mobileMenuDrawer')" class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
-                        <span class="material-symbols-outlined text-primary">group</span> Kullanıcılar
+                    <a href="/users" data-modal-close class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
+                        <svg class="icon text-primary" aria-hidden="true" focusable="false"><use href="#i-group"/></svg> Kullanıcılar
                     </a>
-                    <a href="/features" onclick="toggleModal('mobileMenuDrawer')" class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
-                        <span class="material-symbols-outlined text-primary">bolt</span> Özellikler
+                    <a href="/features" data-modal-close class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
+                        <svg class="icon text-primary" aria-hidden="true" focusable="false"><use href="#i-bolt"/></svg> Özellikler
                     </a>
-                    <a href="/how-it-works" onclick="toggleModal('mobileMenuDrawer')" class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
-                        <span class="material-symbols-outlined text-tertiary">travel_explore</span> Nasıl Çalışır?
+                    <a href="/how-it-works" data-modal-close class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
+                        <svg class="icon text-tertiary" aria-hidden="true" focusable="false"><use href="#i-travel_explore"/></svg> Nasıl Çalışır?
                     </a>
-                    <a href="/privacy" onclick="toggleModal('mobileMenuDrawer')" class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
-                        <span class="material-symbols-outlined text-secondary">security</span> Gizlilik Politikası
+                    <a href="/privacy" data-modal-close class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
+                        <svg class="icon text-secondary" aria-hidden="true" focusable="false"><use href="#i-security"/></svg> Gizlilik Politikası
                     </a>
-                    <a href="/terms" onclick="toggleModal('mobileMenuDrawer')" class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
-                        <span class="material-symbols-outlined text-on-surface-variant">description</span> Hizmet Şartları
+                    <a href="/terms" data-modal-close class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
+                        <svg class="icon text-on-surface-variant" aria-hidden="true" focusable="false"><use href="#i-description"/></svg> Hizmet Şartları
                     </a>
                     <div class="h-px bg-border-glass my-2"></div>
-                    <a href="{{ support_server }}" target="_blank" rel="noopener noreferrer" onclick="toggleModal('mobileMenuDrawer')" class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
-                        <span class="material-symbols-outlined text-secondary">support</span> Destek Sunucusu
+                    <a href="{{ support_server }}" target="_blank" rel="noopener noreferrer" data-modal-close class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg hover:bg-surface-variant/30 transition-colors">
+                        <svg class="icon text-secondary" aria-hidden="true" focusable="false"><use href="#i-support"/></svg> Destek Sunucusu
                     </a>
-                    <a href="{{ bot_invite_url }}" target="_blank" rel="noopener noreferrer" onclick="toggleModal('mobileMenuDrawer')" class="flex items-center gap-4 py-3 px-4 rounded-xl bg-primary-container/20 text-primary font-bold text-lg hover:bg-primary-container/30 transition-colors">
-                        <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1">add_circle</span> Botu Sunucuna Ekle
+                    <a href="{{ bot_invite_url }}" target="_blank" rel="noopener noreferrer" data-modal-close class="flex items-center gap-4 py-3 px-4 rounded-xl bg-primary-container/20 text-primary font-bold text-lg hover:bg-primary-container/30 transition-colors">
+                        <svg class="icon text-primary" aria-hidden="true" focusable="false"><use href="#i-add_circle"/></svg> Botu Sunucuna Ekle
                     </a>
                     <div class="h-px bg-border-glass my-2"></div>
                     {% if user %}
-                    <button onclick="toggleModal('mobileMenuDrawer');toggleTheme();" class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg w-full text-left hover:bg-surface-variant/30 transition-colors">
-                        <span class="material-symbols-outlined text-on-surface-variant">contrast</span> <span id="themeLabel">Açık Tema</span>
+                    <button data-modal-close data-also-theme class="flex items-center gap-4 py-3 px-4 rounded-xl text-on-surface font-bold text-lg w-full text-left hover:bg-surface-variant/30 transition-colors">
+                        <svg class="icon text-on-surface-variant" aria-hidden="true" focusable="false"><use href="#i-contrast"/></svg> <span id="themeLabel">Açık Tema</span>
                     </button>
                     <div class="h-px bg-border-glass my-2"></div>
-                    <a href="/logout" onclick="toggleModal('mobileMenuDrawer')" class="flex items-center gap-4 py-3 px-4 rounded-xl text-error font-bold text-lg hover:bg-surface-variant/30 transition-colors">
-                        <span class="material-symbols-outlined">logout</span> Çıkış Yap
-                    </a>
+                    <form action="/logout" method="POST" class="contents" data-modal-close>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+                        <button type="submit" class="flex items-center gap-4 py-3 px-4 rounded-xl text-error font-bold text-lg w-full text-left hover:bg-surface-variant/30 transition-colors">
+                            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-logout"/></svg> Çıkış Yap
+                        </button>
+                    </form>
                     {% endif %}
                 </div>
             </div>
@@ -256,102 +255,30 @@
     </div>
 
     <!-- Mobil Hızlı Ekleme Modalı -->
-    <div id="mobileAddModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center px-6" data-modal-open="false">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm overlay-fade" onclick="toggleModal('mobileAddModal')"></div>
-        <div class="relative w-full max-w-sm bg-surface-container-high rounded-[2rem] p-8 shadow-2xl border border-border-glass modal-scale">
-            <h3 class="font-headline-md text-on-surface mb-6">Yeni Ürün Ekle</h3>
-            <form action="/product/add" method="POST" onsubmit="return validateGuild(this)">
+    <div id="mobileAddModal" class="fixed inset-0 z-[100] px-6" data-modal-open="false" hidden
+         role="dialog" aria-modal="true" aria-labelledby="mobileAddModalTitle">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm overlay-fade" data-modal-backdrop></div>
+        <div class="relative h-full w-full grid place-items-center">
+        <div class="w-full max-w-sm bg-surface-container-high rounded-[2rem] p-8 shadow-2xl border border-border-glass modal-scale">
+            <h2 id="mobileAddModalTitle" class="font-headline-md text-on-surface mb-6">Yeni Ürün Ekle</h2>
+            <form action="/product/add" method="POST" data-requires-guild novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
                 <input type="hidden" name="guild_id" value="{{ current_guild.id if current_guild else '' }}">
-                <input type="url" name="url" placeholder="Trendyol linkini yapıştır..." required
-                    class="w-full bg-surface-container-low border border-border-glass rounded-2xl p-4 text-on-surface placeholder:text-on-surface-variant/50 mb-4 focus:outline-none focus:border-primary transition-colors font-body-md">
+                <p data-form-error role="alert" hidden
+                   class="mb-3 rounded-xl bg-error/10 text-error px-4 py-3 text-sm font-label-bold"></p>
+                <label for="mobileAddUrl" class="sr-only">Trendyol ürün bağlantısı</label>
+                <input id="mobileAddUrl" type="url" name="url" placeholder="Trendyol linkini yapıştır..." required
+                    class="w-full bg-surface-container-low border border-border-glass rounded-2xl p-4 text-on-surface placeholder:text-on-surface-variant mb-4 focus:outline-none focus:border-primary transition-colors font-body-md">
                 <button type="submit" class="w-full py-4 rounded-2xl bg-primary-container text-on-primary-container font-label-bold text-label-bold shadow-lg active:scale-95 transition-all">Takibi Başlat</button>
             </form>
         </div>
+        </div>
     </div>
 
-    <script>
-        function toggleTheme() {
-            const html = document.documentElement;
-            const isDark = html.classList.contains('dark');
-            if (isDark) {
-                html.classList.remove('dark');
-                localStorage.setItem('trendcord-theme', 'light');
-            } else {
-                html.classList.add('dark');
-                localStorage.setItem('trendcord-theme', 'dark');
-            }
-            updateThemeUI();
-        }
-        function updateThemeUI() {
-            const isDark = document.documentElement.classList.contains('dark');
-            const icons = document.querySelectorAll('.theme-toggle-icon');
-            const label = document.getElementById('themeLabel');
-            icons.forEach(icon => {
-                icon.textContent = isDark ? 'dark_mode' : 'light_mode';
-                icon.classList.add('rotate');
-                setTimeout(() => icon.classList.remove('rotate'), 400);
-            });
-            if (label) label.textContent = isDark ? 'Açık Tema' : 'Koyu Tema';
-        }
-        function toggleModal(id) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            if (el.dataset.modalOpen === 'true') {
-                el.dataset.modalOpen = 'false';
-                clearTimeout(el._closeTimer);
-                el._closeTimer = setTimeout(() => {
-                    if (el.dataset.modalOpen !== 'true') el.classList.add('hidden');
-                }, 300);
-            } else {
-                clearTimeout(el._closeTimer);
-                el.classList.remove('hidden');
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => { el.dataset.modalOpen = 'true'; });
-                });
-            }
-        }
-        function validateGuild(form) {
-            if (!form.guild_id.value) {
-                alert('Lütfen önce bir sunucu seçin.');
-                return false;
-            }
-            return true;
-        }
-        document.addEventListener('DOMContentLoaded', updateThemeUI);
-        let scrollTicking = false;
-        window.addEventListener('scroll', () => {
-            if (scrollTicking) return;
-            scrollTicking = true;
-            requestAnimationFrame(() => {
-                document.querySelectorAll('header').forEach(h => {
-                    h.classList.toggle('is-scrolled', window.scrollY > 24);
-                });
-                scrollTicking = false;
-            });
-        }, { passive: true });
-        (function initReveal() {
-            const cards = document.querySelectorAll('.glass-card');
-            if (!cards.length) return;
-            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-            document.querySelectorAll('.grid').forEach(grid => {
-                grid.querySelectorAll(':scope > .glass-card').forEach((card, i) => {
-                    card.style.setProperty('--reveal-delay', `${Math.min(i * 80, 320)}ms`);
-                });
-            });
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.08, rootMargin: '0px 0px -32px 0px' });
-            cards.forEach(card => {
-                card.classList.add('reveal');
-                observer.observe(card);
-            });
-        })();
-    </script>
+    <script src="/static/js/app.js?v=2" defer></script>
     {% block scripts %}{% endblock %}
+    {#- SVG ikon sprite: <use href="#i-..."> referanslari icin. Sonda tutulur ki
+        govde metni once parse olsun (FCP/LCP). -#}
+    {% include "_icons.html" %}
 </body>
 </html>

@@ -13,12 +13,12 @@
             <table class="w-full text-left">
                 <thead class="bg-surface-container-low">
                     <tr>
-                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Zaman</th>
-                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Ürün</th>
-                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Eski Fiyat</th>
-                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Yeni Fiyat</th>
-                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider">Kullanıcı</th>
-                        <th class="px-4 md:px-6 py-4 font-label-bold text-[10px] text-on-surface-variant uppercase tracking-wider hidden lg:table-cell">Sunucu</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-xs text-on-surface-variant uppercase tracking-wider">Zaman</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-xs text-on-surface-variant uppercase tracking-wider">Ürün</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-xs text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Eski Fiyat</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-xs text-on-surface-variant uppercase tracking-wider hidden md:table-cell">Yeni Fiyat</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-xs text-on-surface-variant uppercase tracking-wider">Kullanıcı</th>
+                        <th class="px-4 md:px-6 py-4 font-label-bold text-xs text-on-surface-variant uppercase tracking-wider hidden lg:table-cell">Sunucu</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border-glass">
@@ -38,7 +38,7 @@
                             {% endif %}
                         </td>
                         <td class="px-4 md:px-6 py-3 hidden md:table-cell">
-                            <span class="font-label-bold text-sm {{ 'text-[#4ade80]' if a.get('old_price') and a.get('current_price') and a.current_price < a.old_price else 'text-error' if a.get('old_price') and a.get('current_price') and a.current_price > a.old_price else 'text-on-surface' }}">
+                            <span class="font-label-bold text-sm {{ 'text-success' if a.get('old_price') and a.get('current_price') and a.current_price < a.old_price else 'text-error' if a.get('old_price') and a.get('current_price') and a.current_price > a.old_price else 'text-on-surface' }}">
                                 ₺{{ "{:,.0f}".format(a.get('current_price', 0)) }}
                             </span>
                         </td>

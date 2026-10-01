@@ -12,7 +12,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div class="glass-panel p-5 md:p-6 rounded-lg relative overflow-hidden">
             <div class="flex items-center gap-3 mb-3">
-                <div class="w-3 h-3 rounded-full bg-[#4ade80] animate-pulse"></div>
+                <div class="w-3 h-3 rounded-full bg-success animate-pulse"></div>
                 <span class="font-label-bold text-xs text-on-surface-variant uppercase">Bot Durumu</span>
             </div>
             <div class="text-2xl md:text-3xl font-extrabold text-on-surface">{{ bot_status|upper }}</div>
@@ -20,7 +20,7 @@
         </div>
         <div class="glass-panel p-5 md:p-6 rounded-lg">
             <div class="flex items-center gap-3 mb-3">
-                <span class="material-symbols-outlined text-primary">storage</span>
+                <svg class="icon text-primary" aria-hidden="true" focusable="false"><use href="#i-storage"/></svg>
                 <span class="font-label-bold text-xs text-on-surface-variant uppercase">Veritabanı</span>
             </div>
             <div class="text-2xl md:text-3xl font-extrabold text-on-surface">{{ "{:,.1f}".format(sys_stats.get('db_size', 0) / 1024 / 1024) }} MB</div>
@@ -28,7 +28,7 @@
         </div>
         <div class="glass-panel p-5 md:p-6 rounded-lg">
             <div class="flex items-center gap-3 mb-3">
-                <span class="material-symbols-outlined text-secondary">timeline</span>
+                <svg class="icon text-secondary" aria-hidden="true" focusable="false"><use href="#i-timeline"/></svg>
                 <span class="font-label-bold text-xs text-on-surface-variant uppercase">Toplam Kontrol</span>
             </div>
             <div class="text-2xl md:text-3xl font-extrabold text-on-surface">{{ "{:,}".format(sys_stats.get('total_checks', 0)) }}</div>
@@ -36,7 +36,7 @@
         </div>
         <div class="glass-panel p-5 md:p-6 rounded-lg">
             <div class="flex items-center gap-3 mb-3">
-                <span class="material-symbols-outlined text-tertiary">schedule</span>
+                <svg class="icon text-tertiary" aria-hidden="true" focusable="false"><use href="#i-schedule"/></svg>
                 <span class="font-label-bold text-xs text-on-surface-variant uppercase">Çalışma Süresi</span>
             </div>
             <div class="text-2xl md:text-3xl font-extrabold text-on-surface">
@@ -55,38 +55,38 @@
             <div class="space-y-4">
                 <div class="flex items-center justify-between py-3 px-4 rounded-xl bg-surface-container-low">
                     <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-primary">dns</span>
+                        <svg class="icon text-primary" aria-hidden="true" focusable="false"><use href="#i-dns"/></svg>
                         <span class="font-body-md text-sm text-on-surface">Discord Bot</span>
                     </div>
-                    <span class="flex items-center gap-1.5 text-[#4ade80] font-label-bold text-[10px]">
-                        <span class="w-2 h-2 rounded-full bg-[#4ade80]"></span> Çevrimiçi
+                    <span class="flex items-center gap-1.5 text-success font-label-bold text-xs">
+                        <span class="w-2 h-2 rounded-full bg-success"></span> Çevrimiçi
                     </span>
                 </div>
                 <div class="flex items-center justify-between py-3 px-4 rounded-xl bg-surface-container-low">
                     <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-secondary">database</span>
+                        <svg class="icon text-secondary" aria-hidden="true" focusable="false"><use href="#i-database"/></svg>
                         <span class="font-body-md text-sm text-on-surface">SQLite Veritabanı</span>
                     </div>
-                    <span class="flex items-center gap-1.5 text-[#4ade80] font-label-bold text-[10px]">
-                        <span class="w-2 h-2 rounded-full bg-[#4ade80]"></span> Çevrimiçi
+                    <span class="flex items-center gap-1.5 text-success font-label-bold text-xs">
+                        <span class="w-2 h-2 rounded-full bg-success"></span> Çevrimiçi
                     </span>
                 </div>
                 <div class="flex items-center justify-between py-3 px-4 rounded-xl bg-surface-container-low">
                     <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-tertiary">api</span>
+                        <svg class="icon text-tertiary" aria-hidden="true" focusable="false"><use href="#i-api"/></svg>
                         <span class="font-body-md text-sm text-on-surface">Discord API</span>
                     </div>
-                    <span class="flex items-center gap-1.5 text-[#4ade80] font-label-bold text-[10px]">
-                        <span class="w-2 h-2 rounded-full bg-[#4ade80]"></span> {{ bot_latency }}ms
+                    <span class="flex items-center gap-1.5 text-success font-label-bold text-xs">
+                        <span class="w-2 h-2 rounded-full bg-success"></span> {{ bot_latency }}ms
                     </span>
                 </div>
                 <div class="flex items-center justify-between py-3 px-4 rounded-xl bg-surface-container-low">
                     <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-primary-container">sync</span>
+                        <svg class="icon text-primary-container" aria-hidden="true" focusable="false"><use href="#i-sync"/></svg>
                         <span class="font-body-md text-sm text-on-surface">Fiyat Kontrol Döngüsü</span>
                     </div>
-                    <span class="flex items-center gap-1.5 text-[#4ade80] font-label-bold text-[10px]">
-                        <span class="w-2 h-2 rounded-full bg-[#4ade80]"></span> 60dk
+                    <span class="flex items-center gap-1.5 text-success font-label-bold text-xs">
+                        <span class="w-2 h-2 rounded-full bg-success"></span> 60dk
                     </span>
                 </div>
             </div>

@@ -8,7 +8,7 @@
         <!-- Header -->
         <div class="text-center mb-12 md:mb-20">
             <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary font-label-bold text-label-bold mb-6">
-                <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1">notifications_active</span>
+                <svg class="icon text-[18px]" aria-hidden="true" focusable="false"><use href="#i-notifications_active"/></svg>
                 FİYAT ALARMLARI
             </div>
             <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-4">Fiyat Alarmı</h1>
@@ -19,20 +19,21 @@
         <div class="glass-panel rounded-lg p-6 md:p-10 mb-8 md:mb-12 max-w-2xl mx-auto">
             <h2 class="font-headline-md text-[20px] md:text-headline-md text-on-surface mb-6">Yeni Alarm Ekle</h2>
             <form action="/alert/add" method="POST" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
                 <div>
-                    <label class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Ürün ID</label>
-                    <input type="text" name="product_id" placeholder="Ürün ID'si (ör: 12345678)" required
-                        class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md">
+                    <label for="alertProductId" class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Ürün ID</label>
+                    <input id="alertProductId" type="text" name="product_id" placeholder="Ürün ID'si (ör: 12345678)" required
+                        class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors font-body-md">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Hedef Fiyat (TL)</label>
-                        <input type="number" name="target_price" step="0.01" placeholder="199.99" required
-                            class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md">
+                        <label for="alertTargetPrice" class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Hedef Fiyat (TL)</label>
+                        <input id="alertTargetPrice" type="number" name="target_price" step="0.01" placeholder="199.99" required
+                            class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors font-body-md">
                     </div>
                     <div>
-                        <label class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Yön</label>
-                        <select name="direction"
+                        <label for="alertDirection" class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Yön</label>
+                        <select id="alertDirection" name="direction"
                             class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface focus:outline-none focus:border-primary transition-colors font-body-md">
                             <option value="below">📉 Fiyat Düşünce</option>
                             <option value="above">📈 Fiyat Yükseldiğinde</option>
@@ -41,14 +42,14 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Sunucu</label>
-                        <input type="text" name="guild_id" placeholder="Sunucu ID"
-                            class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md">
+                        <label for="alertGuildId" class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Sunucu</label>
+                        <input id="alertGuildId" type="text" name="guild_id" placeholder="Sunucu ID"
+                            class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors font-body-md">
                     </div>
                     <div>
-                        <label class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Kanal ID</label>
-                        <input type="text" name="channel_id" placeholder="Kanal ID"
-                            class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors font-body-md">
+                        <label for="alertChannelId" class="font-label-bold text-label-bold text-on-surface-variant text-xs mb-2 block">Kanal ID</label>
+                        <input id="alertChannelId" type="text" name="channel_id" placeholder="Kanal ID"
+                            class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors font-body-md">
                     </div>
                 </div>
                 <button type="submit" class="w-full py-4 rounded-xl bg-primary-container text-on-primary-container font-label-bold text-label-bold shadow-lg active:scale-95 transition-all">
@@ -67,18 +68,19 @@
                     <div class="flex-1 min-w-0">
                         <h3 class="font-label-bold text-on-surface text-sm truncate">{{ a.product_name or 'Ürün' }}</h3>
                         <div class="flex flex-wrap gap-2 mt-2">
-                            <span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-bold text-[10px]">
+                            <span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-bold text-xs">
                                 Mevcut: {{ "{:.2f}".format(a.current_price or 0) }} TL
                             </span>
-                            <span class="px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary font-label-bold text-[10px]">
+                            <span class="px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary font-label-bold text-xs">
                                 Hedef: {{ "{:.2f}".format(a.target_price) }} TL
                             </span>
-                            <span class="px-2 py-0.5 rounded-full {% if a.direction == 'below' %}bg-[#4ade80]/10 text-[#4ade80]{% else %}bg-[#ef4444]/10 text-[#ef4444]{% endif %} font-label-bold text-[10px]">
+                            <span class="px-2 py-0.5 rounded-full {% if a.direction == 'below' %}bg-success-soft text-success{% else %}bg-error-soft text-error{% endif %} font-label-bold text-xs">
                                 {% if a.direction == 'below' %}📉 Düşünce{% else %}📈 Yükseldiğinde{% endif %}
                             </span>
                         </div>
                     </div>
-                    <form action="/alert/delete/{{ a.id }}" method="POST" onsubmit="return confirm('Alarmı silmek istediğinize emin misiniz?')">
+                    <form action="/alert/delete/{{ a.id }}" method="POST" data-confirm="Alarmı silmek istediğinize emin misiniz?">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
                         <button type="submit" class="px-4 py-2 rounded-full bg-error/10 text-error font-label-bold text-xs hover:bg-error/20 transition-colors active:scale-95">
                             Sil
                         </button>
@@ -88,7 +90,7 @@
             </div>
             {% else %}
             <div class="flex flex-col items-center justify-center py-16 glass-panel rounded-lg border-dashed border-border-glass">
-                <span class="material-symbols-outlined text-primary text-[60px] md:text-[80px] mb-4">notifications_off</span>
+                <svg class="icon text-primary text-[60px] md:text-[80px] mb-4" aria-hidden="true" focusable="false"><use href="#i-notifications_off"/></svg>
                 <h3 class="font-headline-md text-[20px] md:text-headline-md text-on-surface mb-2">Henüz alarm yok</h3>
                 <p class="text-on-surface-variant font-body-md text-[13px] md:text-body-md max-w-md text-center mb-6 px-4">Yukarıdaki formu kullanarak fiyat alarmı kurabilirsiniz.</p>
             </div>
