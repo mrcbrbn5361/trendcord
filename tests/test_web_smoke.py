@@ -7,7 +7,9 @@ Calistirma:
 tarayici benzeticisi duz HTTP uzerinde gondermez ve CSRF belirteci eslesmez.
 Uretimde deger 1 (guvenli) kalmalidir.
 """
+import glob
 import http.cookiejar
+import io
 import os
 import re
 import sys
@@ -17,7 +19,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-sys.path.insert(0, "/data/data/com.termux/files/home/trendcord")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
 import uvicorn
 
 PORT = int(os.environ.get("SMOKE_PORT", "8823"))
@@ -154,8 +157,14 @@ check("HEAD /static/css 200", st == 200, f"HTTP {st}")
 print("\n== Cache politikasi")
 st, _, h = req("/")
 cc = h.get("cache-control", "")
-check("dinamik HTML no-store", "no-store" in cc, cc)
 check("dinamik HTML private", "private" in cc, cc)
+check("dinamik HTML no-cache (revalidate)", "no-cache" in cc, cc)
+check("dinamik HTML must-revalidate", "must-revalidate" in cc, cc)
+# `no-store` Chrome'da bfcache'i devre disi birakir; HTML belgelerinde kullanilmaz.
+check("dinamik HTML no-store kullanmiyor (bfcache)", "no-store" not in cc, cc)
+vary = h.get("vary", "")
+check("Vary: Cookie", "cookie" in vary.lower(), vary)
+check("Vary: Accept-Encoding", "accept-encoding" in vary.lower(), vary)
 st, _, h = req("/api/v1/me")
 check("API no-store", "no-store" in h.get("cache-control", ""), h.get("cache-control", "-"))
 for a in ["/static/css/tailwind.min.css?v=9", "/static/js/app.js?v=2", "/static/js/chart.js?v=1",
@@ -202,6 +211,43 @@ for p in ["/", "/features", "/how-it-works", "/servers", "/users", "/compare", "
         check(f"{p} placehold.co yok", "placehold.co" not in body)
         check(f"{p} material-symbols yok", "material-symbols" not in body)
         check(f"{p} app.js var", "/static/js/app.js" in body)
+
+# ------------------------------------------------------- SVG ikon sprite gecerliligi
+# Bu kontrol bir regresyona kilit: ikon `d` degerleri bosluksuzlastirilirken
+# sayi tokenlari arasindaki bosluk kaybolursa `M11 13` -> `m1113` olur; Chrome
+# "Expected number" hatasi verir (Lighthouse Best Practices duser) ve ikon
+# yanlis geometriyle cizilir. Sprite'i ureten kod `tools/gen_icons.py`.
+print("\n== SVG ikon sprite gecerliligi")
+sys.path.insert(0, os.path.join(ROOT, "tools"))
+try:
+    from gen_icons import strict_check as _svg_path_ok
+except Exception as _e:  # pragma: no cover
+    _svg_path_ok = None
+    check("gen_icons.strict_check yuklenebildi", False, str(_e))
+
+sprite = io.open(os.path.join(ROOT, "web/templates/_icons.html"), encoding="utf-8").read()
+syms = re.findall(r'<symbol id="i-([a-z0-9_]+)" viewBox="([^"]+)"><path d="([^"]+)"', sprite)
+check("sprite ikon sayisi", len(syms) == 68, f"{len(syms)} ikon")
+_num_re = re.compile(r"[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?")
+_bad_d, _bad_vb, _oob = [], [], []
+for _n, _vb, _d in syms:
+    if _vb != "0 0 24 24":
+        _bad_vb.append(_n)
+    if _svg_path_ok is not None and not _svg_path_ok(_d)[0]:
+        _bad_d.append(_n)
+    # viewBox 0 0 24 24: koordinatlar disariya tasmamali
+    if any(abs(float(_m.group())) > 24.5 for _m in _num_re.finditer(_d)):
+        _oob.append(_n)
+check("ikon yollari sozdizimsel gecerli", not _bad_d, ", ".join(_bad_d[:6]) or "hepsi gecerli")
+check("tum ikonlar viewBox 0 0 24 24", not _bad_vb, ", ".join(_bad_vb[:6]) or "hepsi ayni")
+check("ikonlar 24x24 kutusu icinde", not _oob, ", ".join(_oob[:6]) or "hepsi icinde")
+_defined = {n for n, _, _ in syms}
+_used = set()
+for _f in glob.glob(os.path.join(ROOT, "web/templates/**/*.html"), recursive=True):
+    _used |= set(re.findall(r'#i-([a-z0-9_]+)', io.open(_f, encoding="utf-8").read()))
+for _f in ["web/static/js/app.js", "web/static/js/chart.js"]:
+    _used |= set(re.findall(r'#i-([a-z0-9_]+)', io.open(os.path.join(ROOT, _f), encoding="utf-8").read()))
+check("kullanilan her ikon sprite'ta var", not (_used - _defined), ", ".join(sorted(_used - _defined)) or "hepsi var")
 
 print("\n== Statik varliklar")
 for a, ctype in [("/static/js/app.js", "javascript"), ("/static/js/chart.js", "javascript"),

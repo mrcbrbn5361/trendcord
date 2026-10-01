@@ -313,9 +313,13 @@ app.add_middleware(ProxyHeadersMiddleware,
 # CSRF belirteci bu oturum kimliginden HMAC ile turetiyor. Edge'de cache'lenen
 # bir HTML, bir sonraki ziyaretciye baska bir kullanicinin belirtecini tasir;
 # hem belirtec hem de `Set-Cookie` uyusmazligi CSRF korumasini bosluga cevirir.
-# Bu yuzden dinamik yanitlar hem bulutta hem tarayicida `no-store` ile
-# kilitlenir. Kazanc, degistirilmeyen statik varliklardan gelir (CSS/JS/font);
-# onlar `immutable` ve Cloudflare tarafından kenarda cache'lenir.
+# Bu yuzden dinamik HTML `private, no-cache, must-revalidate` ile kilitlenir:
+# `private` paylasimli onbelleklerde saklanmasini yasaklar, `no-cache` ise
+# saklansa bile kullanmadan once origin'e dogrulanmasini emreder. `no-store`
+# bilerek secilmedi: Chrome `no-store` gordugu icin sayfayi back/forward cache
+# disinda birakir. API yanitlari `no-store` kalir (belge degil, hicbir sekilde
+# onbelleklenmemeli). Kazanc, degistirilmeyen statik varliklardan gelir
+# (CSS/JS/font); onlar `immutable` ve Cloudflare tarafından kenarda cache'lenir.
 STATIC_IMMUTABLE_SUFFIXES = (".woff2", ".woff", ".ttf", ".ico", ".svg", ".webp", ".avif")
 
 
@@ -338,10 +342,21 @@ class CacheHeadersMiddleware(BaseHTTPMiddleware):
         elif path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
         else:
-            # Dinamik HTML: oturum + CSRF belirteci iceriyor, asla cache'lenmez.
-            # Cloudflare bu basligi gordugu icin `cf-cache-status: DYNAMIC` verir.
-            response.headers["Cache-Control"] = "private, no-store, max-age=0"
-            response.headers.setdefault("Vary", "Cookie, Accept-Encoding")
+            # Dinamik HTML: oturum + CSRF belirteci iceriyor, paylasimli bir
+            # onbellekte tutulamaz.
+            #   private  -> Cloudflare/proxy saklamaz
+            #   no-cache -> saklansa bile kullanmadan once origin'e dogrulanir
+            # NOT: `no-store` bilerek kullanilmadi; Chrome `no-store` gordugu
+            # icin sayfayi back/forward cache (bfcache) disinda birakir ve
+            # geri tusu gezinmesi yavaslar. `no-cache` ayni guvenligi verir
+            # ama bfcache'i korur.
+            response.headers["Cache-Control"] = "private, no-cache, must-revalidate"
+            vary = response.headers.get("Vary", "")
+            parts = [p.strip() for p in vary.split(",") if p.strip()]
+            for needed in ("Cookie", "Accept-Encoding"):
+                if needed.lower() not in [p.lower() for p in parts]:
+                    parts.append(needed)
+            response.headers["Vary"] = ", ".join(parts)
         return response
 
 app.add_middleware(CacheHeadersMiddleware)
