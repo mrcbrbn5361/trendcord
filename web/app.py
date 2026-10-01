@@ -85,7 +85,6 @@ CSP = "; ".join([
     "img-src 'self' data: https://cdn.discordapp.com https://cdn.dsmcdn.com https://*.trendyol.com",
     "font-src 'self'",
     "connect-src 'self'",
-    "manifest-src 'self'",
     # NOT: `upgrade-insecure-requests` yalnizca HTTPS yanitlarda eklenir
     # (asagida); HTTP uzerinden calisan yerel sunucuda tum relative
     # kaynaklari https'e zorlar ve gelistirmeyi bozardi.
@@ -109,7 +108,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         h["Referrer-Policy"] = "strict-origin-when-cross-origin"
         h["Permissions-Policy"] = PERMISSIONS_POLICY
         if request.url.scheme == "https":
-            h["Content-Security-Policy"] = CSP + "upgrade-insecure-requests;"
+            # `upgrade-insecure-requests`, onundeki direktiften (manifest-src)
+            # `; ` ayirici ile ayrilmali; aksi halde `'self'upgrade-...` tek
+            # gecersiz kaynihuge birlesiyor ve Chrome "manifest-src invalid
+            # source" uyarisi uretiyor (Lighthouse errors-in-console).
+            h["Content-Security-Policy"] = CSP + "; upgrade-insecure-requests;"
             h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         else:
             # Yerel HTTP gelistirmesinde relative kaynaklari https'e zorlama
