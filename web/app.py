@@ -292,6 +292,10 @@ app.add_middleware(ServerSessionMiddleware,
     # varsayilan. Yerel HTTP gelistirmede COOKIE_SECURE=0 ile kapatilir.
     cookie_secure=os.getenv("COOKIE_SECURE", "1") != "0",
     cookie_samesite="lax",
+    # Statik varliklarda oturum uretilmez; aksi halde her CSS/JS/font
+    # isteginde Set-Cookie gonderilir ve Cloudflare bu dosyalari kenarda
+    # cache'leyemez (cf-cache-status: BYPASS).
+    exclude_prefixes=("/static/",),
 )
 
 # --- Origin Sikiştirma ---

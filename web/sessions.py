@@ -138,6 +138,7 @@ class ServerSessionMiddleware:
         cookie_httponly: bool = True,
         cookie_secure: bool = True,
         cookie_samesite: str = "lax",
+        exclude_prefixes: tuple = (),
     ):
         self.app = app
         self.max_age = max_age
@@ -146,6 +147,12 @@ class ServerSessionMiddleware:
         self.cookie_httponly = cookie_httponly
         self.cookie_secure = cookie_secure
         self.cookie_samesite = cookie_samesite
+        # Bu yollarda oturum hic olusturulmaz. Statik varliklarda session
+        # uretmek iki zarar veriyor: (1) her varlik icin gereksiz bir
+        # Set-Cookie basligi ve SQLite yazma/islem maliyeti, (2) Cloudflare
+        # `Set-Cookie` iceren yanitlari KENARDA CACHE'LEMEYCEGI icin
+        # CSS/JS/font dosyalari hic cache'lenmiyordu (cf-cache-status: BYPASS).
+        self.exclude_prefixes = tuple(exclude_prefixes)
 
     def _get_session_id_from_cookies(self, cookies: dict) -> str | None:
         return cookies.get(self.cookie_name)
@@ -168,6 +175,10 @@ class ServerSessionMiddleware:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] not in ("http", "websocket"):
+            await self.app(scope, receive, send)
+            return
+
+        if scope["type"] == "http" and scope.get("path", "").startswith(self.exclude_prefixes):
             await self.app(scope, receive, send)
             return
 

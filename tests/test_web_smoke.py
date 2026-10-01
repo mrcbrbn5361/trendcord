@@ -170,6 +170,26 @@ for a in ["/static/js/app.js", "/static/js/chart.js"]:
     cc = h.get("cache-control", "")
     check(f"{a.split('/')[-1]} surumsuz -> 86400", "max-age=86400" in cc, cc)
 
+# ------------------------------------------- statik varliklarda Set-Cookie yok
+print("\n== Statik varliklarda session cookie uretilmemeli")
+for a in ["/static/css/tailwind.min.css", "/static/js/app.js", "/static/fonts/nunito-sans.woff2"]:
+    st, _, h = req(a)
+    # urllib cookie jar yalnizca sunucudan gercekten Set-Cookie gelirse dolar
+    check(f"{a.split('/')[-1]} Set-Cookie yok", "session" not in h, h.get("set-cookie", "-"))
+# Taze istemci (bos cerez sepeti) HTML isteginde session almalı; boylece
+# oturumun statik yollarda degil, sadece dinamik sayfalarda kuruldugu
+# dogrulanir. Mevcut istemcide cookie zaten varsa sunucu tekrar gondermez.
+fresh = urllib.request.build_opener(
+    urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()), NoRedirect)
+try:
+    fr = fresh.open(BASE + "/", timeout=15)
+    fh = {k.lower(): v for k, v in fr.headers.items()}
+    fr.read()
+except urllib.error.HTTPError as e:
+    fh = {k.lower(): v for k, v in e.headers.items()}
+check("HTML taze istemciye session cookie verir", "session" in fh.get("set-cookie", ""),
+      fh.get("set-cookie", "-")[:44])
+
 # ------------------------------------------------------------ sayfa kontrolleri
 print("\n== Sayfa kontrolleri")
 for p in ["/", "/features", "/how-it-works", "/servers", "/users", "/compare", "/stats", "/privacy", "/terms"]:
