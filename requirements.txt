@@ -3,7 +3,7 @@
 # ============================================
 
 # Discord Bot
-discord.py==2.3.2
+discord.py==2.7.1
 
 # Web Framework
 fastapi==0.109.0

@@ -5,6 +5,7 @@ import sys
 import signal
 import logging
 import logging.handlers
+import warnings
 import dotenv
 import functools
 import threading
@@ -14,6 +15,14 @@ from discord.ext import commands, tasks
 from database import Database
 from scraper import TrendyolScraper
 from web.app import app as web_app, set_instances
+
+# discord.py 2.7.x dahili `asyncio.iscoroutinefunction` kullaniyor (Python 3.12+
+# deprecation, 3.16'da kalkacak). Kutuphane duzeltince kaldirilacak log-kirliligi filtresi.
+warnings.filterwarnings(
+    "ignore",
+    message=".*asyncio\\.iscoroutinefunction.*",
+    category=DeprecationWarning,
+)
 
 # .env yükle
 dotenv.load_dotenv()
