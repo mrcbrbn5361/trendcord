@@ -153,64 +153,76 @@
    ihlali + iOS yoksayar). Pinch-zoom serbest birakilir; bunun yerine
    yatay tasma kaynaklari CSS ile kapatilir, cift-dokunus yakinlastirmasi
    `touch-action: manipulation` ile engellenir (yanlislikla buyume gider,
-   iki parmakla buyutme calismaya devam eder). */
-html {
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
-    overflow-x: clip;
-    overscroll-behavior-x: none;
+   iki parmakla buyutme calismaya devam eder).
+   KRITIK: Tum taban kurallari `@layer base` icindedir; boylece Tailwind
+   yardimci siniflari (`h-full`, `w-14`, `text-sm`...) her zaman kazanir.
+   Katmansiz yazilan `img{height:auto}` gibi kurallar utility'leri ezip
+   avatar/urun gorsellerini bozmustu (regresyon). */
+@layer base {
+    html {
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+        overflow-x: clip;
+        overscroll-behavior-x: none;
+    }
+
+    html, body {
+        max-width: 100%;
+    }
+
+    body {
+        background-color: var(--color-background);
+        color: var(--color-on-surface);
+        font-family: 'Nunito Sans', 'Plus Jakarta Sans', sans-serif;
+        overflow-x: hidden;
+        overflow-x: clip;
+        overscroll-behavior-y: auto;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        min-height: 100dvh;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Tasma emniyet supaplari: masaustu pencere kuculse de, mobil pinch
+       sonrasi da icerik kapsayicidan tasmaz, oranlar esit kuculur. */
+    img, video, canvas, iframe {
+        max-width: 100%;
+    }
+    img, video {
+        height: auto;
+    }
+    pre, code, table {
+        max-width: 100%;
+    }
+    pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    :where(p, h1, h2, h3, h4, h5, h6, li, a, span, div, td, th, figcaption) {
+        overflow-wrap: break-word;
+    }
+    table {
+        border-collapse: collapse;
+    }
+
+    /* iOS Safari: 16px alti input odaklaninca otomatik zoom yapar ve sayfa
+       "tam oturmuyor" gibi gorunur. Yalnizca `text-*` yardimcisi OLMAYAN
+       alanlara uygulanir; `text-sm` gibi sinifli alanlarin gorunumu korunur. */
+    @media (max-width: 1023px) {
+        input:where(:not([class*="text-"])),
+        select:where(:not([class*="text-"])),
+        textarea:where(:not([class*="text-"])) {
+            font-size: 16px;
+        }
+    }
 }
 
-html, body {
-    max-width: 100%;
-}
-
-body {
-    background-color: var(--color-background);
-    color: var(--color-on-surface);
-    font-family: 'Nunito Sans', 'Plus Jakarta Sans', sans-serif;
-    overflow-x: hidden;
-    overflow-x: clip;
-    overscroll-behavior-y: auto;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    min-height: 100dvh;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* Tasma emniyet supaplari: masaustu pencere kuculse de, mobil pinch
-   sonrasi da icerik kapsayicidan tasmaz, oranlar esit kuculur. */
-img, video, canvas, iframe {
-    max-width: 100%;
-}
-img, video {
-    height: auto;
-}
-pre, code, table {
-    max-width: 100%;
-}
-pre {
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-:where(p, h1, h2, h3, h4, h5, h6, li, a, span, div, td, th, figcaption) {
-    overflow-wrap: break-word;
-}
-table {
-    border-collapse: collapse;
-}
 /* Yatay kaymasi gereken tablolar: sayfa pinch'i ile karismasin,
    momentum-scroll mobilde akici kalsin. */
-.overflow-x-auto {
-    overscroll-behavior-x: contain;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* iOS Safari: 16px alti input odaklaninca otomatik zoom yapar ve sayfa
-   "tam oturmuyor" gibi gorunur. Mobilde minimum 16px'e sabitle. */
-@media (max-width: 1023px) {
-    input, select, textarea {
-        font-size: 16px;
+@layer utilities {
+    .overflow-x-auto {
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
     }
 }
 
