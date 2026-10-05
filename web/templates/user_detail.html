@@ -103,8 +103,8 @@
             {% if products %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                 {% for p in products %}
-                <div class="glass-card rounded-lg p-4 group touch-scale">
-                    <div class="relative aspect-square rounded-xl overflow-hidden mb-3 border border-border-glass bg-surface-container-low">
+                <div class="flex md:flex-col gap-4 glass-card rounded-lg p-3 md:p-4 group touch-scale">
+                    <div class="relative w-24 h-24 md:w-full md:aspect-square rounded-xl overflow-hidden shrink-0 border border-border-glass bg-surface-container-low">
                         <a href="/product/{{ p.product_id }}" class="block w-full h-full" aria-label="Ürün detayına git">
                         <img src="{{ p.image_url }}" alt="{{ p.name }}" width="400" height="400" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-fallback="product">
                         {% if p.original_price and p.current_price and p.original_price > p.current_price %}
@@ -112,9 +112,11 @@
                         {% endif %}
                         </a>
                     </div>
+                    <!-- Mobil: yatay içerik | Masaüstü: dikey içerik -->
+                    <div class="flex-1 min-w-0">
                     <a href="/product/{{ p.product_id }}" class="block hover:text-primary transition-colors"><h3 class="font-label-bold text-on-surface group-hover:text-primary transition-colors text-sm truncate mb-1">{{ p.name }}</h3></a>
                     <div class="flex items-baseline gap-2 mb-1">
-                        <span class="text-on-surface font-black text-lg">₺{{ "{:,.0f}".format(p.current_price) }}</span>
+                        <span class="text-on-surface font-black text-lg md:text-xl">₺{{ "{:,.0f}".format(p.current_price) }}</span>
                         {% if p.basket_price and p.basket_price < p.current_price %}
                         <span class="text-success text-xs font-bold">sepette ₺{{ "{:,.0f}".format(p.basket_price) }}</span>
                         {% endif %}
@@ -135,6 +137,7 @@
                             {{ get_guild_name(p.guild_id) }}
                         </a>
                         <a href="{{ p.url }}" target="_blank" rel="noopener noreferrer" class="text-on-surface-variant text-sm hover:text-primary transition-colors" aria-label="Trendyol'da aç: {{ p.name }}"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-open_in_new"/></svg></a>
+                    </div>
                     </div>
                 </div>
                 {% endfor %}

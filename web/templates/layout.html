@@ -161,11 +161,11 @@
     <!-- [MOBİL] Alt Menü (App-style Bottom Bar) -->
     <nav aria-label="Alt menü" class="lg:hidden fixed bottom-0 left-0 w-full z-50 bg-background border-t border-outline-variant" style="padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: 0 -2px 12px rgba(0,0,0,0.05);">
         <div class="flex justify-around items-center px-2 pt-2 pb-1">
-            <a href="/" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if request.url.path == '/' else 'text-on-surface-variant hover:text-primary' }}" {% if request.url.path == '/' %}aria-current="page"{% endif %}> style="min-width:48px">
+            <a href="/" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if request.url.path == '/' else 'text-on-surface-variant hover:text-primary' }}" style="min-width:48px" {% if request.url.path == '/' %}aria-current="page"{% endif %}>
                 <svg class="icon text-xl " aria-hidden="true" focusable="false"><use href="#i-home"/></svg>
                 <span class="mt-0.5">Ana Sayfa</span>
             </a>
-            <a href="/dashboard" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/dashboard' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" {% if '/dashboard' in request.url.path %}aria-current="page"{% endif %}> style="min-width:48px">
+            <a href="/dashboard" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/dashboard' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" style="min-width:48px" {% if '/dashboard' in request.url.path %}aria-current="page"{% endif %}>
                 <svg class="icon text-xl " aria-hidden="true" focusable="false"><use href="#i-dashboard"/></svg>
                 <span class="mt-0.5">Takipte</span>
             </a>
@@ -174,15 +174,15 @@
                     <svg class="icon text-3xl" aria-hidden="true" focusable="false"><use href="#i-add_circle"/></svg>
                 </div>
             </button>
-            <a href="/servers" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/servers' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" {% if '/servers' in request.url.path %}aria-current="page"{% endif %}> style="min-width:48px">
+            <a href="/servers" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/servers' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" style="min-width:48px" {% if '/servers' in request.url.path %}aria-current="page"{% endif %}>
                 <svg class="icon text-xl " aria-hidden="true" focusable="false"><use href="#i-dns"/></svg>
                 <span class="mt-0.5">Sunucular</span>
             </a>
-            <a href="/users" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/users' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" {% if '/users' in request.url.path %}aria-current="page"{% endif %}> style="min-width:48px">
+            <a href="/users" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/users' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" style="min-width:48px" {% if '/users' in request.url.path %}aria-current="page"{% endif %}>
                 <svg class="icon text-xl " aria-hidden="true" focusable="false"><use href="#i-group"/></svg>
                 <span class="mt-0.5">Kullanıcılar</span>
             </a>
-            <a href="/alerts" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/alerts' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" {% if '/alerts' in request.url.path %}aria-current="page"{% endif %}> style="min-width:48px">
+            <a href="/alerts" class="flex flex-col items-center justify-center py-1 px-2 font-label-bold text-xs transition-all duration-150 active:scale-90 {{ 'text-primary bg-primary/10 rounded-xl' if '/alerts' in request.url.path else 'text-on-surface-variant hover:text-primary' }}" style="min-width:48px" {% if '/alerts' in request.url.path %}aria-current="page"{% endif %}>
                 <svg class="icon text-xl " aria-hidden="true" focusable="false"><use href="#i-notifications_active"/></svg>
                 <span class="mt-0.5">Alarm</span>
             </a>
