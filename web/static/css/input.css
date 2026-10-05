@@ -148,12 +148,70 @@
     --glass-hover-border: rgba(242, 122, 26, 0.5);
 }
 
+/* ---- Responsive temel: ekrana tam sigdirma + stabil pinch-zoom ----
+   NOT: `maximum-scale=1 / user-scalable=no` bilerek YOK (erisilebilirlik
+   ihlali + iOS yoksayar). Pinch-zoom serbest birakilir; bunun yerine
+   yatay tasma kaynaklari CSS ile kapatilir, cift-dokunus yakinlastirmasi
+   `touch-action: manipulation` ile engellenir (yanlislikla buyume gider,
+   iki parmakla buyutme calismaya devam eder). */
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+}
+
+html, body {
+    max-width: 100%;
+}
+
 body {
     background-color: var(--color-background);
     color: var(--color-on-surface);
     font-family: 'Nunito Sans', 'Plus Jakarta Sans', sans-serif;
     overflow-x: hidden;
+    overflow-x: clip;
+    overscroll-behavior-y: auto;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100dvh;
     transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Tasma emniyet supaplari: masaustu pencere kuculse de, mobil pinch
+   sonrasi da icerik kapsayicidan tasmaz, oranlar esit kuculur. */
+img, video, canvas, iframe {
+    max-width: 100%;
+}
+img, video {
+    height: auto;
+}
+pre, code, table {
+    max-width: 100%;
+}
+pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+:where(p, h1, h2, h3, h4, h5, h6, li, a, span, div, td, th, figcaption) {
+    overflow-wrap: break-word;
+}
+table {
+    border-collapse: collapse;
+}
+/* Yatay kaymasi gereken tablolar: sayfa pinch'i ile karismasin,
+   momentum-scroll mobilde akici kalsin. */
+.overflow-x-auto {
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* iOS Safari: 16px alti input odaklaninca otomatik zoom yapar ve sayfa
+   "tam oturmuyor" gibi gorunur. Mobilde minimum 16px'e sabitle. */
+@media (max-width: 1023px) {
+    input, select, textarea {
+        font-size: 16px;
+    }
 }
 
 .glass-card {
@@ -360,8 +418,10 @@ header.is-scrolled {
 .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 
 .mega-header {
-    font-size: clamp(4rem, 15vw, 10rem);
+    font-size: clamp(2.75rem, 8vw + 1rem, 10rem);
     line-height: 0.9;
+    max-width: 100%;
+    overflow-wrap: break-word;
 }
 
 @media (max-width: 1023px) {
