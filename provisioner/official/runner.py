@@ -175,7 +175,7 @@ async def _apply_automod(guild):
                     keyword_filter=spec.get("patterns") if spec["name"] != "tc-invite-block" else None)
             await guild.create_automod_rule(
                 name=spec["name"],
-                event=discord.AutoModRuleEventType.message_send,
+                event_type=discord.AutoModRuleEventType.message_send,
                 trigger=trigger,
                 actions=[discord.AutoModRuleAction(
                     type=discord.AutoModRuleActionType.block_message)],
