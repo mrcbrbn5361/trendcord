@@ -152,7 +152,8 @@ async def _apply_automod(guild):
     applied = []
     existing = {r.name for r in getattr(guild, "automod_rules", [])}
     try:
-        existing = {r.name async for r in guild.fetch_automod_rules()}
+        rules = await guild.fetch_automod_rules()
+        existing = {r.name for r in rules}
     except Exception as e:
         logger.warning(f"[Official] automod kurallari okunamadi: {e}")
         return applied
