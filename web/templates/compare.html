@@ -32,8 +32,43 @@
         </div>
 
         {% if products %}
-        <!-- Karşılaştırma Tablosu -->
-        <div class="glass-panel rounded-lg overflow-hidden mb-8">
+        <!-- [MOBİL] Karşılaştırma kart listesi -->
+        <div class="md:hidden space-y-3 mb-8">
+            {% for p in products %}
+            <div class="glass-card rounded-lg p-4">
+                <div class="flex gap-3">
+                    <span class="font-stat-giant italic text-2xl {% if loop.index <= 3 %}text-primary{% else %}text-on-surface-variant{% endif %} w-8 shrink-0">{{ loop.index }}</span>
+                    {% if p.image_url %}
+                    <img src="{{ p.image_url }}" alt="{{ p.name }}" class="w-16 h-16 rounded-xl object-cover border border-border-glass shrink-0" loading="lazy" width="64" height="64" data-hide-on-error>
+                    {% endif %}
+                    <div class="flex-1 min-w-0">
+                        <span class="font-label-bold text-on-surface text-sm line-clamp-2">{{ p.name }}</span>
+                        <div class="flex items-baseline flex-wrap gap-x-2 gap-y-0.5 mt-1">
+                            <span class="text-on-surface font-black text-lg">₺{{ "{:,.0f}".format(p.current_price or 0) }}</span>
+                            {% if p.basket_price and p.basket_price < p.current_price %}
+                            <span class="text-success text-xs font-bold">sepette ₺{{ "{:,.0f}".format(p.basket_price) }}</span>
+                            {% endif %}
+                            {% if p.original_price and p.original_price > (p.current_price or 0) %}
+                            <span class="ty-price-old">₺{{ "{:,.0f}".format(p.original_price or 0) }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center justify-between mt-2">
+                            {% set disc = p.discount_pct or 0 %}
+                            {% if disc > 0 %}
+                            <span class="px-2 py-0.5 rounded-full bg-success-soft text-success font-label-bold text-xs">-%{{ "%.1f"|format(disc) }}</span>
+                            {% else %}
+                            <span class="text-on-surface-variant text-xs">indirim yok</span>
+                            {% endif %}
+                            <span class="text-xs text-on-surface-variant">{{ p.username or 'N/A' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- [MASAÜSTÜ] Karşılaştırma Tablosu -->
+        <div class="hidden md:block glass-panel rounded-lg overflow-hidden mb-8">
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[680px]">
                     <thead>
