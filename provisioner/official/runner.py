@@ -341,10 +341,14 @@ def _ow_farkli(mevcut: dict, hedef: dict) -> bool:
 def _strip_private(spec, cat):
     """Kanal-bazli izinleri kategori politikasiyla uyumlu hale getir.
 
-    - Kategoride view_channel=False olan hedefler kanaldan da cikarilir.
-    - Tam gizli kategorilerde (@everyone + Üye deny): kategoride acikca
-      view allow verilmemis hicbir role kanalda view allow birakilmaz
-      (orn. 🤖 Bot rolü STAFF/LOGS/TICKETS/PARTNERLİK'e sizamaz).
+    Kritik: kategoride view_channel=False olan hedeflere kanalda ACIK DENY
+    birakilir. Kanal kategoriyle permissions-synced degilse deny miras
+    ALINMAZ ve guild-baz @everyone view_channel=True kanali herkese acar;
+    acik deny bunu engeller.
+
+    Tam gizli kategorilerde (@everyone + Üye deny): kategoride acikca view
+    allow verilmemis hicbir role kanalda view allow birakilmaz (orn. 🤖 Bot
+    rolu STAFF/LOGS/TICKETS/PARTNERLİK'e sizamaz).
     """
     allowed, denied = set(), set()
     for t, perms in cat.get("overwrites", []):
@@ -355,14 +359,16 @@ def _strip_private(spec, cat):
     if not denied:
         return spec
     gizli = ("@everyone" in denied) and (odata.MEMBER in denied)
-    temiz = []
-    for t, perms in spec.get("overwrites", []):
-        if t in denied:
-            continue
-        if gizli and t != "__BOT__" and t not in allowed and perms.get("view_channel"):
-            continue
-        temiz.append((t, perms))
-    spec["overwrites"] = temiz
+    mevcut = {t: dict(perms) for t, perms in spec.get("overwrites", [])}
+    for t in denied:
+        # deny'yi kanala acikca yaz; onceki allow'lari temizle
+        mevcut[t] = {"view_channel": False, "send_messages": False}
+    if gizli:
+        for t in list(mevcut):
+            if (t != "__BOT__" and t not in allowed and t not in denied
+                    and mevcut[t].get("view_channel")):
+                del mevcut[t]
+    spec["overwrites"] = list(mevcut.items())
     return spec
 
 async def verify_official(guild, db=None) -> dict:
