@@ -202,7 +202,11 @@ OFFICIAL_CATEGORIES = [
           "ping_roles": ["🎁 Kampanya Bildirim"]},
      ]},
     {"key": "oc:topluluk", "name": "💬 TOPLULUK",
-     "overwrites": [("__BOT__", {"view_channel": True})],
+     "overwrites": [
+         ("@everyone", {"view_channel": False}),
+         (MEMBER, {"view_channel": True}),
+         ("__BOT__", {"view_channel": True}),
+     ],
      "channels": [
          {"key": "oh:genel", "name": "genel", "kind": "OPEN", "slowmode": 5},
          {"key": "oh:alisveris-sohbet", "name": "alışveriş-sohbet", "kind": "OPEN", "slowmode": 5},
@@ -216,7 +220,11 @@ OFFICIAL_CATEGORIES = [
          {"key": "oh:afk", "name": "AFK", "kind": "VOICE", "afk": True},
      ]},
     {"key": "oc:geri-bildirim", "name": "🧭 GERİ BİLDİRİM",
-     "overwrites": [("__BOT__", {"view_channel": True, "send_messages": True})],
+     "overwrites": [
+         ("@everyone", {"view_channel": False}),
+         (MEMBER, {"view_channel": True}),
+         ("__BOT__", {"view_channel": True, "send_messages": True}),
+     ],
      "channels": [
          {"key": "oh:bug-bildirimi", "name": "bug-bildirimi", "kind": "FORUM",
           "tags": ["açık", "inceleniyor", "çözüldü", "bilinen-hata"]},
@@ -227,7 +235,8 @@ OFFICIAL_CATEGORIES = [
      ]},
     {"key": "oc:destek", "name": "🎫 DESTEK",
      "overwrites": [
-         ("@everyone", {"view_channel": True, "send_messages": False}),
+         ("@everyone", {"view_channel": False}),
+         (MEMBER, {"view_channel": True, "send_messages": False}),
          ("__BOT__", {"view_channel": True, "send_messages": True, "embed_links": True,
                       "manage_channels": True}),
      ],
