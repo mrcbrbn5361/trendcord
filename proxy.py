@@ -9,7 +9,7 @@ import time
 import os
 import re
 
-MAINTENANCE_PAGE = b"""HTTP/1.1 503 Service Unavailable\r
+MAINTENANCE_PAGE = """HTTP/1.1 503 Service Unavailable\r
 Content-Type: text/html; charset=utf-8\r
 Retry-After: 30\r
 Cache-Control: no-cache\r
@@ -57,7 +57,7 @@ def proxy_thread(client_sock):
                 resp += chunk
             client_sock.sendall(resp)
         except:
-            client_sock.sendall(MAINTENANCE_PAGE)
+            client_sock.sendall(MAINTENANCE_PAGE.encode("utf-8"))
         finally:
             bot_sock.close()
     except:
