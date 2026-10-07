@@ -167,7 +167,7 @@ async def _apply_automod(guild):
             elif spec["trigger"] == "mention_spam":
                 trigger = discord.AutoModTrigger(
                     type=discord.AutoModRuleTriggerType.mention_spam,
-                    mention_total_limit=spec.get("mention_limit", 5))
+                    mention_limit=spec.get("mention_limit", 5))
             else:
                 trigger = discord.AutoModTrigger(
                     type=discord.AutoModRuleTriggerType.keyword,
@@ -177,7 +177,8 @@ async def _apply_automod(guild):
                 name=spec["name"],
                 event=discord.AutoModRuleEventType.message_send,
                 trigger=trigger,
-                actions=[discord.AutoModRuleAction(block_message=True)],
+                actions=[discord.AutoModRuleAction(
+                    type=discord.AutoModRuleActionType.block_message)],
                 enabled=True,
                 reason=spec.get("reason", "Trendcord automod"),
             )
