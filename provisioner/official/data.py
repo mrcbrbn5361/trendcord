@@ -71,25 +71,32 @@ DEV_PLUS = ["👑 Founder", "⚜️ Co-Owner", "🛡️ Administrator", "💻 De
 SUPPORT_PLUS = MOD_PLUS + ["🎧 Support Team"]
 
 MEMBER = "✅ Üye"
+BOT_ROLE = "🤖 Bot"
 
 
 def _ro_overwrites():
-    """3.5 RO sablonu: @everyone V,W✗ | Üye V,W✗,Rxn✓ | Staff W✓."""
+    """RO: herkes okur; Üye tepki verir; diger botlar salt-okur; Mod/Staff yazar."""
     return [
         ("@everyone", {"view_channel": True, "send_messages": False}),
         (MEMBER, {"view_channel": True, "send_messages": False, "add_reactions": True,
                   "read_message_history": True}),
+        (BOT_ROLE, {"view_channel": True, "send_messages": False,
+                    "read_message_history": True}),
+        ("🚨 Moderator", {"view_channel": True, "send_messages": True,
+                          "manage_messages": True}),
         *[(n, {"send_messages": True, "view_channel": True}) for n in STAFF_WRITE],
         ("__BOT__", {"view_channel": True, "send_messages": True, "embed_links": True}),
     ]
 
 
 def _feed_overwrites(ping_roles=None):
-    """3.5 BOT_FEED: Üye V✓,W✗,Rxn✓; BOT yazar; Moderator Mmsg✓; ping rolü görür."""
+    """BOT_FEED: Üye okur/tepki; diger botlar salt-okur; Trendcord yazar; Mod yonetir."""
     ow = [
         ("@everyone", {"view_channel": True, "send_messages": False}),
         (MEMBER, {"view_channel": True, "send_messages": False, "add_reactions": True,
                   "read_message_history": True}),
+        (BOT_ROLE, {"view_channel": True, "send_messages": False,
+                    "read_message_history": True}),
         ("__BOT__", {"view_channel": True, "send_messages": True, "embed_links": True,
                      "attach_files": True, "mention_everyone": False}),
         ("🚨 Moderator", {"manage_messages": True}),
@@ -105,13 +112,18 @@ def _slash_overwrites():
                        "use_application_commands": True, "read_message_history": True}),
         (MEMBER, {"view_channel": True, "send_messages": False,
                   "use_application_commands": True, "read_message_history": True}),
+        (BOT_ROLE, {"view_channel": True, "send_messages": False,
+                    "use_application_commands": True}),
         ("__BOT__", {"view_channel": True, "send_messages": True, "embed_links": True,
                      "use_application_commands": True, "manage_messages": True}),
     ]
 
 
 def _open_overwrites(slowmode=None):
+    """OPEN (sohbet): Üye yazar; diger botlar yazar; Mod yonetir; Staff yazar."""
     return [
+        (MEMBER, {"view_channel": True, "send_messages": True}),
+        (BOT_ROLE, {"view_channel": True, "send_messages": True}),
         ("__BOT__", {"send_messages": False, "view_channel": True}),
         ("🚨 Moderator", {"manage_messages": True}),
         *[(n, {"view_channel": True, "send_messages": True}) for n in STAFF_WRITE],
@@ -124,6 +136,7 @@ def _forum_overwrites():
         (MEMBER, {"view_channel": True, "create_public_threads": True,
                   "send_messages_in_threads": True, "add_reactions": True,
                   "read_message_history": True}),
+        (BOT_ROLE, {"view_channel": True, "send_messages": False}),
         ("__BOT__", {"view_channel": True, "send_messages": True, "manage_threads": True,
                      "embed_links": True}),
     ]
@@ -140,7 +153,10 @@ def _private_cat_overwrites():
 
 
 def _voice_overwrites():
+    """VOICE: Üye ve diger botlar (muzik vb.) baglanir; Mod tasima/susturma."""
     return [
+        (MEMBER, {"view_channel": True, "connect": True, "speak": True}),
+        (BOT_ROLE, {"view_channel": True, "connect": True, "speak": True}),
         ("__BOT__", {"view_channel": True, "connect": True}),
         ("🚨 Moderator", {"move_members": True, "mute_members": True}),
     ]
@@ -205,6 +221,7 @@ OFFICIAL_CATEGORIES = [
      "overwrites": [
          ("@everyone", {"view_channel": False}),
          (MEMBER, {"view_channel": True}),
+         (BOT_ROLE, {"view_channel": True, "connect": True, "speak": True}),
          ("__BOT__", {"view_channel": True}),
      ],
      "channels": [

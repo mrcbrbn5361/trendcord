@@ -339,21 +339,30 @@ def _ow_farkli(mevcut: dict, hedef: dict) -> bool:
 
 
 def _strip_private(spec, cat):
-    """Gizli kategorilerde kanal-bazli @everyone/Üye ALLOW'lari filtrele."""
-    def _cat_view(target):
-        for t, perms in cat.get("overwrites", []):
-            if t == target and perms.get("view_channel") is False:
-                return True
-        return False
-    strip_e = _cat_view("@everyone")
-    strip_m = _cat_view(odata.MEMBER)
-    if strip_e or strip_m:
-        temiz = []
-        for t, perms in spec.get("overwrites", []):
-            if (t == "@everyone" and strip_e) or (t == odata.MEMBER and strip_m):
-                continue
-            temiz.append((t, perms))
-        spec["overwrites"] = temiz
+    """Kanal-bazli izinleri kategori politikasiyla uyumlu hale getir.
+
+    - Kategoride view_channel=False olan hedefler kanaldan da cikarilir.
+    - Tam gizli kategorilerde (@everyone + Üye deny): kategoride acikca
+      view allow verilmemis hicbir role kanalda view allow birakilmaz
+      (orn. 🤖 Bot rolü STAFF/LOGS/TICKETS/PARTNERLİK'e sizamaz).
+    """
+    allowed, denied = set(), set()
+    for t, perms in cat.get("overwrites", []):
+        if perms.get("view_channel") is True:
+            allowed.add(t)
+        elif perms.get("view_channel") is False:
+            denied.add(t)
+    if not denied:
+        return spec
+    gizli = ("@everyone" in denied) and (odata.MEMBER in denied)
+    temiz = []
+    for t, perms in spec.get("overwrites", []):
+        if t in denied:
+            continue
+        if gizli and t != "__BOT__" and t not in allowed and perms.get("view_channel"):
+            continue
+        temiz.append((t, perms))
+    spec["overwrites"] = temiz
     return spec
 
 async def verify_official(guild, db=None) -> dict:
