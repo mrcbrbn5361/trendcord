@@ -387,7 +387,7 @@ _ensure_db()
 OWNER_ID = os.getenv("OWNER_ID", "")
 CLIENT_ID = os.getenv("CLIENT_ID", "")
 BOT_INVITE_URL = f"https://discord.com/api/oauth2/authorize?client_id={CLIENT_ID}&permissions=8&scope=bot%20applications.commands"
-SUPPORT_SERVER = os.getenv("SUPPORT_SERVER", "https://discord.gg/trendcord")
+SUPPORT_SERVER = os.getenv("SUPPORT_SERVER", "https://discord.gg/XwyPpCbMA8")
 
 @app.exception_handler(404)
 async def not_found(request: Request, exc):

@@ -86,7 +86,7 @@ export default function HomePage() {
               </a>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <a href="https://discord.gg/trendcord" target="_blank" rel="noopener noreferrer">
+              <a href="https://discord.gg/XwyPpCbMA8" target="_blank" rel="noopener noreferrer">
                 Discord Sunucusu
               </a>
             </Button>

@@ -17,9 +17,30 @@ logger = logging.getLogger("Trendcord")
 ORANGE = 0xF27A1A
 
 
+AUTO_MEMBER_ROLE = "✅ Üye"
+AUTO_BOT_ROLE = "🤖 Bot"
+
+
 class ProvisionOfficial(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        """Resmi sunucuda otomatik katılım rolü: insan=✅ Üye, bot=🤖 Bot."""
+        if not runner.module_enabled() or not runner.is_official(member.guild.id):
+            return
+        target = AUTO_BOT_ROLE if member.bot else AUTO_MEMBER_ROLE
+        role = discord.utils.find(lambda r: r.name == target, member.guild.roles)
+        if role is None:
+            logger.warning(f"[Official] otomatik rol bulunamadı: {target}")
+            return
+        try:
+            await member.add_roles(role, reason="Trendcord: otomatik katılım rolü")
+        except discord.Forbidden:
+            logger.warning(f"[Official] otomatik rol verilemedi (izin): {member} -> {target}")
+        except Exception as e:
+            logger.debug(f"[Official] otomatik rol hatası: {e}")
 
     async def cog_load(self):
         if not runner.module_enabled():

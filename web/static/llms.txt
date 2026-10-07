@@ -20,7 +20,7 @@
 ## Kurumsal
 - [Gizlilik Politikası](https://trendcord.miracdeveloper.com.tr/privacy): KVKK ve GDPR uyumlu veri koruma politikası
 - [Hizmet Şartları](https://trendcord.miracdeveloper.com.tr/terms): Kullanım koşulları ve sorumluluk reddi
-- [Discord Destek](https://discord.gg/G46MFdw7R6): Resmi Discord destek sunucusu
+- [Discord Destek](https://discord.gg/XwyPpCbMA8): Resmi Discord destek sunucusu
 
 ## Temel Bilgiler
 - Platform: Discord (bot) + Web paneli

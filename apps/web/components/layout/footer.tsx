@@ -13,7 +13,7 @@ export function Footer() {
             Trendyol fiyat takip botu. Discord sunucularınız için fiyat uyarıları.
           </p>
           <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-            <a href="https://discord.gg/trendcord" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+            <a href="https://discord.gg/XwyPpCbMA8" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
               Discord
             </a>
             <a href="https://github.com/mrcbrbn5361/trendcord" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
