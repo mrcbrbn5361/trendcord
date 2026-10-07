@@ -163,14 +163,14 @@ async def _apply_automod(guild):
             continue
         try:
             if spec["trigger"] == "spam":
-                trigger = discord.AutoModTrigger(type=discord.AutoModTriggerType.spam)
+                trigger = discord.AutoModTrigger(type=discord.AutoModRuleTriggerType.spam)
             elif spec["trigger"] == "mention_spam":
                 trigger = discord.AutoModTrigger(
-                    type=discord.AutoModTriggerType.mention_spam,
+                    type=discord.AutoModRuleTriggerType.mention_spam,
                     mention_total_limit=spec.get("mention_limit", 5))
             else:
                 trigger = discord.AutoModTrigger(
-                    type=discord.AutoModTriggerType.keyword,
+                    type=discord.AutoModRuleTriggerType.keyword,
                     regex_patterns=spec.get("patterns") if spec["name"] == "tc-invite-block" else None,
                     keyword_filter=spec.get("patterns") if spec["name"] != "tc-invite-block" else None)
             await guild.create_automod_rule(
