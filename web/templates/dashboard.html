@@ -55,6 +55,24 @@
                 <input class="w-full bg-surface-container-low border border-border-glass rounded-full py-2 pl-9 pr-3 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors font-body-md" placeholder="Ara..." type="text" id="productSearchMobile" data-filter-input>
             </div>
         </div>
+        <!-- Mobile: sunucu secim seridi (yatay kaydirmali) -->
+        {% if guilds %}
+        <div class="flex md:hidden gap-2.5 w-full overflow-x-auto pt-2.5 pb-0.5" style="scrollbar-width:none;-ms-overflow-style:none;">
+            <a href="/dashboard" aria-label="Tüm sunucular" class="w-11 h-11 shrink-0 rounded-2xl flex items-center justify-center transition-all active:scale-90 {{ 'bg-primary-container text-on-primary-container ring-2 ring-primary/50' if not current_guild else 'glass-panel text-on-surface-variant' }}" title="Tümü">
+                <svg class="icon text-lg" aria-hidden="true" focusable="false"><use href="#i-grid_view"/></svg>
+            </a>
+            {% for g in guilds %}
+            <a href="/dashboard?guild_id={{ g.id }}" aria-label="{{ g.name }}" class="w-11 h-11 shrink-0 rounded-2xl flex items-center justify-center transition-all active:scale-90 {{ 'bg-primary-container text-on-primary-container ring-2 ring-primary/50' if current_guild and current_guild.id == g.id else 'glass-panel text-on-surface-variant' }}" title="{{ g.name }}">
+                {% if g.icon_url %}
+                    <img src="{{ g.icon_url }}" alt="{{ g.name }} ikonu" width="28" height="28" class="w-7 h-7 rounded-lg object-cover" data-hide-on-error data-show-next="block">
+                    <span class="font-label-bold text-xs hidden">{{ g.name[:2] }}</span>
+                {% else %}
+                    <span class="font-label-bold text-xs">{{ g.name[:2] }}</span>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
     </header>
 
     <!-- Main Content -->
@@ -140,7 +158,7 @@
                     <form action="/product/delete/{{ p.product_id }}" method="POST" class="absolute top-2 right-2 z-10">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
                         <input type="hidden" name="guild_id" value="{{ current_guild.id if current_guild else '' }}">
-                        <button type="submit" class="w-7 h-7 rounded-full bg-black/40 hover:bg-error text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
+                        <button type="submit" aria-label="Ürünü takipten çıkar" class="w-7 h-7 rounded-full bg-black/40 hover:bg-error text-white flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all backdrop-blur-sm">
                             <svg class="icon text-xs" aria-hidden="true" focusable="false"><use href="#i-delete"/></svg>
                         </button>
                     </form>

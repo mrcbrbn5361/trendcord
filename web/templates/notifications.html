@@ -37,7 +37,7 @@
                         <input id="notifChannelId" type="text" name="channel_id" value="{{ prefs.notify_channel_id or '' }}" placeholder="Discord kanal ID'si"
                             class="w-full bg-surface-container-low border border-border-glass rounded-xl p-4 text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary transition-colors font-body-md">
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <label for="notifOnDrop" class="flex items-center gap-3 p-4 rounded-xl bg-surface-container-low border border-border-glass cursor-pointer hover:border-primary/30 transition-colors">
                             <input id="notifOnDrop" type="checkbox" name="notify_on_drop" value="1" {% if prefs.notify_on_drop != 0 %}checked{% endif %}
                                 class="w-5 h-5 rounded accent-primary">
