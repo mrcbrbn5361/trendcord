@@ -1,3 +1,4 @@
+import asyncio
 import discord
 import os
 import logging
@@ -14,6 +15,10 @@ logger = logging.getLogger("Trendcord")
 
 CID_PRODUCT_LIST = "tc:urun-liste"
 MAX_PICKER_OPTIONS = 25
+
+
+def _owner_id() -> str:
+    return str(os.getenv("OWNER_ID", "") or "").strip()
 
 
 class ProductPickerView(discord.ui.View):
@@ -358,23 +363,65 @@ class ProductCommands(commands.Cog):
 
     @commands.hybrid_command(name="yardım", aliases=["yardim", "help"], description="Trendcord komutlarını göster")
     async def yardim(self, ctx):
-        """Tüm komutları listeler."""
-        embed = discord.Embed(title="Trendcord Yardım", color=self.orange,
-            description="Trendyol fiyat takip botu komutları")
-        embed.add_field(name="/ekle <link>", value="Ürün takibe alır", inline=False)
-        embed.add_field(name="/takiptekiler", value="Takip listesini gösterir", inline=False)
-        embed.add_field(name="/sil", value="Ürün siler — ID, isim yaz ya da boş bırakıp menüden seç", inline=False)
-        embed.add_field(name="/alarm <ID> <fiyat> [alt|üzeri]", value="Fiyat alarmı kurar", inline=False)
-        embed.add_field(name="/alarmlar", value="Aktif alarmları listeler", inline=False)
-        embed.add_field(name="/karşılaştır", value="Ürünleri karşılaştırır", inline=False)
-        embed.add_field(name="/sunucuistatistik", value="Sunucu raporu gösterir", inline=False)
-        embed.add_field(name="/bildirim-kanal <#kanal>", value="Bildirim kanalını ayarlar", inline=False)
-        embed.add_field(name="/bildirim-ayarla", value="Bildirim tercihlerini düzenler", inline=False)
+        """Güncel komut listesi (botun kendi komutlarından otomatik)."""
+        from provisioner.common.content import COMMAND_HELP, commands_help_text
+        embed = discord.Embed(title="🧰 Trendcord Yardım", color=self.orange,
+                              description="Trendyol fiyat takip botu — güncel komutlar")
+        for baslik, cmdlar in COMMAND_HELP:
+            embed.add_field(name=baslik, value=f"`{cmdlar}`", inline=False)
+        embed.add_field(name="📌 Tüm komutlar", value=commands_help_text(),
+                        inline=False)
         embed.set_footer(text="Trendcord • Trendyol Fiyat Takip Botu")
         if isinstance(ctx, commands.Context):
             await ctx.send(embed=embed)
         else:
             await ctx.response.send_message(embed=embed)
+
+    # ---------- /icerik-guncelle ----------
+    @commands.hybrid_command(
+        name="icerik-guncelle",
+        description="Trendcord kategorilerindeki tüm bot mesajlarını yeniler")
+    @app_commands.describe(kapsam="tumu | resmi | buradaki")
+    @app_commands.choices(kapsam=[
+        app_commands.Choice(name="buradaki — sadece bu sunucu", value="buradaki"),
+        app_commands.Choice(name="resmi — sadece resmi sunucu", value="resmi"),
+        app_commands.Choice(name="tumu — botun olduğu tüm sunucular", value="tumu"),
+    ])
+    @commands.guild_only()
+    async def icerik_guncelle(self, ctx, kapsam: str = "buradaki"):
+        """Trendcord'un oluşturduğu tüm kanallardaki mesajları yeniden post eder."""
+        if str(ctx.author.id) != _owner_id():
+            await ctx.reply("⛔ Bu komut yalnızca bot sahibine açık.", ephemeral=True)
+            return
+        if kapsam == "buradaki":
+            hedefler = [ctx.guild]
+        elif kapsam == "resmi":
+            from provisioner.common import official_guard as oguard
+            hedefler = [g for g in self.bot.guilds if oguard.is_official(g.id)]
+        else:
+            hedefler = list(self.bot.guilds)
+
+        await ctx.defer(thinking=True)
+        from provisioner.common.content import refresh_guild_content
+        ok, hatali = [], []
+        for guild in hedefler:
+            try:
+                r = await refresh_guild_content(guild, db=self.bot.db, force=True)
+                ok.append(f"{r['guild_name']} → {r['channels']} kanal")
+            except Exception as e:
+                hatali.append(f"{guild.name}: {type(e).__name__}")
+            await asyncio.sleep(0.4)
+
+        embed = discord.Embed(title="🔄 İçerik Güncellendi", color=self.orange,
+                              description=f"Kapsam: **{kapsam}** · Sunucu: **{len(hedefler)}**")
+        toplam = sum(int(x.split("→")[1].split()[0]) for x in ok) if ok else 0
+        embed.add_field(name="Güncellenen kanal", value=str(toplam), inline=True)
+        embed.add_field(name="Başarılı sunucu", value=str(len(ok)), inline=True)
+        if ok:
+            embed.add_field(name="Detay", value="\n".join(ok[:25]), inline=False)
+        if hatali:
+            embed.add_field(name="❌ Hatalı", value="\n".join(hatali[:15]), inline=False)
+        await ctx.followup.send(embed=embed, ephemeral=True)
 
     @commands.command(name="istatistik", aliases=["stats", "bilgi"])
     @commands.is_owner()

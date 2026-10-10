@@ -128,10 +128,42 @@ def b_rehber(g):
     return [(e, v)]
 
 
+COMMAND_HELP = [
+    ("🛒 Ürün Takibi", "/ekle · /takiptekiler · /sil"),
+    ("🔔 Fiyat Alarmı", "/alarm · /alarmlar · /alarm-sil"),
+    ("⚙️ Ayarlar", "/bildirim-kanal · /bildirim-ayarla · /bildirim-test"),
+    ("📊 İstatistik", "/karşılaştır · /sunucuistatistik"),
+    ("🧰 Yardım", "/yardım"),
+]
+
+
+def commands_help_text():
+    """Botun güncel slash komutlarını otomatik listeler (manuel liste yok)."""
+    try:
+        import main as botmain
+        cogs = sorted((c for c in botmain.bot.commands
+                       if getattr(c, "app_command", None)), key=lambda c: c.name)
+        names = sorted({"/" + c.name for c in cogs})
+    except Exception:
+        names = []
+    if not names:
+        return ("`/ekle` `/sil` `/takiptekiler` `/alarm` `/alarmlar` `/alarm-sil` "
+                "`/karşılaştır` `/bildirim-kanal` `/yardım`")
+    return "`" + "` `".join(names) + "`"
+
+
+def b_yardim(g):
+    lines = "\n".join(f"**{baslik}**\n`{cmdlar}`" for baslik, cmdlar in COMMAND_HELP)
+    e = E("🧰 Komut Listesi",
+          f"{lines}\n\n📌 Güncel komutlar: {commands_help_text()}")
+    return [(e, None)]
+
+
 def b_sss(g):
-    e = E("❓ Sık Sorulan Sorular",
+    e = E("❓ Sık Sorulan Sorular & Komutlar",
           "Aşağıdaki butonlardan en çok sorulan soruların cevaplarını "
-          "görebilirsin. Cevabın yoksa destek panelini kullan.")
+          "görebilirsin. Cevabın yoksa destek panelini kullan.\n\n"
+          f"**Güncel komutlar:** {commands_help_text()}")
     return [(e, "SSS")]
 
 
@@ -153,11 +185,7 @@ def b_rol_secimi(g):
 def b_komutlar(g):
     e = E("⌨️ Komut Alanı",
           "Bu kanalda **yalnızca slash komut** kullanılır.\n\n"
-          "`/ekle` `/sil` `/takiptekiler` — ürün takibi\n"
-          "`/alarm` `/alarmlar` `/alarm-sil` — fiyat alarmları\n"
-          "`/karşılaştır` — iki ürünü kıyasla\n"
-          "`/istatistik` `/sunucuistatistik` — istatistikler\n"
-          "`/yardım` — tüm komutlar\n\n"
+          f"**Güncel komutlar:** {commands_help_text()}\n\n"
           "⚠️ Normal mesajlar bu kanalda yazılamaz.")
     v = link_view(("🌐 Web Paneli", WEB), ("➕ Botu Ekle", invite_url(os.getenv("CLIENT_ID", ""))))
     return [(e, v)]
@@ -437,11 +465,11 @@ async def post_channel_content(guild, spec, db, force=False) -> bool:
         return False
 
     msg_key = "msg:" + spec["keys"][0]
+    prev_ent = store.entity(str(guild.id), msg_key)
     if not force:
-        ent = store.entity(str(guild.id), msg_key)
-        if ent:
+        if prev_ent:
             try:
-                m = await ch.fetch_message(int(ent["discord_id"]))
+                m = await ch.fetch_message(int(prev_ent["discord_id"]))
                 if m:
                     return False  # zaten var
             except (discord.NotFound, discord.HTTPException):
@@ -466,6 +494,16 @@ async def post_channel_content(guild, spec, db, force=False) -> bool:
     except Exception:
         pass
 
+    # Baslik DEGISTIYSE eski mesaj kayitta durur -> kayitli mesaji de sil.
+    # (/icerik-guncelle ile "Sık Sorulan Sorular" -> "...& Komutlar" gibi)
+    if force and prev_ent:
+        try:
+            old = await ch.fetch_message(int(prev_ent["discord_id"]))
+            if old and old.author == guild.me:
+                await old.delete()
+        except (discord.NotFound, discord.HTTPException):
+            pass
+
     last_msg = None
     for item in built:
         if item == ("DURUM", None):
@@ -487,8 +525,13 @@ async def post_channel_content(guild, spec, db, force=False) -> bool:
     return True
 
 
-async def post_all_content(guild, db=None, official: bool = False) -> int:
-    """Tum kanallarin icerigini post eder; sayi dondurur."""
+async def post_all_content(guild, db=None, official: bool = False,
+                           force: bool = False) -> int:
+    """Tum kanallarin icerigini post eder; sayi dondurur.
+
+    force=True: mevcut bot mesajlari silinip yeniden post edilir
+    (/icerik-guncelle komutu icin).
+    """
     assert db is not None, "db gerekli"
     from provisioner.common.store import SetupStore
     store = SetupStore(db)
@@ -497,12 +540,26 @@ async def post_all_content(guild, db=None, official: bool = False) -> int:
         if spec.get("official_only") and not official:
             continue
         try:
-            if await post_channel_content(guild, spec, db):
+            if await post_channel_content(guild, spec, db, force=force):
                 n += 1
         except Exception as e:
             logger.warning(f"[Content] {guild.id}/{spec['keys'][0]}: {e}")
-    logger.info(f"[Content] {guild.id}: {n} kanal icerigi post edildi")
+    logger.info(f"[Content] {guild.id}: {n} kanal icerigi "
+                f"{'YENILENDI' if force else 'post edildi'}")
     return n
+
+
+async def refresh_guild_content(guild, db=None, force: bool = True) -> dict:
+    """Bir sunucudaki TUM Trendcord kategori/kanal mesajlarini yeniler.
+
+    Yalnizca managed_entities icindeki (botun olusturdugu) kanallar islenir.
+    """
+    assert db is not None, "db gerekli"
+    from provisioner.common import official_guard as oguard
+    official = oguard.is_official(guild.id)
+    n = await post_all_content(guild, db, official=official, force=force)
+    return {"guild_id": guild.id, "guild_name": guild.name,
+            "channels": n, "official": official}
 
 
 async def post_status_message(guild, db=None, bot=None) -> None:
