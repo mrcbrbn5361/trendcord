@@ -672,6 +672,39 @@ def _may_delete_product(session, pid: str) -> bool:
     return bool(p_ and (p_.manage_guild or p_.administrator))
 
 
+_refresh_tasks: dict = {}
+
+
+def _schedule_refresh(guild_id=None) -> int:
+    """Fiyat tazelemesi bot tarafinda baslatilir (tek istek = tek gorev)."""
+    key = str(guild_id or "all")
+    if key in _refresh_tasks and not _refresh_tasks[key].done():
+        return -1  # zaten calisiyor
+    try:
+        import main as botmain
+    except Exception:
+        return 0
+    if botmain.bot is None or not botmain.bot.is_ready():
+        return 0
+    task = asyncio.create_task(botmain.force_refresh(guild_id=guild_id))
+    _refresh_tasks[key] = task
+    task.add_done_callback(lambda t: _refresh_tasks.pop(key, None))
+    return 1
+
+
+@app.post("/dashboard/tazele")
+async def dashboard_refresh(request: Request, guild_id: str = Form(None)):
+    """Dashboard'daki 'Fiyatlari tazele' butonu."""
+    user = request.session.get("user")
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    uid = str(user.get("id", ""))
+    state = _schedule_refresh(guild_id or None)
+    target = f"/dashboard?guild_id={guild_id}&refreshing={state}" if guild_id \
+        else f"/dashboard?refreshing={state}"
+    return RedirectResponse(target, status_code=303)
+
+
 @app.post("/product/delete/{pid}")
 async def delete_product(request: Request, pid: str, guild_id: str = Form(None)):
     if _may_delete_product(request.session, pid):

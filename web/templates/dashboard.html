@@ -85,6 +85,37 @@
             {% endif %}
         {% endfor %}
 
+        <!-- Fiyat tazeleme şeridi -->
+        {% if products %}
+        <div class="glass-panel rounded-lg px-4 py-3 flex flex-wrap items-center gap-3 mt-4">
+            <p class="text-sm text-on-surface-variant">
+                {% set stale = products|selectattr('last_checked', 'none')|list %}
+                {% if products|length %}
+                <span class="text-on-surface font-bold">{{ products|length }}</span> ürün gösteriliyor.
+                {% endif %}
+                {% if stale|length %}
+                <span class="text-warning font-bold">{{ stale|length }}</span> tanesi kontrol edilmemiş.
+                {% endif %}
+            </p>
+            <form action="/dashboard/tazele" method="POST" class="ml-auto"
+                  data-confirm="Ürün fiyatları şimdi tazelensin mi?">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+                <input type="hidden" name="guild_id" value="{{ current_guild.id if current_guild else '' }}">
+                <button type="submit" class="px-4 py-2 rounded-full bg-primary text-on-primary font-label-bold text-xs hover:brightness-110 transition flex items-center gap-2">
+                    <svg class="icon text-sm" aria-hidden="true" focusable="false"><use href="#i-sync"/></svg>
+                    Fiyatları Tazele
+                </button>
+            </form>
+        </div>
+        {% if request.query_params.get('refreshing') == '1' %}
+        <p class="mt-2 text-xs text-on-surface-variant" data-auto-reload="12000">
+            🔄 Fiyatlar arka planda tazeleniyor… bu sayfa birazdan kendini yenileyecek.
+        </p>
+        {% elif request.query_params.get('refreshing') == '0' %}
+        <p class="mt-2 text-xs text-error">⚠️ Bot şu anda çevrimdışı görünüyor; fiyatlar otomatik tazelenecek.</p>
+        {% endif %}
+        {% endif %}
+
         <!-- Mobile: Welcome + Mini Stats -->
         <section class="md:hidden">
             <h1 class="font-headline-md text-[22px] text-on-surface">Hoş geldin{% if user %}, <span class="text-primary">{{ user.username.split('#')[0] }}</span>{% endif %}</h1>

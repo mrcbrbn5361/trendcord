@@ -8,7 +8,7 @@ import os
 
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from provisioner.official import runner
 from provisioner.common.views import RolePanelView, TicketPanelView
@@ -19,6 +19,9 @@ ORANGE = 0xF27A1A
 
 AUTO_MEMBER_ROLE = "✅ Üye"
 AUTO_BOT_ROLE = "🤖 Bot"
+
+# Izin/kategori senkronu (drift varsa duzeltir, yoksa hic dokunmaz)
+AUTO_SYNC_MINUTES = int(os.getenv("OFFICIAL_AUTO_SYNC_MINUTES", "360") or 360)
 
 
 class ProvisionOfficial(commands.Cog):
@@ -48,6 +51,43 @@ class ProvisionOfficial(commands.Cog):
                            "devre dışı (G3).")
         else:
             logger.info("ProvisionOfficial cog yüklendi.")
+            if AUTO_SYNC_MINUTES > 0 and not self.auto_sync.is_running():
+                self.auto_sync.start()
+
+    async def cog_unload(self):
+        if self.auto_sync.is_running():
+            self.auto_sync.cancel()
+
+    @tasks.loop(minutes=AUTO_SYNC_MINUTES)
+    async def auto_sync(self):
+        """Resmi sunucudaki kanal/rol/kategori izinlerini blueprint'e esitler.
+
+        Drift yoksa hicbir API cagrisi yapilmaz (apply idempotent + karsilastirma).
+        """
+        await self.bot.wait_until_ready()
+        guild = self.bot.get_guild(int(runner.official_guild_id()))
+        if guild is None:
+            return
+        try:
+            report = await runner.apply_official(guild, db=self.bot.db)
+            degisen = (len(report.get("synced", [])) + len(report.get("created", []))
+                       + len(report.get("errors", [])))
+            if degisen:
+                logger.info(f"[OfficialAutoSync] {guild.id}: "
+                            f"senkron={len(report.get('synced', []))} "
+                            f"olusan={len(report.get('created', []))} "
+                            f"hata={len(report.get('errors', []))}")
+                if report.get("errors"):
+                    logger.warning(f"[OfficialAutoSync] hatalar: "
+                                   f"{report['errors'][:5]}")
+            else:
+                logger.debug(f"[OfficialAutoSync] {guild.id}: drift yok.")
+        except Exception as e:
+            logger.warning(f"[OfficialAutoSync] {guild.id}: {e}")
+
+    @auto_sync.before_loop
+    async def before_auto_sync(self):
+        await self.bot.wait_until_ready()
 
     def _guard(self, ctx) -> str | None:
         """Donus None = gecti; str = reddetme sebebi."""

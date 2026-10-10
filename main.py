@@ -110,6 +110,10 @@ class TrendcordBot(commands.Bot):
         if not check_prices.is_running():
             check_prices.start()
             logger.info("Fiyat kontrol döngüsü aktif edildi.")
+        if not refresh_stale_prices.is_running():
+            refresh_stale_prices.start()
+            logger.info(f"Bayat fiyat döngüsü aktif ({STALE_LOOP_MINUTES} dk, "
+                        f"eşik {STALE_MINUTES} dk).")
 
     async def on_ready(self):
         self.start_time = __import__('time').time()
@@ -136,111 +140,198 @@ class TrendcordBot(commands.Bot):
 
 bot = TrendcordBot()
 
-@tasks.loop(minutes=60)
-async def check_prices():
-    """Arka planda ürün fiyatlarını kontrol eder."""
-    products = bot.db.get_all_products()
-    if not products: return
+# Fiyat tazeleme ayarlari
+PRICE_CHECK_MINUTES = int(os.getenv("PRICE_CHECK_MINUTES", "60") or 60)
+STALE_MINUTES = int(os.getenv("STALE_MINUTES", "45") or 45)
+STALE_LOOP_MINUTES = int(os.getenv("STALE_LOOP_MINUTES", "15") or 15)
+STALE_BATCH = int(os.getenv("STALE_BATCH", "40") or 40)
 
+_refresh_lock = asyncio.Lock()
+
+
+async def refresh_product(p, notify=True):
+    """Tek bir urunu tazeler: fiyat, alarm ve kanal bildirimi.
+
+    Hem saatlik `check_prices` hem bayat `refresh_stale_prices` bunu kullanir.
+    """
+    loop = asyncio.get_running_loop()
+    data = await loop.run_in_executor(
+        None, functools.partial(bot.scraper.scrape_product, p['url']))
+
+    if not data or not data.get('success'):
+        return False
+
+    old_p = p['current_price']
+    new_p = bot.db._safe_float(data.get('current_price', 0))
+    orig_p = bot.db._safe_float(data.get('original_price', 0))
+    basket_p = bot.db._safe_float(data.get('basket_price', 0))
+    disc_pct = bot.db._safe_float(data.get('discount_pct', 0))
+    camp_name = data.get('campaign_name', '')
+    camp_type = data.get('campaign_type', '')
+    camp_end = data.get('campaign_end', '')
+    price_changed = abs(new_p - old_p) > 0.01
+
+    if new_p <= 0:
+        return False
+
+    if not (price_changed and old_p > 0):
+        # Fiyat degismedi: son kontrol zamanini guncelle + saatlik
+        # gecmis noktasi (grafik canli kalsin)
+        bot.db.update_product_price(p['product_id'], new_p, orig_p, basket_p,
+                                    disc_pct, camp_name, camp_type, camp_end)
+
+    active_alerts = bot.db.get_active_alerts()
+    for alert in active_alerts:
+        if alert.get('product_id') != p['product_id']:
+            continue
+        target = alert.get('target_price', 0)
+        direction = alert.get('direction', 'below')
+        triggered = (direction == 'below' and new_p <= target) or \
+                    (direction == 'above' and new_p >= target)
+        if not triggered:
+            continue
+        bot.db.trigger_alert(alert['id'])
+        ch_id = alert.get('channel_id', '')
+        if ch_id and ch_id.isdigit():
+            ch = bot.get_channel(int(ch_id))
+            if ch:
+                emoji = "📉" if direction == 'below' else "📈"
+                embed = discord.Embed(
+                    title=f"{emoji} Alarm Tetiklendi!", url=p['url'],
+                    color=0x10B981 if direction == 'below' else 0xF59E0B)
+                embed.add_field(name="Ürün", value=p['name'][:100], inline=False)
+                embed.add_field(name="Hedef",
+                                value=f"{target:.2f} TL "
+                                      f"({'Altına' if direction == 'below' else 'Üzerine'})",
+                                inline=True)
+                embed.add_field(name="Güncel", value=f"**{new_p:.2f} TL**", inline=True)
+                await ch.send(content=f"<@{alert['user_id']}>", embed=embed)
+
+    if price_changed and old_p > 0:
+        bot.db.update_product_price(p['product_id'], new_p, orig_p, basket_p,
+                                    disc_pct, camp_name, camp_type, camp_end)
+    elif old_p <= 0:
+        bot.db.update_product_price(p['product_id'], new_p)
+
+    if not (notify and price_changed and old_p > 0):
+        return True
+
+    c_id = str(p.get('channel_id', '0'))
+    if not (c_id.isdigit() and c_id != "0"):
+        return True
+    ch = bot.get_channel(int(c_id))
+    if not ch:
+        return True
+
+    color = 0x10B981 if new_p < old_p else 0xEF4444
+    embed = discord.Embed(title="📊 Fiyat Güncellemesi", url=p['url'], color=color)
+
+    img_url = data.get('image_url')
+    if img_url and isinstance(img_url, str) and img_url.startswith('http'):
+        try:
+            embed.set_thumbnail(url=img_url)
+        except Exception:
+            pass
+
+    embed.add_field(name="Ürün", value=p['name'][:100], inline=False)
+
+    eski_sepet = p.get('basket_price') or old_p
+    yeni_sepet = basket_p if basket_p and basket_p < new_p else new_p
+
+    eski_txt = f"~~{old_p:.2f} TL~~"
+    if eski_sepet and eski_sepet < old_p:
+        eski_txt += f" (sepette ~~{eski_sepet:.2f} TL~~)"
+    embed.add_field(name="Eski Fiyat", value=eski_txt, inline=False)
+
+    yeni_txt = f"**{new_p:.2f} TL**"
+    if yeni_sepet and yeni_sepet < new_p:
+        yeni_txt += f" (sepette **{yeni_sepet:.2f} TL**)"
+    embed.add_field(name="Yeni Fiyat", value=yeni_txt, inline=False)
+
+    if disc_pct and disc_pct > 0:
+        embed.add_field(name="İndirim", value=f"**%{disc_pct:.0f}**", inline=True)
+    if camp_name:
+        embed.add_field(name="Kampanya", value=camp_name, inline=True)
+    if camp_end:
+        try:
+            from datetime import datetime
+            bitis = datetime.fromisoformat(camp_end.replace('Z', '+00:00'))
+            kalan = bitis - datetime.now(bitis.tzinfo)
+            embed.add_field(name="Kampanya Bitişi",
+                            value=f"{kalan.days} gün {kalan.seconds // 3600} saat",
+                            inline=True)
+        except Exception:
+            pass
+
+    await ch.send(content=f"<@{p['user_id']}>", embed=embed)
+    await asyncio.sleep(0.5)
+    return True
+
+
+@tasks.loop(minutes=PRICE_CHECK_MINUTES)
+async def check_prices():
+    """Arka planda ürün fiyatlarını kontrol eder (tüm ürünler)."""
+    if _refresh_lock.locked():
+        logger.debug("Fiyat kontrolü atlandı: bayat döngü çalışıyor.")
+        return
+    products = bot.db.get_all_products()
+    if not products:
+        return
+    async with _refresh_lock:
+        for p in products:
+            try:
+                await refresh_product(p)
+                await asyncio.sleep(2)
+            except Exception as e:
+                logger.error(f"Döngü hatası ({p.get('product_id', 'Bilinmiyor')}): {e}")
+
+
+@tasks.loop(minutes=STALE_LOOP_MINUTES)
+async def refresh_stale_prices():
+    """Saatlik turunu beklemeyen bayat urunleri kisa araliklarla tazeler."""
+    if _refresh_lock.locked():
+        return
+    stale = bot.db.get_stale_products(older_than_minutes=STALE_MINUTES,
+                                      limit=STALE_BATCH)
+    if not stale:
+        return
+    logger.info(f"[Fiyat] {len(stale)} bayat ürün tazeleniyor "
+                f"(>{STALE_MINUTES} dk).")
+    async with _refresh_lock:
+        for p in stale:
+            try:
+                await refresh_product(p)
+                await asyncio.sleep(2)
+            except Exception as e:
+                logger.error(f"Bayat yenileme hatası "
+                             f"({p.get('product_id', '?')}): {e}")
+
+
+@check_prices.before_loop
+async def before_check_prices():
+    await bot.wait_until_ready()
+
+
+@refresh_stale_prices.before_loop
+async def before_refresh_stale():
+    await bot.wait_until_ready()
+
+
+async def force_refresh(guild_id=None, limit=STALE_BATCH):
+    """Beklemeden fiyat tazele (web paneli / komut tetikler). Donus: sayi."""
+    products = (bot.db.get_stale_products(older_than_minutes=0, limit=limit)
+                if guild_id is None else
+                [p for p in bot.db.get_all_products(guild_id=guild_id)][:limit])
+    n = 0
     for p in products:
         try:
-            loop = asyncio.get_running_loop()
-            data = await loop.run_in_executor(None, functools.partial(bot.scraper.scrape_product, p['url']))
-            
-            if data and data.get('success'):
-                old_p = p['current_price']
-                new_p = bot.db._safe_float(data.get('current_price', 0))
-                orig_p = bot.db._safe_float(data.get('original_price', 0))
-                basket_p = bot.db._safe_float(data.get('basket_price', 0))
-                disc_pct = bot.db._safe_float(data.get('discount_pct', 0))
-                camp_name = data.get('campaign_name', '')
-                camp_type = data.get('campaign_type', '')
-                camp_end = data.get('campaign_end', '')
-                price_changed = abs(new_p - old_p) > 0.01
-                
-                if price_changed and new_p > 0 and old_p > 0:
-                    bot.db.update_product_price(p['product_id'], new_p, orig_p, basket_p, disc_pct, camp_name, camp_type, camp_end)
-                elif new_p > 0:
-                    # Fiyat degismedi: son kontrol zamanini guncelle + saatlik
-                    # gecmis noktasi (grafik canli kalsin)
-                    bot.db.update_product_price(p['product_id'], new_p, orig_p, basket_p, disc_pct, camp_name, camp_type, camp_end)
-                    
-                    active_alerts = bot.db.get_active_alerts()
-                    for alert in active_alerts:
-                        if alert.get('product_id') == p['product_id']:
-                            target = alert.get('target_price', 0)
-                            direction = alert.get('direction', 'below')
-                            triggered = False
-                            if direction == 'below' and new_p <= target:
-                                triggered = True
-                            elif direction == 'above' and new_p >= target:
-                                triggered = True
-                            
-                            if triggered:
-                                bot.db.trigger_alert(alert['id'])
-                                ch_id = alert.get('channel_id', '')
-                                if ch_id and ch_id.isdigit():
-                                    ch = bot.get_channel(int(ch_id))
-                                    if ch:
-                                        emoji = "📉" if direction == 'below' else "📈"
-                                        embed = discord.Embed(
-                                            title=f"{emoji} Alarm Tetiklendi!",
-                                            url=p['url'],
-                                            color=0x10B981 if direction == 'below' else 0xF59E0B
-                                        )
-                                        embed.add_field(name="Ürün", value=p['name'][:100], inline=False)
-                                        embed.add_field(name="Hedef", value=f"{target:.2f} TL ({'Altına' if direction == 'below' else 'Üzerine'})", inline=True)
-                                        embed.add_field(name="Güncel", value=f"**{new_p:.2f} TL**", inline=True)
-                                        await ch.send(content=f"<@{alert['user_id']}>", embed=embed)
-                    
-                    c_id = str(p.get('channel_id', '0'))
-                    if c_id and c_id != "0" and c_id.isdigit():
-                        ch = bot.get_channel(int(c_id))
-                        if ch:
-                            color = 0x10B981 if new_p < old_p else 0xEF4444
-                            embed = discord.Embed(title="📊 Fiyat Güncellemesi", url=p['url'], color=color)
-                            
-                            img_url = data.get('image_url')
-                            if img_url and isinstance(img_url, str) and img_url.startswith('http'):
-                                try:
-                                    embed.set_thumbnail(url=img_url)
-                                except: pass
-                            
-                            embed.add_field(name="Ürün", value=p['name'][:100], inline=False)
-                            
-                            eski_sepet = p.get('basket_price') or old_p
-                            yeni_sepet = basket_p if basket_p and basket_p < new_p else new_p
-                            
-                            eski_txt = f"~~{old_p:.2f} TL~~"
-                            if eski_sepet and eski_sepet < old_p:
-                                eski_txt += f" (sepette ~~{eski_sepet:.2f} TL~~)"
-                            embed.add_field(name="Eski Fiyat", value=eski_txt, inline=False)
-                            
-                            yeni_txt = f"**{new_p:.2f} TL**"
-                            if yeni_sepet and yeni_sepet < new_p:
-                                yeni_txt += f" (sepette **{yeni_sepet:.2f} TL**)"
-                            embed.add_field(name="Yeni Fiyat", value=yeni_txt, inline=False)
-                            
-                            if disc_pct and disc_pct > 0:
-                                embed.add_field(name="İndirim", value=f"**%{disc_pct:.0f}**", inline=True)
-                            if camp_name:
-                                embed.add_field(name="Kampanya", value=camp_name, inline=True)
-                            if camp_end:
-                                try:
-                                    from datetime import datetime
-                                    bitis = datetime.fromisoformat(camp_end.replace('Z', '+00:00'))
-                                    kalan = bitis - datetime.now(bitis.tzinfo)
-                                    embed.add_field(name="Kampanya Bitişi", value=f"{kalan.days} gün {kalan.seconds//3600} saat", inline=True)
-                                except: pass
-                            
-                            await ch.send(content=f"<@{p['user_id']}>", embed=embed)
-                            await asyncio.sleep(0.5)
-                elif price_changed and new_p > 0 and old_p <= 0:
-                    bot.db.update_product_price(p['product_id'], new_p)
-            
-            await asyncio.sleep(2) 
+            if await refresh_product(p):
+                n += 1
+            await asyncio.sleep(1.5)
         except Exception as e:
-            logger.error(f"Döngü hatası ({p.get('product_id', 'Bilinmiyor')}): {e}")
+            logger.error(f"Zorunlu yenileme hatası "
+                         f"({p.get('product_id', '?')}): {e}")
+    return n
 
 def run_web(port):
     logger.info(f"Web sunucusu başlatılıyor: 0.0.0.0:{port}")

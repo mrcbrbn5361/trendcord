@@ -224,6 +224,45 @@ class Database:
             print(f"[DB ERROR] update_price: {e}")
             return False
 
+    def get_stale_products(self, older_than_minutes=45, limit=50):
+        """Son kontrolu eski olan urunler (fiyat tazeleme onceligi icin)."""
+        try:
+            from datetime import datetime, timedelta
+            cutoff = datetime.now() - timedelta(minutes=int(older_than_minutes))
+            self.cursor.execute(
+                "SELECT * FROM products WHERE last_checked IS NULL "
+                "OR last_checked < ? ORDER BY last_checked ASC LIMIT ?",
+                (cutoff.isoformat(), int(limit)))
+            cols = [d[0] for d in self.cursor.description]
+            return [dict(zip(cols, r)) for r in self.cursor.fetchall()]
+        except Exception as e:
+            print(f"[DB ERROR] get_stale_products: {e}")
+            return []
+
+    def count_stale_products(self, older_than_minutes=45) -> int:
+        try:
+            from datetime import datetime, timedelta
+            cutoff = datetime.now() - timedelta(minutes=int(older_than_minutes))
+            self.cursor.execute(
+                "SELECT COUNT(*) FROM products WHERE last_checked IS NULL "
+                "OR last_checked < ?", (cutoff.isoformat(),))
+            return self.cursor.fetchone()[0] or 0
+        except Exception as e:
+            print(f"[DB ERROR] count_stale_products: {e}")
+            return 0
+
+    def mark_products_stale(self, guild_id=None) -> int:
+        """Urunleri 'kontrol edilmemiş' gibi isaretler; bir sonraki döngüde yenilenir."""
+        try:
+            self.cursor.execute("UPDATE products SET last_checked = NULL "
+                                "WHERE guild_id = ?", (str(guild_id),))
+            n = self.cursor.rowcount or 0
+            self.conn.commit()
+            return n
+        except Exception as e:
+            print(f"[DB ERROR] mark_products_stale: {e}")
+            return 0
+
     def get_product(self, pid):
         """Tek urun satirini dondurur (yoksa None)."""
         try:

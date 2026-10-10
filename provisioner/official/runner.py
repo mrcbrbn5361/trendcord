@@ -299,6 +299,17 @@ async def apply_official(guild, db=None) -> dict:
                     if ch.get("slowmode") and getattr(existing, "slowmode_delay", 0) != ch["slowmode"]:
                         await existing.edit(slowmode_delay=ch["slowmode"])
                         degisti = True
+                    # Eski surumde create_text_channel(type=...) hatasi yuzunden
+                    # duyurular duz metin olarak acilmisti -> haber kanalina cevir.
+                    if (ch.get("news") and getattr(existing, "type", None)
+                            == discord.ChannelType.text):
+                        try:
+                            await existing.edit(type=discord.ChannelType.news,
+                                                reason="Trendcord: duyurular NEWS'e cevrildi")
+                            report["synced"].append(f"# {existing.name} -> haber kanalı")
+                        except Exception as e:
+                            logger.info(f"[Official] {ch['key']} NEWS'e cevrilemedi "
+                                        f"(Community kapali olabilir): {e}")
                     if degisti:
                         report["synced"].append(f"# {existing.name} izinleri")
                 except discord.Forbidden:

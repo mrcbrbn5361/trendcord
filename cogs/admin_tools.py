@@ -1,9 +1,15 @@
 import discord
 import logging
+import os
 from discord.ext import commands
 from discord import app_commands
 
 logger = logging.getLogger("Trendcord")
+
+
+def _owner_id() -> str:
+    return str(os.getenv("OWNER_ID", "") or "").strip()
+
 
 class AdminTools(commands.Cog):
     def __init__(self, bot):
@@ -15,6 +21,30 @@ class AdminTools(commands.Cog):
 
     async def cog_unload(self):
         logger.info("AdminTools cog kaldırıldı.")
+
+    @commands.hybrid_command(name="fiyat-tazele",
+                             description="Bayat kalan ürün fiyatlarını hemen tazeler (bot sahibi)")
+    @app_commands.describe(kapsam="hepsi | sunucu")
+    @app_commands.choices(kapsam=[
+        app_commands.Choice(name="hepsi — tüm bayat ürünler", value="hepsi"),
+        app_commands.Choice(name="sunucu — bu sunucudakiler", value="sunucu"),
+    ])
+    @commands.guild_only()
+    async def fiyat_tazele(self, ctx, kapsam: str = "hepsi"):
+        if str(ctx.author.id) != _owner_id():
+            await ctx.reply("⛔ Bu komut yalnızca bot sahibine açık.", ephemeral=True)
+            return
+        await ctx.defer(thinking=True)
+        import main as botmain
+        gid = str(ctx.guild.id) if kapsam == "sunucu" else None
+        if gid is None:
+            bayat = self.bot.db.count_stale_products()
+        else:
+            bayat = len([p for p in self.bot.db.get_all_products(guild_id=gid)
+                         if not p.get("last_checked")])
+        n = await botmain.force_refresh(guild_id=gid)
+        await ctx.followup.send(
+            f"🔄 **{n}** ürün tazelendi (işaretli: {bayat}).", ephemeral=True)
 
     @commands.command(name="reload")
     @commands.is_owner()
