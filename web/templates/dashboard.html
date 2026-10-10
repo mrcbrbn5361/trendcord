@@ -136,16 +136,38 @@
         <!-- Header with Tabs -->
         <div class="flex items-center justify-between pt-2 md:pt-6">
             <h2 class="font-headline-md text-[20px] md:text-headline-md text-on-surface">Takip Edilen Ürünler</h2>
-            <div class="flex gap-2">
+            <div class="flex gap-2 items-center">
+                {% if products %}
+                <button type="button" data-bulk-select-all aria-pressed="false"
+                        class="px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-border-glass text-on-surface-variant font-label-bold text-xs hover:text-on-surface transition-colors">Tümünü Seç</button>
+                {% endif %}
                 <button data-filter-products="" class="px-4 md:px-5 py-1.5 md:py-2 rounded-full bg-primary text-on-primary font-label-bold text-xs md:text-label-bold active:scale-95 transition-transform filter-btn touch-scale" data-filter="all">Tümü</button>
             </div>
         </div>
+
+        <!-- Toplu silme çubuğu -->
+        {% if products %}
+        <div data-bulk-bar hidden class="sticky top-2 z-30 mt-3 flex flex-wrap items-center gap-3 glass-panel rounded-lg px-4 py-3 border border-border-glass">
+            <span class="text-sm text-on-surface"><b data-bulk-count>0</b> ürün seçildi</span>
+            <form action="/product/delete-bulk" method="POST" data-bulk-form class="ml-auto flex items-center gap-2"
+                  data-confirm="Seçili ürünler ve bağlı alarmları silinsin mi? Bu işlem geri alınamaz.">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+                <input type="hidden" name="pids" value="" data-bulk-ids>
+                <input type="hidden" name="guild_id" value="{{ current_guild.id if current_guild else '' }}">
+                <button type="button" data-bulk-clear class="px-4 py-2 rounded-full border border-border-glass text-on-surface-variant font-label-bold text-xs hover:text-on-surface transition-colors">Vazgeç</button>
+                <button type="submit" class="px-4 py-2 rounded-full bg-error text-white font-label-bold text-xs hover:brightness-110 transition">Seçilenleri Sil</button>
+            </form>
+        </div>
+        {% endif %}
 
         <!-- Product Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter" id="product-grid">
             {% for p in products %}
             <!-- Mobile: horizontal card | Desktop: vertical card -->
-            <div class="flex md:flex-col gap-4 glass-panel p-3 md:p-4 rounded-lg group touch-scale" data-filter-row data-filter-show="flex" data-name="{{ p.name|lower }}">
+            <div class="flex md:flex-col gap-4 glass-panel p-3 md:p-4 rounded-lg group touch-scale relative" data-filter-row data-filter-show="flex" data-name="{{ p.name|lower }}">
+                <label class="absolute top-2 left-2 z-10 w-6 h-6 rounded-md bg-black/40 backdrop-blur-sm border border-white/30 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <input type="checkbox" data-bulk-check value="{{ p.product_id }}" class="w-3.5 h-3.5 accent-primary cursor-pointer" aria-label="{{ p.name }} ürününü seç">
+                </label>
                 <div class="relative w-24 h-24 md:w-full md:aspect-square rounded-xl overflow-hidden shrink-0 border border-border-glass bg-surface-container-low">
                     <a href="/product/{{ p.product_id }}" class="block w-full h-full group/det" aria-label="Ürün detayına git">
                     <img src="{{ p.image_url }}" alt="{{ p.name }}" width="400" height="400" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-fallback="product">
@@ -306,7 +328,30 @@
             <svg class="icon text-4xl" aria-hidden="true" focusable="false"><use href="#i-error"/></svg>
         </div>
         <h2 id="errorModalTitle" class="font-headline-md text-headline-md text-on-surface mb-2">İşlem Başarısız</h2>
-        <p class="font-body-md text-body-md text-on-surface-variant mb-8">Ürün taranamadı. Linki kontrol edip tekrar deneyin.</p>
+        <p class="font-body-md text-body-md text-on-surface-variant mb-8">
+            {% if request.query_params.get('error') == 'delete_forbidden' %}
+            Bu ürünü silme yetkin yok. Yalnızca eklediğin ürünleri veya sunucunun yönetebildiği ürünleri silebilirsin.
+            {% else %}
+            Ürün taranamadı. Linki kontrol edip tekrar deneyin.
+            {% endif %}
+        </p>
+        <button type="button" data-modal-close class="w-full py-4 rounded-2xl bg-primary-container text-on-primary-container font-label-bold text-label-bold shadow-lg active:scale-95 transition-all">Tamamdır</button>
+    </div>
+</div>
+{% endif %}
+
+<!-- SILME MODALI -->
+{% set silinen = request.query_params.get('deleted') %}
+{% if silinen %}
+<div id="deletedSuccess" class="fixed inset-0 z-[200] grid place-items-center px-6" data-modal-open="true"
+     role="dialog" aria-modal="true" aria-labelledby="deletedSuccessTitle">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" data-modal-backdrop></div>
+    <div class="relative w-full max-w-sm bg-surface-container-high rounded-[2rem] p-10 text-center shadow-2xl border border-border-glass">
+        <div class="w-20 h-20 rounded-full bg-success-soft flex items-center justify-center text-success mx-auto mb-6">
+            <svg class="icon text-4xl" aria-hidden="true" focusable="false"><use href="#i-check_circle"/></svg>
+        </div>
+        <h2 id="deletedSuccessTitle" class="font-headline-md text-headline-md text-on-surface mb-2">Ürünler Silindi</h2>
+        <p class="font-body-md text-body-md text-on-surface-variant mb-8">{{ siliden }} ürün ve bağlı alarmları temizlendi.</p>
         <button type="button" data-modal-close class="w-full py-4 rounded-2xl bg-primary-container text-on-primary-container font-label-bold text-label-bold shadow-lg active:scale-95 transition-all">Tamamdır</button>
     </div>
 </div>

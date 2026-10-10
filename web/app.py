@@ -645,11 +645,57 @@ async def add_product(request: Request, url: str = Form(...), guild_id: str = Fo
         return RedirectResponse(f"/dashboard?guild_id={guild_id}&added=1", status_code=303)
     return RedirectResponse(f"/dashboard?guild_id={guild_id}&error=1", status_code=303)
 
+def _may_delete_product(session, pid: str) -> bool:
+    """Urunu silmeye yetki var mi? (kendi urunu veya bot yoneticisi)"""
+    user = session.get("user")
+    if not user or not db_instance:
+        return False
+    uid = str(user.get("id", ""))
+    if uid == OWNER_ID:
+        return True
+    p = db_instance.get_product(pid)
+    if not p:
+        return False
+    if str(p.get("user_id")) == uid:
+        return True
+    gid = str(p.get("guild_id") or "")
+    if not gid.isdigit() or bot_instance is None or not uid.isdigit():
+        return False
+    try:
+        g = bot_instance.get_guild(int(gid))
+    except Exception:
+        return False
+    if g is None:
+        return False
+    m = g.get_member(int(uid))
+    p_ = m.guild_permissions if m else None
+    return bool(p_ and (p_.manage_guild or p_.administrator))
+
+
 @app.post("/product/delete/{pid}")
 async def delete_product(request: Request, pid: str, guild_id: str = Form(None)):
-    if request.session.get("user") and db_instance: db_instance.delete_product(pid)
+    if _may_delete_product(request.session, pid):
+        db_instance.delete_product(pid)
+    else:
+        return RedirectResponse(
+            f"/dashboard?guild_id={guild_id or ''}&error=delete_forbidden", status_code=303)
     redirect_path = f"/dashboard?guild_id={guild_id}" if guild_id else "/dashboard"
-    return RedirectResponse(redirect_path, status_code=303)
+    return RedirectResponse(redirect_path + "&deleted=1", status_code=303)
+
+
+@app.post("/product/delete-bulk")
+async def delete_products_bulk(request: Request,
+                               pids: str = Form(""),
+                               guild_id: str = Form(None)):
+    """Secilen urunleri toplu siler. Donus: dashboard'a geri doner."""
+    ids = [x for x in (pids or "").split(",") if x.strip()][:100]
+    silinen = 0
+    for pid in ids:
+        if _may_delete_product(request.session, pid.strip()):
+            if db_instance.delete_product(pid.strip()).get("product"):
+                silinen += 1
+    redirect_path = f"/dashboard?guild_id={guild_id}" if guild_id else "/dashboard"
+    return RedirectResponse(f"{redirect_path}&deleted={silinen}", status_code=303)
 
 @app.get("/product/{pid}", response_class=HTMLResponse)
 async def product_detail(request: Request, pid: str):

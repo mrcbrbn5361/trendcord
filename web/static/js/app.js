@@ -284,6 +284,7 @@
         document.querySelectorAll('[data-filter-count]').forEach(function (el) {
             el.textContent = String(shown);
         });
+        syncBulkBar();
     }
 
 
@@ -358,9 +359,57 @@
         if (f.length) f[0].focus();
     }
 
+    /* ---------- Toplu urun secimi / silme ---------- */
+    function bulkBoxes() {
+        return Array.prototype.slice.call(document.querySelectorAll('[data-bulk-check]'));
+    }
+    function syncBulkBar() {
+        var bar = document.querySelector('[data-bulk-bar]');
+        if (!bar) return;
+        var boxes = bulkBoxes().filter(function (b) { return b.offsetParent !== null; });
+        var checked = boxes.filter(function (b) { return b.checked; });
+        var count = bar.querySelector('[data-bulk-count]');
+        var ids = bar.querySelector('[data-bulk-ids]');
+        var allBtn = document.querySelector('[data-bulk-select-all]');
+        if (count) count.textContent = String(checked.length);
+        if (ids) ids.value = checked.map(function (b) { return b.value; }).join(',');
+        if (allBtn) {
+            var allOn = boxes.length > 0 && checked.length === boxes.length;
+            allBtn.setAttribute('aria-pressed', allOn ? 'true' : 'false');
+            allBtn.textContent = allOn ? 'Seçimi Kaldır' : 'Tümünü Seç';
+        }
+        if (checked.length) bar.removeAttribute('hidden');
+        else bar.setAttribute('hidden', '');
+    }
+    function initBulk() {
+        var bar = document.querySelector('[data-bulk-bar]');
+        if (!bar) return;
+        document.addEventListener('change', function (e) {
+            if (e.target instanceof Element && e.target.matches('[data-bulk-check]')) syncBulkBar();
+        });
+        var allBtn = document.querySelector('[data-bulk-select-all]');
+        if (allBtn) {
+            allBtn.addEventListener('click', function () {
+                var boxes = bulkBoxes().filter(function (b) { return b.offsetParent !== null; });
+                var turnOn = boxes.some(function (b) { return !b.checked; });
+                boxes.forEach(function (b) { b.checked = turnOn; });
+                syncBulkBar();
+            });
+        }
+        var clear = bar.querySelector('[data-bulk-clear]');
+        if (clear) {
+            clear.addEventListener('click', function () {
+                bulkBoxes().forEach(function (b) { b.checked = false; });
+                syncBulkBar();
+            });
+        }
+        syncBulkBar();
+    }
+
     function init() {
         applyThemeIcon();
         initReveal();
+        initBulk();
         document.querySelectorAll('[data-modal-open-btn]').forEach(function (b) {
             b.setAttribute('aria-expanded', 'false');
         });

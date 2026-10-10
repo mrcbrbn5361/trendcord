@@ -459,9 +459,10 @@ async def delete_product(product_id: str, request: Request):
     if not is_owner and rows[0]["user_id"] != user["user_id"]:
         raise HTTPException(403, "not_your_product")
 
-    if db_instance is None or not db_instance.delete_product(product_id):
+    res = db_instance.delete_product(product_id) if db_instance else None
+    if not res or not res["product"]:
         raise HTTPException(500, "db_error")
-    return {"ok": True}
+    return {"ok": True, "alerts_removed": res["alerts"]}
 
 
 @router.get("/guilds")

@@ -224,10 +224,80 @@ class Database:
             print(f"[DB ERROR] update_price: {e}")
             return False
 
+    def get_product(self, pid):
+        """Tek urun satirini dondurur (yoksa None)."""
+        try:
+            self.cursor.execute("SELECT * FROM products WHERE product_id = ?",
+                                (str(pid),))
+            row = self.cursor.fetchone()
+            if not row:
+                return None
+            cols = [d[0] for d in self.cursor.description]
+            return dict(zip(cols, row))
+        except Exception as e:
+            print(f"[DB ERROR] get_product: {e}")
+            return None
+
     def delete_product(self, pid):
-        self.cursor.execute('DELETE FROM products WHERE product_id = ?', (str(pid),))
+        """Urunu siler ve BAGLI ALARMLARI da temizler (oksuz alarm kalmasin).
+
+        Donus: {"product": bool, "alerts": int, "history": int}
+        """
+        pid = str(pid)
+        res = {"product": False, "alerts": 0, "history": 0}
+        try:
+            self.cursor.execute('DELETE FROM products WHERE product_id = ?', (pid,))
+            res["product"] = self.cursor.rowcount > 0
+        except Exception as e:
+            print(f"[DB ERROR] delete_product: {e}")
+            return res
+        for table, key in (("alerts", "alerts"), ("price_history", "history")):
+            try:
+                self.cursor.execute(
+                    f'DELETE FROM {table} WHERE product_id = ?', (pid,))
+                res[key] = self.cursor.rowcount or 0
+            except Exception:
+                pass  # tablo yoksa gormezden gel
         self.conn.commit()
-        return self.cursor.rowcount > 0
+        return res
+
+    def delete_products(self, pids):
+        """Birden fazla urunu toplu siler. Donus: {"products": n, "alerts": n}"""
+        pids = [str(p) for p in pids if p]
+        out = {"products": 0, "alerts": 0, "missing": []}
+        for pid in pids:
+            r = self.delete_product(pid)
+            if r["product"]:
+                out["products"] += 1
+            else:
+                out["missing"].append(pid)
+            out["alerts"] += r["alerts"]
+        return out
+
+    def search_products(self, guild_id=None, user_id=None, query=None, limit=25):
+        """Isme gore arama (LIKE, case-insensitive)."""
+        try:
+            q = "SELECT * FROM products"
+            where, params = [], []
+            if guild_id:
+                where.append("guild_id = ?")
+                params.append(str(guild_id))
+            if user_id:
+                where.append("user_id = ?")
+                params.append(str(user_id))
+            if query:
+                where.append("name LIKE ? COLLATE NOCASE")
+                params.append(f"%{query}%")
+            if where:
+                q += " WHERE " + " AND ".join(where)
+            q += " ORDER BY last_checked DESC LIMIT ?"
+            params.append(int(limit))
+            self.cursor.execute(q, params)
+            cols = [d[0] for d in self.cursor.description]
+            return [dict(zip(cols, r)) for r in self.cursor.fetchall()]
+        except Exception as e:
+            print(f"[DB ERROR] search_products: {e}")
+            return []
 
     def add_user(self, user_id, username, avatar_url=''):
         """Kullanıcıyı kaydet veya güncelle."""

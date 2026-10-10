@@ -89,6 +89,13 @@ class TrendcordBot(commands.Bot):
         except Exception as e:
             logger.error(f"Kalici panel kaydi basarisiz: {e}")
 
+        # /takiptekiler mesajindaki kalici "Urun Sil" butonu
+        try:
+            import cogs.product_commands as pc
+            pc.register(self)
+        except Exception as e:
+            logger.error(f"Urun sil butonu kaydi basarisiz: {e}")
+
         if os.path.exists("cogs"):
             for filename in os.listdir("cogs"):
                 if filename.endswith(".py") and not filename.startswith("__"):

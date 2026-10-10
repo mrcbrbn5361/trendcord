@@ -109,12 +109,37 @@ class TestProducts:
             'current_price': 100.0,
         }
         db.add_product(data, 'guild1', 'user1', 'channel1')
-        
+        db.add_alert('12345', 'user1', 'guild1', 'channel1', 50.0)
+
         result = db.delete_product('12345')
-        assert result is True
-        
+        assert result["product"] is True
+        assert result["alerts"] == 1
+
         products = db.get_all_products(guild_id='guild1')
         assert len(products) == 0
+        # Oksuz alarm kalmamali
+        assert all(a["product_id"] != '12345' for a in db.get_active_alerts())
+
+    def test_delete_products_bulk(self, db):
+        for i in range(3):
+            db.add_product({'product_id': str(i), 'name': f'Ürün {i}',
+                            'url': f'https://trendyol.com/{i}', 'image_url': '',
+                            'current_price': 10.0}, 'guild1', 'user1', 'channel1')
+        res = db.delete_products(['0', '1', 'yok-boyle-bir-id'])
+        assert res["products"] == 2
+        assert res["missing"] == ['yok-boyle-bir-id']
+        assert len(db.get_all_products(guild_id='guild1')) == 1
+
+    def test_search_products_by_name(self, db):
+        db.add_product({'product_id': 'a', 'name': 'Apple iPhone 15 Pro',
+                        'url': 'https://trendyol.com/a', 'image_url': '',
+                        'current_price': 10.0}, 'guild1', 'user1', 'channel1')
+        db.add_product({'product_id': 'b', 'name': 'Samsung Galaxy S24',
+                        'url': 'https://trendyol.com/b', 'image_url': '',
+                        'current_price': 20.0}, 'guild1', 'user1', 'channel1')
+        found = db.search_products(guild_id='guild1', query='iphone')
+        assert [p["product_id"] for p in found] == ['a']
+        assert db.search_products(guild_id='guild1', query='yok') == []
 
     def test_get_all_products_by_guild(self, db):
         for i in range(3):
