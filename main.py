@@ -82,7 +82,7 @@ class TrendcordBot(commands.Bot):
 
     async def setup_hook(self):
         # Kalici paneller: rol-secimi / destek / sss butonlari restart sonrasi
-        # da calisir (sabit custom_id + add_persistent_view).
+        # da calisir (sabit custom_id + add_view).
         try:
             from provisioner.common.views import register_persistent_views
             register_persistent_views(self)

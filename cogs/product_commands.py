@@ -114,7 +114,9 @@ class ProductListView(discord.ui.View):
 
 def register(bot):
     """Kalici butonu kaydet (bot acilirken cagrilir)."""
-    bot.add_persistent_view(ProductListView())
+    from provisioner.common.views import add_persistent
+    if not add_persistent(bot, ProductListView()):
+        logger.error("Kalici 'Urun Sil' butonu kaydedilemedi.")
 
 
 class ProductCommands(commands.Cog):

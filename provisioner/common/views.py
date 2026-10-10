@@ -22,14 +22,31 @@ CID_TICKET_PANEL = "tc:ticket-panel"
 CID_SSS_PREFIX = "tc:sss:"
 
 
+def add_persistent(bot, view) -> bool:
+    """View'i kalici olarak kaydeder (restart sonrasi da calisir).
+
+    discord.py 2.7+ `add_view`; 2.x eski surumlerde `add_persistent_view`.
+    """
+    adder = getattr(bot, "add_view", None) or getattr(bot, "add_persistent_view", None)
+    if adder is None:
+        logger.error("[Views] bot API'sinde kalici view kaydi yok "
+                     "(add_view/add_persistent_view bulunamadi)")
+        return False
+    try:
+        adder(view)
+        return True
+    except Exception as e:
+        logger.warning(f"[Views] kalici kayit basarisiz {type(view).__name__}: {e}")
+        return False
+
+
 def register_persistent_views(bot):
     """Bot acilirken cagrilir: paneller restart sonrasi da calisir."""
+    ok = 0
     for view in (RolePanelView(), TicketPanelView(), SSSView()):
-        try:
-            bot.add_persistent_view(view)
-        except Exception as e:
-            logger.warning(f"[Views] persistent kayit basarisiz {type(view).__name__}: {e}")
-    logger.info("Kalici paneller kaydedildi (rol / destek / sss).")
+        if add_persistent(bot, view):
+            ok += 1
+    logger.info(f"Kalici paneller kaydedildi: {ok}/3 (rol / destek / sss).")
 
 
 class RolePanelView(discord.ui.View):
