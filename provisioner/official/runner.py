@@ -531,6 +531,12 @@ async def distribute_member_roles(guild, batch_size: int = 0,
         logger.info(f"[Official] {guild.id}: rol dagitimi — Üye={report['member']} "
                     f"Bot={report['bot']} atlanan={report['skipped']} "
                     f"(taranan={report['scanned']})")
+    else:
+        # Members intent kapaliysa guild.members bos gelir; sessizce
+        # "dagitildi" sanilmasin diye her zaman gorunur.
+        logger.info(f"[Official] {guild.id}: rol dagitimi — ekleme yok "
+                    f"(taranan={report['scanned']}"
+                    f"{', MEMBERS_INTENT ACIK OLMALI' if report['scanned'] == 0 else ''})")
     return report
 
 
