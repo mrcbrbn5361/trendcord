@@ -128,6 +128,21 @@ if wcss:
     check("dvh ile viewport kaymasi onlendi", "100dvh" in wcss)
     check("masaustu kurallari degistirilmemis", "min-width: 1024px" not in wcss)
 
+    # Widget body { font-size: X% } uyguluyor ama Tailwind px tabanli;
+    # o yuzden "Yazı Boyutu"nun Tailwind siniflarina tasinmasi gerekiyor.
+    for cls, zoom in (("engelsiz-fontsize-minus1", "0.9"), ("engelsiz-fontsize-1", "1.1"),
+                      ("engelsiz-fontsize-2", "1.25"), ("engelsiz-fontsize-3", "1.4")):
+        pat = rf"{re.escape(cls)}\s*\{{\s*--tc-zoom:\s*{re.escape(zoom)}\s*!important"
+        check(f"zoom {cls} = {zoom}", re.search(pat, wcss) is not None)
+    for t in ("text-xs", "text-sm", "text-base", "text-lg", "text-xl",
+              "text-2xl", "text-3xl", "text-4xl", "text-5xl"):
+        pat = rf"\.{re.escape(t)}\s*\{{\s*font-size:\s*calc\([^)]*var\(--tc-zoom"
+        check(f"{t} zoom ile carpiliyor", re.search(pat, wcss) is not None)
+    check("md: varyantlari da carpiyor",
+          re.search(r"\.md\\:text-sm\s*\{\s*font-size:\s*calc\([^)]*var\(--tc-zoom",
+                    wcss) is not None)
+    check("tum kurallar !important", wcss.count("!important") >= 20)
+
 # --------------------------------------------------------------- CSRF reddi
 print("\n== CSRF reddi (403 olmali)")
 for name, path, fields in [

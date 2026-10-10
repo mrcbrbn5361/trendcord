@@ -1,18 +1,26 @@
-/* EngelsizForum erisilebilirlik widget'i - mobil uyumlama duzeltmesi.
+/* EngelsizForum erisilebilirlik widget'i - Trendcord uyumlama duzeltmeleri.
  *
- * Sorun: widget `position: fixed` ve `bottom: 20px` ile konumlanir. Sitede
- * mobilde `fixed bottom-0` alt menu cubugu (~62px + safe-area) ve dashboard'da
- * sag altta FAB var. Bu yuzden widget butonu alt cubugun/ikonlarin uzerine
- * biniyor ve panel ekrana sigmiyor.
+ * 1) MOBIL KONUM: widget `position: fixed; bottom: 20px` ile geliyor. Sitede
+ *    mobilde `fixed bottom-0` alt menu cubugu (~62px + safe-area) ve
+ *    dashboard'da sag altta FAB var. Buton alt cubugun uzerine biniyor,
+ *    panelin alt kenari kesiliyor. Lg altinda widget SOLA alinir (FAB sagda)
+ *    ve alt cubuk + safe-area yuksekligi kadar yukarI kaldirilir.
  *
- * Cozum: lg breakpoint'inin altinda widget sola alinir (FAB sagda, sol bos)
- * ve alt menu + safe-area yuksekligi kadar yukarI kaldirilir.
- * Masaustunde hicbir sey degismez (bottom-right, 20px).
+ * 2) YAZI BOYUTU: widget `body { font-size: X% !important }` uyguluyor ama
+ *    Tailwind `text-xs/sm/lg/...` ile px tabanli font-size koyuyor; bu
+ *    yuzden "Yazı Boyutu" (90% / A- / A / A+ / A++) sitemizde HIC BIR seyi
+ *    degistirmiyordu. Asagidaki kural Tailwind olceklerini widget'in
+ *    --tc-zoom degeriyle carpim haline getirir; boylece A++ gercekten
+ *    buyutur. Ayni sey masaustu (md:) ve mobil icin de gecerli.
+ *
+ * 3) Diger widget ozellikleri (kontras, disleksi, okuma cetveli, buyuk
+ *    imlec, baglanti vurgulama, sesli okuyucu, renk korlugu) body
+ *    siniflari + !important ile uygulaniyor; bunlar sunucu CSS'ine
+ *    dokunmadan calisiyor, panel de mobil icin asagida sigacak sekilde
+ *    ayarlanmistir.
  */
 
-/* Masaustu: kaynak kodun ayarlari korunur. Degisiklik yok. */
-
-/* --- Mobil (< lg = 1024px) --- */
+/* ---------- 1) Mobil konum ---------- */
 @media (max-width: 1023px) {
   /* Buton: sola al, alt cubugun uzerine cik */
   #engelsiz-accessibility-widget.engelsiz-pos-bottom-right {
@@ -36,17 +44,49 @@
 
 /* Cok dar ekranlar (< 360px): butonu ve paneli biraz daha kucult */
 @media (max-width: 359px) {
-  #engelsiz-accessibility-widget.engelsiz-trigger-btn,
   #engelsiz-accessibility-widget .engelsiz-trigger-btn {
     width: 46px !important;
     height: 46px !important;
   }
 }
 
-/* Alti sinir: widget hicbir durumda ekranin disina tasmasin */
-@media (max-width: 1023px) {
-  #engelsiz-accessibility-widget.engelsiz-pos-bottom-right,
-  #engelsiz-accessibility-widget.engelsiz-pos-bottom-left {
-    max-height: calc(100dvh - 12px) !important;
-  }
+/* ---------- 2) Yazı Boyutu -> Tailwind olcegini gercekten degistir ---------- */
+/* Widget'in body siniflarindan --tc-zoom turet (varsayilan 1 = degisiklik yok) */
+body.engelsiz-fontsize-minus1 { --tc-zoom: 0.9 !important; }
+body.engelsiz-fontsize-1      { --tc-zoom: 1.1 !important; }
+body.engelsiz-fontsize-2      { --tc-zoom: 1.25 !important; }
+body.engelsiz-fontsize-3      { --tc-zoom: 1.4 !important; }
+
+/* Tailwind'in rem tabanli yazi olceklerini zoom ile carp.
+   !important gerekli: Tailwind .text-* siniflari da dogrudan font-size set eder
+   ve widget body seviyesinde uygulaniyor. */
+body[class*="engelsiz-fontsize-"] .text-xs   { font-size: calc(0.75rem   * var(--tc-zoom, 1)) !important; line-height: calc(1rem    * var(--tc-zoom, 1)) !important; }
+body[class*="engelsiz-fontsize-"] .text-sm   { font-size: calc(0.875rem  * var(--tc-zoom, 1)) !important; line-height: calc(1.25rem * var(--tc-zoom, 1)) !important; }
+body[class*="engelsiz-fontsize-"] .text-base { font-size: calc(1rem      * var(--tc-zoom, 1)) !important; line-height: calc(1.5rem  * var(--tc-zoom, 1)) !important; }
+body[class*="engelsiz-fontsize-"] .text-lg   { font-size: calc(1.125rem  * var(--tc-zoom, 1)) !important; line-height: calc(1.75rem * var(--tc-zoom, 1)) !important; }
+body[class*="engelsiz-fontsize-"] .text-xl   { font-size: calc(1.25rem   * var(--tc-zoom, 1)) !important; line-height: calc(1.75rem * var(--tc-zoom, 1)) !important; }
+body[class*="engelsiz-fontsize-"] .text-2xl  { font-size: calc(1.5rem    * var(--tc-zoom, 1)) !important; line-height: calc(2rem    * var(--tc-zoom, 1)) !important; }
+body[class*="engelsiz-fontsize-"] .text-3xl  { font-size: calc(1.875rem  * var(--tc-zoom, 1)) !important; line-height: calc(2.25rem * var(--tc-zoom, 1)) !important; }
+body[class*="engelsiz-fontsize-"] .text-4xl  { font-size: calc(2.25rem   * var(--tc-zoom, 1)) !important; line-height: calc(2.5rem  * var(--tc-zoom, 1)) !important; }
+body[class*="engelsiz-fontsize-"] .text-5xl  { font-size: calc(3rem      * var(--tc-zoom, 1)) !important; line-height: 1 !important; }
+
+/* Masaustu (md:) varyantlari icin ayni olcek - Tailwind bunlari 768px'te uygular */
+@media (min-width: 768px) {
+  body[class*="engelsiz-fontsize-"] .md\:text-xs   { font-size: calc(0.75rem  * var(--tc-zoom, 1)) !important; line-height: calc(1rem    * var(--tc-zoom, 1)) !important; }
+  body[class*="engelsiz-fontsize-"] .md\:text-sm   { font-size: calc(0.875rem * var(--tc-zoom, 1)) !important; line-height: calc(1.25rem * var(--tc-zoom, 1)) !important; }
+  body[class*="engelsiz-fontsize-"] .md\:text-base { font-size: calc(1rem     * var(--tc-zoom, 1)) !important; line-height: calc(1.5rem  * var(--tc-zoom, 1)) !important; }
+  body[class*="engelsiz-fontsize-"] .md\:text-lg   { font-size: calc(1.125rem * var(--tc-zoom, 1)) !important; line-height: calc(1.75rem * var(--tc-zoom, 1)) !important; }
+  body[class*="engelsiz-fontsize-"] .md\:text-xl   { font-size: calc(1.25rem  * var(--tc-zoom, 1)) !important; line-height: calc(1.75rem * var(--tc-zoom, 1)) !important; }
+  body[class*="engelsiz-fontsize-"] .md\:text-2xl  { font-size: calc(1.5rem   * var(--tc-zoom, 1)) !important; line-height: calc(2rem    * var(--tc-zoom, 1)) !important; }
+  body[class*="engelsiz-fontsize-"] .md\:text-3xl  { font-size: calc(1.875rem * var(--tc-zoom, 1)) !important; line-height: calc(2.25rem * var(--tc-zoom, 1)) !important; }
+  body[class*="engelsiz-fontsize-"] .md\:text-4xl  { font-size: calc(2.25rem  * var(--tc-zoom, 1)) !important; line-height: calc(2.5rem  * var(--tc-zoom, 1)) !important; }
+  body[class*="engelsiz-fontsize-"] .md\:text-6xl  { font-size: calc(3.75rem  * var(--tc-zoom, 1)) !important; line-height: 1 !important; }
+  body[class*="engelsiz-fontsize-"] .md\:text-8xl  { font-size: calc(6rem     * var(--tc-zoom, 1)) !important; line-height: 1 !important; }
 }
+
+/* Ozel baslik siniflarimiz da Tailwind olceklerini kullanir */
+body[class*="engelsiz-fontsize-"] .font-headline-md { font-size: calc(1.25rem  * var(--tc-zoom, 1)) !important; }
+body[class*="engelsiz-fontsize-"] .font-stat-giant { font-size: calc(3.75rem  * var(--tc-zoom, 1)) !important; }
+
+/* Widget kendi panelinde ayni zoom olcegini kullanmali (panel icerigi de okunur) */
+#engelsiz-accessibility-widget { font-size: calc(14px * var(--tc-zoom, 1)); }
