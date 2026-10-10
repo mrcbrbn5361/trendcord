@@ -1,14 +1,35 @@
 """Etkilesim panelleri: rol secimi (resmi) + destek paneli (4.6).
 
 G5: webhook kullanilmaz; tum islemler bot hesabiyla yapilir.
+
+KRITIK: tum paneller SABIT custom_id tasir ve `register_persistent_views()`
+ile bot acilirken kaydedilir. Aksi halde bot her restart'ta panel
+custom_id'lerini unutur ve butonlar "calismiyor" olur.
 """
 import logging
 
 import discord
 
+from provisioner.common import official_guard as oguard
+from provisioner.common import owner_role
 from provisioner.official import data as odata
 
 logger = logging.getLogger("Trendcord")
+
+# Sabit custom_id'ler — mesajlar yeniden post edilse bile ayni kalir.
+CID_ROLE_PANEL = "tc:role-panel"
+CID_TICKET_PANEL = "tc:ticket-panel"
+CID_SSS_PREFIX = "tc:sss:"
+
+
+def register_persistent_views(bot):
+    """Bot acilirken cagrilir: paneller restart sonrasi da calisir."""
+    for view in (RolePanelView(), TicketPanelView(), SSSView()):
+        try:
+            bot.add_persistent_view(view)
+        except Exception as e:
+            logger.warning(f"[Views] persistent kayit basarisiz {type(view).__name__}: {e}")
+    logger.info("Kalici paneller kaydedildi (rol / destek / sss).")
 
 
 class RolePanelView(discord.ui.View):
@@ -19,6 +40,7 @@ class RolePanelView(discord.ui.View):
 
     @discord.ui.select(placeholder="Bildirim / ilgi rollerini seç",
                        min_values=0, max_values=len(odata.SELF_ASSIGNABLE),
+                       custom_id=CID_ROLE_PANEL,
                        options=[discord.SelectOption(label=n, emoji=n.split(" ")[0])
                                 for n in odata.SELF_ASSIGNABLE])
     async def pick(self, interaction: discord.Interaction, select: discord.ui.Select):
@@ -29,6 +51,9 @@ class RolePanelView(discord.ui.View):
         member = interaction.user
         added, removed = [], []
         for name in odata.SELF_ASSIGNABLE:
+            # Savunma: bot sahibi rolu hicbir panelden dagitilamaz
+            if name == owner_role.OWNER_ROLE_NAME:
+                continue
             role = discord.utils.find(lambda r: r.name == name, interaction.guild.roles)
             if not role:
                 continue
@@ -58,8 +83,13 @@ class TicketPanelView(discord.ui.View):
         super().__init__(timeout=None)
 
     @discord.ui.select(placeholder="Destek türü seç", min_values=1, max_values=1,
+                       custom_id=CID_TICKET_PANEL,
                        options=[discord.SelectOption(label=t) for t in TURULER])
     async def pick(self, interaction: discord.Interaction, select: discord.ui.Select):
+        # Destek talebi YALNIZCA resmi sunucuda acilir.
+        if not interaction.guild or not oguard.is_official(interaction.guild.id):
+            await interaction.response.send_message(oguard.deny_message(), ephemeral=True)
+            return
         konu = select.values[0]
         me = interaction.guild.me if interaction.guild else None
         can_thread = False
@@ -124,7 +154,8 @@ class SSSView(discord.ui.View):
         super().__init__(timeout=None)
         for i, soru in enumerate(self.SORULAR):
             btn = discord.ui.Button(label=soru.split(" ", 1)[1][:80], row=i // 3,
-                                    style=discord.ButtonStyle.secondary)
+                                    style=discord.ButtonStyle.secondary,
+                                    custom_id=f"{CID_SSS_PREFIX}{i}")
 
             async def cb(interaction: discord.Interaction, s=soru):
                 e = discord.Embed(title=s, description=self.SORULAR[s],

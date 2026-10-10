@@ -285,6 +285,13 @@ def b_changelog(g):
 
 
 def b_destek_paneli(g):
+    from provisioner.common import official_guard as oguard
+    if not oguard.is_official(g.id):
+        e = E("🎫 Destek",
+              "Destek talepleri yalnızca **Trendcord Resmi Sunucusu**'nda "
+              "açılabilir — ekibimiz orada aktif.\n\n"
+              f"👉 {oguard.invite_url()}")
+        return [(e, None)]
     e = E("🎫 Destek",
           "Aşağıdaki menüden destek türünü seç — özel bir thread açalım, "
           "sadece sen ve destek ekibi görsün.\n\n"

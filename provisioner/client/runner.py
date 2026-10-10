@@ -1,13 +1,18 @@
 """Client guild otomatik kurulum runner (Modul B).
 
-G1: Bu dosyanin kod yolunda HICBIR rol olusturma/guncelleme/silme cagrisi
-bulunmaz — roller yalnizca OKUNUR (analyze_roles).
+G1: Bu dosyanin kod yolunda sunucuya ait rol olusturma/duzenleme/silme cagrisi
+bulunmaz — kullanici rolleri yalnizca OKUNUR (analyze_roles).
+
+TEK ISTISNA: `Trendcord Bot Owner` rolu. Bu botun kendi yonettigi kanallara
+tam yetki verebilmek icin gereklidir ve ortak modulde uretilir
+(provisioner/common/owner_role.py). Sunucunun diger hicbir rolune dokunulmaz.
 """
 import logging
 
 import discord
 
 from provisioner.common import overwrites as owlib
+from provisioner.common import owner_role
 from provisioner.common.analyzer import analyze_roles, resolve_role_lists
 from provisioner.common.ratelimit import safe_call, StepResult
 from provisioner.client import data as cdata
@@ -52,10 +57,9 @@ async def _create_channel(guild, ch, overwrite_map):
         if ch.get("topic") and kind != "PANEL":
             kwargs["topic"] = ch["topic"]
         if ch.get("news"):
-            try:
-                kwargs["type"] = discord.ChannelType.news
-            except Exception:
-                pass
+            # discord.py Guild.create_text_channel(type=...) YOK; parametre `news`.
+            # (eski hata: TypeError -> duyurular kanali hic olusmuyordu)
+            kwargs["news"] = True
         if kind == "PANEL":
             kwargs["topic"] = ch.get("topic", "Destek talebi aç")
         return await guild.create_text_channel(**kwargs)
@@ -180,6 +184,12 @@ async def apply_setup(guild, modules: dict = None, analysis: dict = None, db=Non
     except Exception as e:
         logger.warning(f"[ClientSetup] icerik postlama: {e}")
 
+    # Trendcord Bot Owner rolu: kanallara tam yetki + yalnizca OWNER_ID'ye atama
+    try:
+        report["owner_role"] = await owner_role.provision(guild, db)
+    except Exception as e:
+        logger.warning(f"[ClientSetup] owner rolu: {e}")
+
     logger.info(f"[ClientSetup] {guild.id}: {report['status']} "
                 f"oluşturulan={len(report['created'])} atlanan={len(report['skipped'])}")
     return report
@@ -223,6 +233,10 @@ async def remove_setup(guild, db=None) -> dict:
             removed.append(ent["key"])
         else:
             errors.append(f"{ent['key']}: {res.status}")
+    try:
+        await owner_role.teardown(guild)
+    except Exception as e:
+        errors.append(f"owner_role: {e}")
     return {"removed": removed, "errors": errors}
 
 

@@ -42,7 +42,14 @@ STATIC_DIR = BASE_DIR / "web" / "static"
 # --- Static Files (catch-all route, not ASGI mount, to avoid uvicorn/threading issues) ---
 @app.get("/static/{filepath:path}")
 async def static_files(filepath: str):
-    file_path = STATIC_DIR / filepath
+    # Path traversal korumasi: istek static dizinin DISINA cikamaz
+    # (/static/../../.env ile bot tokeni okunabiliyordu).
+    try:
+        file_path = (STATIC_DIR / filepath).resolve()
+        file_path.relative_to(STATIC_DIR.resolve())
+    except (ValueError, OSError):
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse("Not Found", status_code=404)
     if not file_path.is_file():
         from fastapi.responses import PlainTextResponse
         return PlainTextResponse("Not Found", status_code=404)

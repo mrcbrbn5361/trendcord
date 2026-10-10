@@ -121,11 +121,15 @@ async def _ensure_channel(guild, ch, parent, overwrite_map):
         if ch.get("kind") == "FORUM":
             return await guild.create_forum(**kwargs)
         if ch.get("news"):
+            # discord.py Guild.create_text_channel(type=...) YOK; parametre `news`.
+            # (eski hata: duyurular kanali hic olusmuyordu)
             try:
-                kwargs["type"] = discord.ChannelType.news
+                kwargs["news"] = True
                 return await guild.create_text_channel(**kwargs)
-            except Exception:
-                kwargs.pop("type", None)
+            except Exception as e:
+                # Community kapaliysa duyurular duz TEXT olur
+                logger.warning(f"[Official] {key}: NEWS olusturulamadi ({e}); TEXT deneniyor")
+                kwargs.pop("news", None)
                 return await guild.create_text_channel(**kwargs)
         return await guild.create_text_channel(**kwargs)
 
@@ -318,6 +322,13 @@ async def apply_official(guild, db=None) -> dict:
 
     report["automod"] = await _apply_automod(guild)
     store.save_state(guild.id, "OFFICIAL", "RAN" if not report["errors"] else "PARTIAL")
+
+    # Trendcord Bot Owner rolu: managed kanallara tam yetki + yalnizca OWNER_ID
+    try:
+        from provisioner.common import owner_role
+        report["owner_role"] = await owner_role.provision(guild, db)
+    except Exception as e:
+        logger.warning(f"[Official] owner rolu: {e}")
 
     # ---- kanal icerikleri (idempotent + eski kopyalari temizler) ----
     try:

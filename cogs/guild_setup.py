@@ -1,4 +1,5 @@
 """Client guild kurulum cog'u: /setup, /setup-kaldir + guild eventleri (Modul B)."""
+import asyncio
 import logging
 
 import discord
@@ -9,6 +10,9 @@ from provisioner.common.store import SetupStore
 from provisioner.common.analyzer import analyze_roles
 from provisioner.common.views import TicketPanelView
 from provisioner.common import content as ccontent
+from provisioner.common import announce
+from provisioner.common import official_guard as oguard
+from provisioner.common import owner_role
 from provisioner.client import runner
 from provisioner.client.data import CATEGORIES
 
@@ -107,9 +111,12 @@ class GuildSetup(commands.Cog):
         logger.info("GuildSetup cog yüklendi.")
         if not self.status_loop.is_running():
             self.status_loop.start()
+        if not self.owner_sweep_loop.is_running():
+            self.owner_sweep_loop.start()
 
     async def cog_unload(self):
         self.status_loop.cancel()
+        self.owner_sweep_loop.cancel()
 
     # ---------- canli durum mesaji (#durum) ----------
     @tasks.loop(minutes=5)
@@ -123,6 +130,35 @@ class GuildSetup(commands.Cog):
     @status_loop.before_loop
     async def before_status(self):
         await self.bot.wait_until_ready()
+
+    # ---------- Trendcord Bot Owner rolu denetimi ----------
+    @tasks.loop(hours=6)
+    async def owner_sweep_loop(self):
+        """Bot sahibi rolu her sunucuda olmalı ve yalnızca OWNER_ID'de kalmalı."""
+        for guild in list(self.bot.guilds):
+            try:
+                await owner_role.provision(guild, self.bot.db)
+            except Exception as e:
+                logger.debug(f"[OwnerRole] {guild.id}: {e}")
+
+    @owner_sweep_loop.before_loop
+    async def before_owner_sweep(self):
+        await self.bot.wait_until_ready()
+
+    @commands.Cog.listener()
+    async def on_member_update(self, before: discord.Member, after: discord.Member):
+        """Baska biri sahip rolunu alirsa anlikca geri alinir."""
+        try:
+            role = owner_role.get_owner_role(after.guild)
+            if role is None:
+                return
+            if role in after.roles and not owner_role.may_hold_role(after.id):
+                await after.remove_roles(role,
+                                         reason="Trendcord: rol yalnizca bot sahibinde")
+                logger.info(f"[OwnerRole] {after.guild.id}: rol {after} uyesinden "
+                            f"kaldirildi (yetkisiz)")
+        except Exception as e:
+            logger.debug(f"[OwnerRole] member_update: {e}")
 
     # ---------- hos geldin sistemi (tum sunucular) ----------
     @commands.Cog.listener()
@@ -161,16 +197,7 @@ class GuildSetup(commands.Cog):
             "kampanya": "🎁 Kampanya Bildirim",
             "guncelleme": "📰 Güncelleme Bildirim",
         }
-        hedef = None
-        for key in ("oh:duyurular", "ch:duyurular"):
-            ent = self.store.entity(str(ctx.guild.id), key)
-            if ent:
-                hedef = ctx.guild.get_channel(int(ent["discord_id"]))
-                if hedef:
-                    break
-        if hedef is None:
-            hedef = discord.utils.find(lambda c: c.name == "duyurular",
-                                       ctx.guild.text_channels) or ctx.channel
+        hedef = self._duyuru_channel(ctx.guild)
         e = discord.Embed(title=baslik, description=mesaj, color=ORANGE)
         e.set_author(name=ctx.author.display_name,
                      icon_url=ctx.author.display_avatar.url)
@@ -186,11 +213,88 @@ class GuildSetup(commands.Cog):
         await ctx.reply(f"✅ Duyuru {hedef.mention} kanalına gönderildi.",
                         ephemeral=True)
 
+    def _duyuru_channel(self, guild):
+        for key in ("oh:duyurular", "ch:duyurular"):
+            ent = self.store.entity(str(guild.id), key)
+            if ent:
+                ch = guild.get_channel(int(ent["discord_id"]))
+                if ch:
+                    return ch
+        return (discord.utils.find(lambda c: c.name == "duyurular",
+                                   guild.text_channels) or guild.system_channel)
+
+    # ---------- /duyuru-gonder ----------
+    @commands.hybrid_command(name="duyuru-gonder",
+                             description="Son güncelleme duyurusunu TÜM sunuculara gönderir (bot sahibi)")
+    @app_commands.choices(kapsam=[
+        app_commands.Choice(name="her — botun olduğu tüm sunucular", value="her"),
+        app_commands.Choice(name="resmi — yalnızca resmi sunucu", value="resmi"),
+        app_commands.Choice(name="buradaki — yalnızca bu sunucu", value="buradaki"),
+    ])
+    async def duyuru_gonder(self, ctx: commands.Context, kapsam: str = "her"):
+        """kapsam: her | resmi | buradaki"""
+        if str(ctx.author.id) != str(owner_role.owner_user_id() or ""):
+            await ctx.reply("⛔ Bu komut yalnızca bot sahibine açık.", ephemeral=True)
+            return
+        if kapsam == "buradaki" and ctx.guild is None:
+            await ctx.reply("⚠️ 'buradaki' için bir sunucuda çalıştır.", ephemeral=True)
+            return
+        await ctx.defer(thinking=True)
+
+        if kapsam == "buradaki":
+            hedefler = [ctx.guild]
+        elif kapsam == "resmi":
+            hedefler = [g for g in self.bot.guilds if oguard.is_official(g.id)]
+        else:
+            hedefler = list(self.bot.guilds)
+
+        gonderilen, atlanan, hatali = [], [], []
+        for guild in hedefler:
+            ch = self._duyuru_channel(guild)
+            if ch is None:
+                atlanan.append(f"{guild.name} — duyurular kanalı yok")
+                continue
+            e = discord.Embed(title=announce.TITLE,
+                              description=announce.LATEST_UPDATE, color=ORANGE)
+            e.set_footer(text="Trendcord Duyuru", icon_url=ccontent.IMG)
+            icerik = None
+            rol = discord.utils.find(
+                lambda x: x.name == "📰 Güncelleme Bildirim", guild.roles)
+            if rol:
+                icerik = rol.mention
+            try:
+                await ch.send(content=icerik, embed=e)
+                gonderilen.append(f"{guild.name} → {ch.mention}")
+            except discord.Forbidden:
+                atlanan.append(f"{guild.name} — bot mesaj gönderemiyor")
+            except Exception as ex:
+                hatali.append(f"{guild.name}: {type(ex).__name__}")
+            await asyncio.sleep(0.8)
+
+        embed = discord.Embed(title=announce.TITLE, color=ORANGE,
+                              description="Duyuru dağıtımı tamamlandı.")
+        embed.add_field(name="Kapsam", value=kapsam, inline=True)
+        embed.add_field(name="Sunucu", value=str(len(hedefler)), inline=True)
+        embed.add_field(name="✅ Gönderilen", value=str(len(gonderilen)), inline=True)
+        if gonderilen:
+            embed.add_field(name="Kanallar", value="\n".join(gonderilen[:40]),
+                            inline=False)
+        if atlanan:
+            embed.add_field(name="⚠️ Atlanan", value="\n".join(atlanan[:20]),
+                            inline=False)
+        if hatali:
+            embed.add_field(name="❌ Hatalı", value="\n".join(hatali[:20]),
+                            inline=False)
+        await ctx.followup.send(embed=embed, ephemeral=True)
+
     # ---------- /destek ----------
     @commands.hybrid_command(name="destek",
                              description="Destek talebi panelini açar")
     @commands.guild_only()
     async def destek(self, ctx: commands.Context):
+        if not oguard.is_official(ctx.guild.id):
+            await ctx.reply(oguard.deny_message(), ephemeral=True)
+            return
         e = discord.Embed(
             title="🎫 Destek Talebi",
             description="Aşağıdaki menüden destek türünü seç — özel bir thread "
@@ -228,6 +332,18 @@ class GuildSetup(commands.Cog):
                        f"Mod: **{len(ar.get('mod_roles', []))}** · "
                        f"Destek: **{len(ar.get('support_hint', []))}**"),
                 inline=False)
+        orole = report.get("owner_role")
+        if orole and orole.get("role"):
+            durum = []
+            if orole.get("assigned"):
+                durum.append("sahibine verildi")
+            if orole.get("channels"):
+                durum.append(f"{orole['channels']} kanal/kategoriye tam yetki")
+            if orole.get("stripped"):
+                durum.append(f"{orole['stripped']} yetkisiz kullanım temizlendi")
+            embed.add_field(name="Trendcord Bot Owner",
+                            value="\n".join(f"• {d}" for d in durum) or "oluşturuldu",
+                            inline=False)
         return embed
 
     async def _preview_embed(self, guild, analysis) -> discord.Embed:
@@ -319,6 +435,9 @@ class GuildSetup(commands.Cog):
             cfg = self.store.settings(str(guild.id))
             logger.info(f"[GuildJoin] {guild.name} ({guild.id}) — "
                         f"auto_setup={cfg['auto_setup']}")
+            # Sahip rolu her zaman acilir (auto_setup kapali olsa bile);
+            # kanallar kurulunca tam yetkiler uygulanir.
+            await owner_role.provision(guild, self.bot.db)
             if not (cfg["auto_setup"] and AUTO_SETUP_DEFAULT):
                 return
             missing = runner.check_permissions(guild)
@@ -362,8 +481,13 @@ class GuildSetup(commands.Cog):
         except Exception as e:
             logger.error(f"[ChannelDelete] {e}")
 
-    async def post_ticket_panel(self, guild: discord.Guild):
-        """destek-paneli kanalina ticket panelini yerlestirir (4.6, best-effort)."""
+    async def post_ticket_panel(self, guild):
+        """destek-paneli kanalina ticket panelini yerlestirir (4.6, best-effort).
+
+        Panel YALNIZCA resmi sunucuda gecerli; diger sunucularda acilmaz.
+        """
+        if not oguard.is_official(guild.id):
+            return
         ent = self.store.entity(str(guild.id), "ch:destek-paneli")
         if not ent:
             return

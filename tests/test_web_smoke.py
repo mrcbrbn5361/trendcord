@@ -255,6 +255,14 @@ for a, ctype in [("/static/js/app.js", "javascript"), ("/static/js/chart.js", "j
     st, _, h = req(a)
     check(a, st == 200 and ctype in h.get("content-type", ""), f"{st} {h.get('Content-Type')}")
 
+print("\n== Path traversal korumasi (/static/..)")
+for a in ["/static/../../.env", "/static/../../main.py", "/static/../.env",
+          "/static/..%2f..%2f.env", "/static/img/../../.env",
+          "/static/../../../../etc/passwd"]:
+    st, body, _ = req(a)
+    leaked = "DISCORD_TOKEN" in (body or "") or "root:" in (body or "")
+    check(f"{a} engellendi", st == 404 and not leaked, f"{st} leaked={leaked}")
+
 print(f"\n{'='*46}\nSONUC: {len(fails)} basarisiz")
 for f in fails:
     print("  FAIL:", f)

@@ -71,12 +71,24 @@ class TrendcordBot(commands.Bot):
         intents = discord.Intents.default()
         intents.message_content = True
         intents.guilds = True
+        # Trendcord Bot Owner rolu yalnizca bot sahibinde kalmali; rol
+        # verildiginde anlikca geri alabilmek icin member update gerekir.
+        # (Developer Portal > Bot > Privileged Gateway Intents > SERVER MEMBERS INTENT)
+        intents.members = True
         super().__init__(command_prefix=PREFIX, intents=intents, help_command=None)
         self.db = Database()
         self.scraper = TrendyolScraper()
         self._synced = False
 
     async def setup_hook(self):
+        # Kalici paneller: rol-secimi / destek / sss butonlari restart sonrasi
+        # da calisir (sabit custom_id + add_persistent_view).
+        try:
+            from provisioner.common.views import register_persistent_views
+            register_persistent_views(self)
+        except Exception as e:
+            logger.error(f"Kalici panel kaydi basarisiz: {e}")
+
         if os.path.exists("cogs"):
             for filename in os.listdir("cogs"):
                 if filename.endswith(".py") and not filename.startswith("__"):
@@ -269,6 +281,23 @@ async def main():
             break
         except SystemExit as e:
             raise
+        except discord.errors.PrivilegedIntentsRequired:
+            # Developer Portal'da SERVER MEMBERS INTENT acik degil.
+            # Botu TAMAMEN dusurmeyelim: intents'i kapatip members'siz devam et.
+            if bot._connection._intents.members:
+                logger.critical(
+                    "SERVER MEMBERS INTENT Developer Portal'da acik degil. "
+                    "Intent kapatilip bot members'siz olarak devam ediyor "
+                    "(bot sahibi rolu denetimi 6 saatlik taramaya kalir).")
+                bot._connection._intents.members = False
+                try:
+                    await bot.close()
+                except Exception:
+                    pass
+                retry = 0
+                continue
+            logger.critical("Privileged intent hatasi (members kapali) — cikis (kod 1).")
+            sys.exit(1)
         except Exception as e:
             msg = f"{e} {type(e).__name__}".lower()
             auth_markers = (
