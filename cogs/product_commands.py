@@ -406,19 +406,23 @@ class ProductCommands(commands.Cog):
         else:
             await ctx.defer()
         from provisioner.common.content import refresh_guild_content
-        ok, hatali = [], []
+        ok, hatali, toplam_silinen = [], [], 0
+        toplam = 0
         for guild in hedefler:
             try:
                 r = await refresh_guild_content(guild, db=self.bot.db, force=True)
-                ok.append(f"{r['guild_name']} → {r['channels']} kanal")
+                toplam_silinen += r.get("deleted", 0)
+                toplam += r.get("channels", 0)
+                ok.append(f"{r['guild_name']} → {r['channels']} kanal, "
+                          f"{r.get('deleted', 0)} mesaj temizlendi")
             except Exception as e:
                 hatali.append(f"{guild.name}: {type(e).__name__}")
             await asyncio.sleep(0.4)
 
-        embed = discord.Embed(title="🔄 İçerik Güncellendi", color=self.orange,
+        embed = discord.Embed(title="🧹 İçerik Güncellendi", color=self.orange,
                               description=f"Kapsam: **{kapsam}** · Sunucu: **{len(hedefler)}**")
-        toplam = sum(int(x.split("→")[1].split()[0]) for x in ok) if ok else 0
-        embed.add_field(name="Güncellenen kanal", value=str(toplam), inline=True)
+        embed.add_field(name="Yenilenen kanal", value=str(toplam), inline=True)
+        embed.add_field(name="🗑️ Silinen mesaj", value=str(toplam_silinen), inline=True)
         embed.add_field(name="Başarılı sunucu", value=str(len(ok)), inline=True)
         if ok:
             embed.add_field(name="Detay", value="\n".join(ok[:25]), inline=False)

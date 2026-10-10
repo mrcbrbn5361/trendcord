@@ -445,7 +445,50 @@ CONTENT = [
 ]
 
 
-async def post_channel_content(guild, spec, db, force=False) -> bool:
+def is_content_message(msg, bot_id: int) -> bool:
+    """Bu mesaj Trendcord'un kendi icerik mesaji mi? (bot'a ait olmali)
+
+    Fiyat bildirimi / durum mesaji gibi bot ciktilari KORUNUR:
+    - Trendcord footer'li embed'ler (b_sss, b_duyurular, ...)
+    - buton/select iceren eski paneller
+    """
+    if msg.author.id != bot_id:
+        return False
+    if msg.components:
+        return True
+    for e in msg.embeds:
+        if e.footer and (e.footer.text or "").startswith("Trendcord"):
+            return True
+        if e.author and (e.author.name or "").startswith("Trendcord"):
+            return True
+    return False
+
+
+async def clean_channel(guild, ch, limit: int = 100) -> int:
+    """Kanaldaki TUM Trendcord icerik mesajlarini siler. Donus: silinen adet.
+
+    Sadece bot'un kendi mesajlari silinir; kullanici mesajlari ve
+    fiyat/durum bildirimleri korunur.
+    """
+    bot_id = guild.me.id
+    silinen = 0
+    try:
+        async for m in ch.history(limit=limit):
+            if not is_content_message(m, bot_id):
+                continue
+            try:
+                await m.delete()
+                silinen += 1
+            except discord.NotFound:
+                continue
+            except discord.Forbidden:
+                logger.debug(f"[Content] {ch.id}: silinemedi {m.id}")
+    except discord.Forbidden:
+        logger.debug(f"[Content] {ch.id}: gecmis okunamadi")
+    return silinen
+
+
+async def post_channel_content(guild, spec, db, force=False, stats=None) -> bool:
     """Tek kanalin icerigini idempotent post eder. Donus: post edildi mi."""
     from provisioner.common.store import SetupStore
     store = SetupStore(db)
@@ -483,26 +526,32 @@ async def post_channel_content(guild, spec, db, force=False) -> bool:
 
     built = spec["build"](guild)
 
-    # DEDUP: ayni baslikli eski bot mesajlarini sil (cift post onleme/temizlik)
-    basliklar = {e.title for e, _ in built
-                 if not isinstance(e, str) and getattr(e, "title", None)}
-    try:
-        async for m in ch.history(limit=30):
-            if (m.author == guild.me and m.embeds
-                    and m.embeds[0].title in basliklar):
-                await m.delete()
-    except Exception:
-        pass
-
-    # Baslik DEGISTIYSE eski mesaj kayitta durur -> kayitli mesaji de sil.
-    # (/icerik-guncelle ile "Sık Sorulan Sorular" -> "...& Komutlar" gibi)
-    if force and prev_ent:
+    if force:
+        # KANLI TAMAMEN TEMIZLE: bu kanaldaki tum Trendcord icerik
+        # mesajlarini (eski baslikli kopyalar dahil) sil, sonra taze post et.
+        silinen = await clean_channel(guild, ch)
+        if stats is not None:
+            stats["deleted"] = stats.get("deleted", 0) + silinen
+    else:
+        # DEDUP: ayni baslikli eski bot mesajlarini sil (cift post onleme)
+        basliklar = {e.title for e, _ in built
+                     if not isinstance(e, str) and getattr(e, "title", None)}
         try:
-            old = await ch.fetch_message(int(prev_ent["discord_id"]))
-            if old and old.author == guild.me:
-                await old.delete()
-        except (discord.NotFound, discord.HTTPException):
+            async for m in ch.history(limit=30):
+                if (m.author == guild.me and m.embeds
+                        and m.embeds[0].title in basliklar):
+                    await m.delete()
+        except Exception:
             pass
+
+        # Baslik DEGISTIYSE eski mesaj kayitta durur -> kayitli mesaji de sil.
+        if prev_ent:
+            try:
+                old = await ch.fetch_message(int(prev_ent["discord_id"]))
+                if old and old.author == guild.me:
+                    await old.delete()
+            except (discord.NotFound, discord.HTTPException):
+                pass
 
     last_msg = None
     for item in built:
@@ -526,21 +575,20 @@ async def post_channel_content(guild, spec, db, force=False) -> bool:
 
 
 async def post_all_content(guild, db=None, official: bool = False,
-                           force: bool = False) -> int:
+                           force: bool = False, stats: dict = None) -> int:
     """Tum kanallarin icerigini post eder; sayi dondurur.
 
-    force=True: mevcut bot mesajlari silinip yeniden post edilir
-    (/icerik-guncelle komutu icin).
+    force=True: her kanal once TAMAMEN temizlenir (bot'a ait tum Trendcord
+    icerik mesajlari silinir), sonra taze icerik post edilir.
     """
     assert db is not None, "db gerekli"
-    from provisioner.common.store import SetupStore
-    store = SetupStore(db)
     n = 0
     for spec in CONTENT:
         if spec.get("official_only") and not official:
             continue
         try:
-            if await post_channel_content(guild, spec, db, force=force):
+            if await post_channel_content(guild, spec, db, force=force,
+                                          stats=stats):
                 n += 1
         except Exception as e:
             logger.warning(f"[Content] {guild.id}/{spec['keys'][0]}: {e}")
@@ -557,9 +605,12 @@ async def refresh_guild_content(guild, db=None, force: bool = True) -> dict:
     assert db is not None, "db gerekli"
     from provisioner.common import official_guard as oguard
     official = oguard.is_official(guild.id)
-    n = await post_all_content(guild, db, official=official, force=force)
+    stats: dict = {}
+    n = await post_all_content(guild, db, official=official, force=force,
+                               stats=stats)
     return {"guild_id": guild.id, "guild_name": guild.name,
-            "channels": n, "official": official}
+            "channels": n, "deleted": stats.get("deleted", 0),
+            "official": official}
 
 
 async def post_status_message(guild, db=None, bot=None) -> None:
