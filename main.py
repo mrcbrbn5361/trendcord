@@ -166,6 +166,14 @@ async def on_app_command_error(interaction: discord.Interaction, error):
     except discord.HTTPException:
         pass
 
+# Web sunucusu YALNIZCA yerel arabirimde dinlesin (varsayilan).
+# GUVENLIK: 0.0.0.0 ile dinlenince origin IP'si uzerinden dogrudan erisim
+# mumkun olurdu; o durumda Cloudflare WAF / rate limit / DDoS korumasi ve
+# origin IP gizliligi tamamen atlanir. Trafik zaten cloudflared tuneli
+# uzerinden 127.0.0.1'e geliyor. Yerel gelistirme (Termux/LAN) icin
+# WEB_HOST=0.0.0.0 verilebilir.
+WEB_HOST = os.getenv("WEB_HOST", "127.0.0.1").strip() or "127.0.0.1"
+
 # Fiyat tazeleme ayarlari
 PRICE_CHECK_MINUTES = int(os.getenv("PRICE_CHECK_MINUTES", "60") or 60)
 STALE_MINUTES = int(os.getenv("STALE_MINUTES", "45") or 45)
@@ -367,7 +375,7 @@ async def force_refresh(guild_id=None, limit=STALE_BATCH):
     return n
 
 def run_web(port):
-    logger.info(f"Web sunucusu başlatılıyor: 0.0.0.0:{port}")
+    logger.info(f"Web sunucusu başlatılıyor: {WEB_HOST}:{port}")
     web_log_handler = logging.handlers.RotatingFileHandler(
         os.path.join(LOG_DIR, 'web.log'),
         maxBytes=5*1024*1024,
@@ -378,7 +386,7 @@ def run_web(port):
     uvicorn_logger = logging.getLogger("uvicorn")
     uvicorn_logger.addHandler(web_log_handler)
     uvicorn_logger.setLevel(logging.INFO)
-    uvicorn.run(web_app, host="0.0.0.0", port=port, log_level="info")
+    uvicorn.run(web_app, host=WEB_HOST, port=port, log_level="info")
 
 async def main():
     if not TOKEN:

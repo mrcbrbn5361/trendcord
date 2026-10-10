@@ -20,7 +20,11 @@ import hashlib
 import secrets
 import sqlite3
 import logging
+import threading
 from typing import Optional
+
+# In-memory rate limit sayaci icin (Redis yoksa devreye girer)
+_mem_lock = threading.Lock()
 
 from fastapi import APIRouter, Request, HTTPException, Depends, Header
 from fastapi.responses import JSONResponse, PlainTextResponse
@@ -49,9 +53,19 @@ CODE_RE = re.compile(r"^[A-Za-z0-9_-]{10,200}$")
 URL_RE = re.compile(r"^https?://[^\s]{1,500}$")
 
 # ---------------------------------------------------------------------------
-# Rate limiter (Redis, fail-open)
+# Rate limiter
+#
+# Redis varsa paylasilan kova kullanilir. Redis YOKSA (yedek sunucu,
+# konteyner, Redis cokmasi) in-memory sayac devreye girer — ONCEDEN burada
+# dogrudan `return True` (fail-open) vardi, yani Redis erisilemediğinde
+# /api/* tamamen limitsiz kaliyordu.
+#
+# `strict=True` olan cagrilar (login gibi) in-memory sayac da basarisiz
+# olursa KAPALI kalir: brute-force korumasi hicbir kosulda devre disi kalmaz.
 # ---------------------------------------------------------------------------
 _rl = None
+_mem_rl: dict = {}
+_mem_rl_warned = False
 
 
 def _redis():
@@ -63,7 +77,27 @@ def _redis():
     return _rl
 
 
-def rate_limit(key: str, limit: int, window: int) -> bool:
+def _mem_rate_limit(key: str, limit: int, window: int) -> bool:
+    """Surec ici kayan pencere sayaci (thread-safe, Redis'siz yedek)."""
+    global _mem_rl_warned
+    now = int(time.time())
+    bucket = now // window
+    k = (key, bucket)
+    with _mem_lock:
+        # eski bucket'lari temizle (bellek sismesin)
+        if len(_mem_rl) > 4096:
+            for old in [kk for kk in _mem_rl if kk[1] != bucket]:
+                del _mem_rl[old]
+        _mem_rl[k] = _mem_rl.get(k, 0) + 1
+        n = _mem_rl[k]
+    if not _mem_rl_warned:
+        _mem_rl_warned = True
+        logger.warning("[API-RATE] Redis yok — surec ici sayac kullaniliyor "
+                       "(cok ornekli kurulumda Redis onerilir)")
+    return n <= limit
+
+
+def rate_limit(key: str, limit: int, window: int, strict: bool = False) -> bool:
     """Sliding window sayac. True=izin var, False=limit asildi."""
     try:
         r = _redis()
@@ -73,13 +107,41 @@ def rate_limit(key: str, limit: int, window: int) -> bool:
             r.expire(full_key, window + 1)
         return n <= limit
     except Exception:
-        logger.warning("[API-RATE] Redis erisilemedi, fail-open")
-        return True
+        # Redis yok/yoktu: sessizce limitsiz birakma, sayaca dus
+        try:
+            return _mem_rate_limit(key, limit, window)
+        except Exception:
+            # strict ise kapali kal (login korumasi), degilse acik
+            logger.error(f"[API-RATE] sayac tamamen calisamiyor (strict={strict})")
+            return not strict
+
+
+# Guvenilir proxy'ler (Cloudflare tuneli yerelde baglanir)
+TRUSTED_PROXIES = {"127.0.0.1", "::1", "localhost"}
+
+
+def _extract_client_ip(scope) -> str:
+    """Guvenilir proxy'den XFF, aksi halde gercek peer IP.
+
+    Once XFF KORUMSUZCE kabul ediliyordu; origin dışarıdan erisilebilir
+    olduğu için saldırgan istediği IP'yi taklit edip tum IP bazli
+    limitleri geçebiliyordu.
+    """
+    peer = "?"
+    client = scope.get("client")
+    if client:
+        peer = client[0]
+    if peer not in TRUSTED_PROXIES:
+        return peer          # XFF'ye guvenme
+    for name, value in scope.get("headers", []):
+        if name == b"x-forwarded-for":
+            return value.decode("latin-1").split(",")[0].strip()
+    return peer
 
 
 def client_ip(request: Request) -> str:
-    xf = request.headers.get("x-forwarded-for", "")
-    return xf.split(",")[0].strip() if xf else (request.client.host if request.client else "?")
+    scope = getattr(request, "scope", None) or {}
+    return _extract_client_ip(scope)
 
 
 def too_many() -> JSONResponse:
@@ -103,17 +165,9 @@ class RateLimitMiddleware:
             await self.app(scope, receive, send)
             return
 
-        # Header'lardan IP cikar (Cloudflare arkasinda)
-        ip = "?"
-        for name, value in scope.get("headers", []):
-            if name == b"x-forwarded-for":
-                ip = value.decode("latin-1").split(",")[0].strip()
-                break
-        if ip == "?":
-            client = scope.get("client")
-            ip = client[0] if client else "?"
+        ip = _extract_client_ip(scope)
 
-        # Genel limit: 120 istek/dk/IP; auth/login ayrica 10/saat/IP (asagida ekstra)
+        # Genel limit: 120 istek/dk/IP
         if not rate_limit(f"api:{ip}", 120, 60):
             resp = too_many()
             await resp(scope, receive, send)
@@ -308,7 +362,8 @@ class ProductAddIn(BaseModel):
 @router.post("/auth/login")
 async def login(request: Request, body: LoginIn):
     ip = client_ip(request)
-    if not rate_limit(f"login:{ip}", 10, 3600):
+    # strict=True: kaba kuvvet korumasi ASLA devre disi kalmaz
+    if not rate_limit(f"login:{ip}", 10, 3600, strict=True):
         return too_many()
 
     from web.auth import get_access_token, get_user_info
@@ -374,14 +429,21 @@ async def products(
             "SELECT * FROM products WHERE guild_id=? LIMIT ? OFFSET ?",
             (guild_id, limit, offset),
         )
-    elif mine:
-        user = await get_current_user(request)
-        rows = q(
-            "SELECT * FROM products WHERE user_id=? LIMIT ? OFFSET ?",
-            (user["user_id"], limit, offset),
-        )
     else:
-        rows = q("SELECT * FROM products LIMIT ? OFFSET ?", (limit, offset))
+        # Kapsam belirtilmeden TUM urunleri (ve username/guild_id) kimlik
+        # dogrulamasi olmadan herkese aciyordu — veri sizintisiydi.
+        # Artik kimlik zorunlu ve varsayilan kapsam "kendi urunlerim".
+        user = await get_current_user(request)
+        if mine:
+            rows = q(
+                "SELECT * FROM products WHERE user_id=? LIMIT ? OFFSET ?",
+                (user["user_id"], limit, offset),
+            )
+        else:
+            rows = q(
+                "SELECT * FROM products WHERE user_id=? LIMIT ? OFFSET ?",
+                (user["user_id"], limit, offset),
+            )
     return {"items": [public_product(p) for p in rows], "count": len(rows),
             "limit": limit, "offset": offset}
 

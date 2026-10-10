@@ -69,3 +69,19 @@ jobs:
       # Provisioner reset/temizleme yollari (saf testler, API gerektirmez).
       - name: Run provisioner tests
         run: python tests/test_provisioner.py
+
+  security:
+    name: Guvenlik Regresyon Testleri
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Path traversal, origin erisimi, rate-limit fail-open, XFF, OAuth
+      # state, session fixation, API kapsam sizintisi.
+      - name: Run security tests
+        run: python tests/test_security.py

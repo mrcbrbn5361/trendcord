@@ -799,34 +799,48 @@ async def callback(request: Request, code: str = None, state: str = None):
         logger.error("[AUTH] Callback error: No code received")
         return RedirectResponse("/login")
     # CSRF state doğrulaması
+    # CSRF state doğrulaması — KAYIT YOKSA DA REDDET.
+    # Önceden "saved_state yoksa doğrulamadan devam" vardı; bu, saldırganın
+    # kendi OAuth kodunu kurbanın tarayıcısında açtırarak onu kendi
+    # hesabına giriş yaptırmasına (login CSRF / hesap karıştırma) yol açıyordu.
     saved_state = request.session.pop("oauth_state", None)
-    if saved_state and state != saved_state:
-        logger.warning(f"[AUTH] CSRF state mismatch: expected={saved_state}, got={state}")
-        return RedirectResponse("/login")
-    elif not saved_state:
-        logger.info(f"[AUTH] No saved state (direct OAuth URL), proceeding without CSRF check")
+    if not saved_state:
+        logger.warning("[AUTH] CSRF state yok — reddedildi "
+                       "(login CSRF denemesi olabilir)")
+        return RedirectResponse("/login?error=state_missing")
+    if not state or state != saved_state:
+        logger.warning("[AUTH] CSRF state mismatch — reddedildi")
+        return RedirectResponse("/login?error=state_mismatch")
     try:
-        logger.info(f"[AUTH] Callback received code: {code[:20]}...")
+        logger.info("[AUTH] Callback received (code uzunlugu=%d)", len(code or ""))
         token_data = await get_access_token(code)
-        logger.info(f"[AUTH] Token received: {list(token_data.keys())}")
         user_info = await get_user_info(token_data['access_token'])
         logger.info(f"[AUTH] User: {user_info.get('username')} ({user_info.get('id')})")
         avatar_ext = "gif" if user_info.get("avatar", "").startswith("a_") else "png"
         user_info["avatar_url"] = f"https://cdn.discordapp.com/avatars/{user_info['id']}/{user_info['avatar']}.{avatar_ext}" if user_info.get("avatar") else "https://cdn.discordapp.com/embed/avatars/0.png"
+
+        # SESSION FIXATION KORUMASI: yetki yukseldigi icin oturum kimligini
+        # yenile. Onceden ayni session_id ile devam ediliyordu; kimlik onceceden
+        # biliniyorsa giristen sonra da bilinmeye devam ediyordu.
+        regenerate = getattr(request.session, "regenerate", None)
+        if callable(regenerate):
+            regenerate()
+        else:                                   # eski middleware (güvenlik amaçlı)
+            request.session.clear()
+
         request.session.update({"user": user_info, "access_token": token_data['access_token']})
         # Kullanıcının sunucularını session'a kaydet (IDOR koruması için)
         try:
             user_guilds = await get_user_guilds(token_data['access_token'])
             request.session["user_guilds"] = user_guilds or []
-        except:
+        except Exception:
             request.session["user_guilds"] = []
         # Kullanıcıyı veritabanına kaydet
         if db_instance:
             db_instance.add_user(user_info['id'], user_info.get('username', ''), user_info.get('avatar_url', ''))
-        logger.info(f"[AUTH] Session set, redirecting to dashboard")
+        logger.info("[AUTH] Oturum yenilendi, dashboard'a yönlendiriliyor")
         request.session.save()
-        resp = RedirectResponse("/dashboard", status_code=302)
-        return resp
+        return RedirectResponse("/dashboard", status_code=303)
     except Exception as e:
         logger.error(f"[AUTH] Callback error: {e}")
         return RedirectResponse("/login?error=auth_failed")

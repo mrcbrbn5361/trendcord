@@ -49,6 +49,7 @@ class ServerSession:
         self._data = data
         self._max_age = max_age
         self._modified = False
+        self._regenerated = False
 
     def __getitem__(self, key):
         return self._data[key]
@@ -110,6 +111,29 @@ class ServerSession:
     @property
     def is_new(self):
         return len(self._data) == 0
+
+    def regenerate(self) -> str:
+        """Oturum kimligini yeniler (session fixation korumasi).
+
+        Eski kayit sunucu tarafinda SILINIR; cevap yeni kimlikle gonderilir.
+        Giris/rol degisikligi gibi yetki yukselen islemlerden sonra cagrilmalidir.
+        """
+        old_id = self._session_id
+        self._session_id = secrets.token_urlsafe(32)
+        self._data = {}
+        self._modified = True
+        self._regenerated = True          # cookie'yi yeniden yazmak icin
+        try:
+            db = _get_db()
+            db.execute("DELETE FROM sessions WHERE session_id = ?", (old_id,))
+            db.commit()
+        except Exception as e:
+            logger.error(f"Session regenerate error: {e}")
+        return self._session_id
+
+    @property
+    def regenerated(self) -> bool:
+        return getattr(self, "_regenerated", False)
 
     def save(self):
         if not self._modified:
