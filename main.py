@@ -45,6 +45,11 @@ console_handler.setFormatter(logging.Formatter("[%(levelname)s] %(name)s: %(mess
 logging.basicConfig(level=logging.INFO, handlers=[file_handler, console_handler])
 logger = logging.getLogger("Trendcord")
 
+# Windows asyncio tasima gurultusu: uzaktan kapalanan soketler icin
+# _ProactorBasePipeTransport._call_connection_lost her seferinde ERROR
+# basiyor. Ag kesintisi oldugunda dogal, kodla ilgisi yok.
+logging.getLogger("asyncio").setLevel(logging.CRITICAL)
+
 TOKEN = os.getenv('DISCORD_TOKEN')
 PREFIX = os.getenv('COMMAND_PREFIX', '!')
 

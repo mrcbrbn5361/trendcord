@@ -58,3 +58,7 @@ jobs:
       # tree.on_error. Bunlar calisma aninda patliyor, CI'da yakalansin.
       - name: Run cog guard tests
         run: python tests/test_cog_guards.py
+
+      # Provisioner reset/temizleme yollari (saf testler, API gerektirmez).
+      - name: Run provisioner tests
+        run: python tests/test_provisioner.py

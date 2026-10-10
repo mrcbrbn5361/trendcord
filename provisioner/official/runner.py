@@ -25,6 +25,22 @@ def is_official(guild_id) -> bool:
     return bool(gid) and str(guild_id) == gid
 
 
+_news_warned: set = set()
+
+
+def _warn_news_once(guild_id, err):
+    """NEWS'e cevrilememe durumu sunucu basina bir kez loglanir.
+
+    Community ozelligi kapali kalirsa her sync'te (6 saatte bir) ayni
+    mesaj tekrar yazilmasin diye.
+    """
+    if guild_id in _news_warned:
+        return
+    _news_warned.add(guild_id)
+    logger.info(f"[Official] {guild_id}: duyurular haber kanalina cevrilemedi "
+                f"(sunucu ayarlarinda Community acik olmali): {err}")
+
+
 def module_enabled() -> bool:
     return bool(official_guild_id())
 
@@ -308,8 +324,9 @@ async def apply_official(guild, db=None) -> dict:
                                                 reason="Trendcord: duyurular NEWS'e cevrildi")
                             report["synced"].append(f"# {existing.name} -> haber kanalı")
                         except Exception as e:
-                            logger.info(f"[Official] {ch['key']} NEWS'e cevrilemedi "
-                                        f"(Community kapali olabilir): {e}")
+                            # Community kapaliysa her sync'te tekrar tekrar
+                            # yazmamak icin sunucu basina bir kez logla.
+                            _warn_news_once(guild.id, e)
                     if degisti:
                         report["synced"].append(f"# {existing.name} izinleri")
                 except discord.Forbidden:
@@ -412,3 +429,72 @@ async def verify_official(guild, db=None) -> dict:
                 missing_channels.append(f"# {ch['name']}")
     return {"missing_roles": missing_roles, "missing_channels": missing_channels,
             "manual": odata.MANUAL_STEPS}
+
+
+# ROLE_PURGE_KORUMASI: hicbir zaman silinmeyen roller.
+# @everyone (guild.default_role) ve botun kendi rolu zaten managed/managed
+# oldugu icin zaten atlanir; burada ek olarak sunucu sahibinin rolu de korunur.
+def _deletable_roles(guild):
+    """Silinebilecek roller: @everyone, botun en ust rolu, bot/entegrasyon
+    rolleri ve sunucu sahibinin rolu HARIC her sey."""
+    me = guild.me
+    owner_id = getattr(guild, "owner_id", None)
+    default_id = guild.default_role.id
+    top_id = me.top_role.id if me is not None else None
+    out = []
+    for r in guild.roles:
+        if r.managed:                 # bot/entegrasyon rolleri
+            continue
+        if r.id == default_id:        # @everyone
+            continue
+        if top_id is not None and r.id == top_id:
+            continue                 # botun en ust rolu (hierarsi kilidi)
+        if owner_id and r.id == owner_id:
+            continue                 # sunucu sahibinin rolu
+        out.append(r)
+    return out
+
+
+async def reset_official(guild, db=None) -> dict:
+    """TAM PURGE: tum kanallar + yonetilebilir roller, sonra blueprint sifirdan.
+
+    G4: yalnizca resmi sunucuda cagrilir. Geri alinamaz.
+    """
+    from provisioner.common.store import SetupStore
+    assert db is not None, 'db gerekli'
+    store = SetupStore(db)
+    reset = {"channels": [], "roles": [], "errors": []}
+
+    # 1) tum kanallar (kategoriler dahil)
+    for ch in list(guild.channels):
+        name = getattr(ch, "name", str(ch.id))
+        try:
+            await ch.delete(reason="Trendcord: /provision-official reset")
+            reset["channels"].append(name)
+        except discord.Forbidden:
+            reset["errors"].append(f"kanal {name}: 50013")
+        except discord.NotFound:
+            pass
+        except Exception as e:
+            reset["errors"].append(f"kanal {name}: {type(e).__name__}")
+
+    # 2) yonetilebilir roller (bot/entegrasyon/sahip rolleri haric)
+    for role in _deletable_roles(guild):
+        try:
+            await role.delete(reason="Trendcord: /provision-official reset")
+            reset["roles"].append(role.name)
+        except discord.Forbidden:
+            reset["errors"].append(f"rol {role.name}: 50013")
+        except discord.NotFound:
+            pass
+        except Exception as e:
+            reset["errors"].append(f"rol {role.name}: {type(e).__name__}")
+
+    logger.info(f"[Official] reset {guild.id}: "
+                f"{len(reset['channels'])} kanal, {len(reset['roles'])} rol silindi, "
+                f"{len(reset['errors'])} hata")
+
+    # 3) blueprint'i sifirdan kur
+    report = await apply_official(guild, db=db)
+    report["reset"] = reset
+    return report

@@ -24,6 +24,38 @@ AUTO_BOT_ROLE = "🤖 Bot"
 AUTO_SYNC_MINUTES = int(os.getenv("OFFICIAL_AUTO_SYNC_MINUTES", "360") or 360)
 
 
+class ResetConfirm(discord.ui.View):
+    """TAM SIFIRLAMA onayi (tehlikeli islem icin iki adimli)."""
+
+    def __init__(self, requester_id: int, timeout: float = 60.0):
+        super().__init__(timeout=timeout)
+        self.requester_id = requester_id
+        self.onay = False
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.requester_id:
+            await interaction.response.send_message(
+                "⛔ Bu onayı yalnızca komutu yazan kişi verebilir.", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="Evet, sıfırla", style=discord.ButtonStyle.danger)
+    async def evet(self, interaction: discord.Interaction,
+                   button: discord.ui.Button):
+        self.onay = True
+        for item in self.children:
+            item.disabled = True
+        await interaction.response.edit_message(
+            content="⏳ Sıfırlama onaylandı, başlıyorum…", view=self)
+        self.stop()
+
+    @discord.ui.button(label="Vazgeç", style=discord.ButtonStyle.secondary)
+    async def vazgec(self, interaction: discord.Interaction,
+                     button: discord.ui.Button):
+        await interaction.response.edit_message("İptal edildi.", view=None)
+        self.stop()
+
+
 class ProvisionOfficial(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -148,7 +180,7 @@ class ProvisionOfficial(commands.Cog):
             return
 
         if eylem == "reset":
-            view = ResetConfirm()
+            view = ResetConfirm(ctx.author.id)
             await ctx.reply(
                 "⚠️ **TAM SIFIRLAMA** — sunucudaki BÜTÜN kanallar ve tüm "
                 "yönetilebilir roller silinecek (başka botların rolleri hariç), "
