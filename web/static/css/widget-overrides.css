@@ -1,0 +1,52 @@
+/* EngelsizForum erisilebilirlik widget'i - mobil uyumlama duzeltmesi.
+ *
+ * Sorun: widget `position: fixed` ve `bottom: 20px` ile konumlanir. Sitede
+ * mobilde `fixed bottom-0` alt menu cubugu (~62px + safe-area) ve dashboard'da
+ * sag altta FAB var. Bu yuzden widget butonu alt cubugun/ikonlarin uzerine
+ * biniyor ve panel ekrana sigmiyor.
+ *
+ * Cozum: lg breakpoint'inin altinda widget sola alinir (FAB sagda, sol bos)
+ * ve alt menu + safe-area yuksekligi kadar yukarI kaldirilir.
+ * Masaustunde hicbir sey degismez (bottom-right, 20px).
+ */
+
+/* Masaustu: kaynak kodun ayarlari korunur. Degisiklik yok. */
+
+/* --- Mobil (< lg = 1024px) --- */
+@media (max-width: 1023px) {
+  /* Buton: sola al, alt cubugun uzerine cik */
+  #engelsiz-accessibility-widget.engelsiz-pos-bottom-right {
+    left: 12px !important;
+    right: auto !important;
+    bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Panel: ekranin tamamini kullanmasin, alt cubugun uzerinde kalsin */
+  #engelsiz-accessibility-widget .engelsiz-panel.engelsiz-panel-bottom-right {
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    bottom: calc(138px + env(safe-area-inset-bottom, 0px)) !important;
+    /* dvh: mobil tarayici cubugu daraldiginda icerik kaymasin */
+    max-height: calc(100vh - 162px) !important;
+    max-height: calc(100dvh - 162px) !important;
+  }
+}
+
+/* Cok dar ekranlar (< 360px): butonu ve paneli biraz daha kucult */
+@media (max-width: 359px) {
+  #engelsiz-accessibility-widget.engelsiz-trigger-btn,
+  #engelsiz-accessibility-widget .engelsiz-trigger-btn {
+    width: 46px !important;
+    height: 46px !important;
+  }
+}
+
+/* Alti sinir: widget hicbir durumda ekranin disina tasmasin */
+@media (max-width: 1023px) {
+  #engelsiz-accessibility-widget.engelsiz-pos-bottom-right,
+  #engelsiz-accessibility-widget.engelsiz-pos-bottom-left {
+    max-height: calc(100dvh - 12px) !important;
+  }
+}

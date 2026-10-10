@@ -116,6 +116,18 @@ check("CSP frame-src her iki hostu da acik",
 check("CSP connect-src her iki hostu da acik",
       "connect-src 'self' https://engelsizforum.com https://www.engelsizforum.com" in csp)
 
+print("\n== Widget mobil uyumlama")
+check("layout widget-overrides yuklüyor", "widget-overrides.css" in lay)
+st, wcss, _ = req("/static/css/widget-overrides.css")
+check("widget CSS 200", st == 200, str(st))
+if wcss:
+    check("mobil media query (< lg)", "@media (max-width: 1023px)" in wcss)
+    check("buton sola aliniyor (FAB sagda)", "left: 12px !important" in wcss)
+    check("alt cubuk + safe-area hesaba katiliyor", "env(safe-area-inset-bottom" in wcss)
+    check("panel alt cubugun uzerinde", "bottom: calc(138px" in wcss)
+    check("dvh ile viewport kaymasi onlendi", "100dvh" in wcss)
+    check("masaustu kurallari degistirilmemis", "min-width: 1024px" not in wcss)
+
 # --------------------------------------------------------------- CSRF reddi
 print("\n== CSRF reddi (403 olmali)")
 for name, path, fields in [
