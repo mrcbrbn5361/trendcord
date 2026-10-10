@@ -239,7 +239,10 @@ class GuildSetup(commands.Cog):
         if kapsam == "buradaki" and ctx.guild is None:
             await ctx.reply("⚠️ 'buradaki' için bir sunucuda çalıştır.", ephemeral=True)
             return
-        await ctx.defer(thinking=True)
+        if ctx.interaction:
+            await ctx.interaction.response.defer(thinking=True)
+        else:
+            await ctx.defer()
 
         if kapsam == "buradaki":
             hedefler = [ctx.guild]

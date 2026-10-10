@@ -401,7 +401,10 @@ class ProductCommands(commands.Cog):
         else:
             hedefler = list(self.bot.guilds)
 
-        await ctx.defer(thinking=True)
+        if ctx.interaction:
+            await ctx.interaction.response.defer(thinking=True)
+        else:
+            await ctx.defer()
         from provisioner.common.content import refresh_guild_content
         ok, hatali = [], []
         for guild in hedefler:

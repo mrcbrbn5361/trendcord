@@ -140,6 +140,27 @@ class TrendcordBot(commands.Bot):
 
 bot = TrendcordBot()
 
+
+@bot.tree.on_error
+async def on_app_command_error(interaction: discord.Interaction, error):
+    """Slash komut hatasi: hem logla hem kullaniciya bildir.
+
+    Aksi halde komut defer edilmeden patlarsa Discord 3 sn sonra
+    "uygulama yanit vermedi" gosterir ve kullanici nedenini bilemez.
+    """
+    logger.error(f"[Slash] /{interaction.command.qualified_name if interaction.command else '?'} "
+                 f"({interaction.user}): {type(error).__name__}: {error.original or error}")
+    msg = "❌ Komut çalıştırılırken bir hata oluştu."
+    if isinstance(error, discord.app_commands.MissingPermissions):
+        msg = "⛔ Bu komut için gerekli iznin yok."
+    try:
+        if interaction.response.is_done():
+            await interaction.followup.send(msg, ephemeral=True)
+        else:
+            await interaction.response.send_message(msg, ephemeral=True)
+    except discord.HTTPException:
+        pass
+
 # Fiyat tazeleme ayarlari
 PRICE_CHECK_MINUTES = int(os.getenv("PRICE_CHECK_MINUTES", "60") or 60)
 STALE_MINUTES = int(os.getenv("STALE_MINUTES", "45") or 45)

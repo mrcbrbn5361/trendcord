@@ -34,7 +34,10 @@ class AdminTools(commands.Cog):
         if str(ctx.author.id) != _owner_id():
             await ctx.reply("⛔ Bu komut yalnızca bot sahibine açık.", ephemeral=True)
             return
-        await ctx.defer(thinking=True)
+        if ctx.interaction:
+            await ctx.interaction.response.defer(thinking=True)
+        else:
+            await ctx.defer()
         import main as botmain
         gid = str(ctx.guild.id) if kapsam == "sunucu" else None
         if gid is None:
