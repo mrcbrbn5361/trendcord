@@ -22,6 +22,8 @@ AUTO_BOT_ROLE = "🤖 Bot"
 
 # Izin/kategori senkronu (drift varsa duzeltir, yoksa hic dokunmaz)
 AUTO_SYNC_MINUTES = int(os.getenv("OFFICIAL_AUTO_SYNC_MINUTES", "360") or 360)
+# Her otomatik senkron turunda en fazla kac uyeye rol dagitilir (kademeli).
+ROLE_BATCH = int(os.getenv("OFFICIAL_ROLE_BATCH", "40") or 40)
 
 
 class ResetConfirm(discord.ui.View):
@@ -114,6 +116,10 @@ class ProvisionOfficial(commands.Cog):
                                    f"{report['errors'][:5]}")
             else:
                 logger.debug(f"[OfficialAutoSync] {guild.id}: drift yok.")
+
+            # Rol dagitimi: uye/bot rollerini kaybetmis olanlari tamamla.
+            # Buyuk sunucularda kademeli: her turda en fazla ROLE_BATCH uye.
+            await runner.distribute_member_roles(guild, batch_size=ROLE_BATCH)
         except Exception as e:
             logger.warning(f"[OfficialAutoSync] {guild.id}: {e}")
 
@@ -138,7 +144,7 @@ class ProvisionOfficial(commands.Cog):
             return True
         return False
 
-    async def _safe_reply(self, ctx, content=None, embed=None):
+    async def _safe_reply(self, ctx, content=None, embed=None, view=None):
         """Cevabi gonder; kanal reset sirasinda silinmisse DM'e duser.
 
         /provision-official reset komutun cagrildigi kanali da siler; o
@@ -147,12 +153,13 @@ class ProvisionOfficial(commands.Cog):
         try:
             if ctx.interaction is not None:
                 if ctx.interaction.response.is_done():
-                    await ctx.interaction.followup.send(content=content, embed=embed)
+                    await ctx.interaction.followup.send(
+                        content=content, embed=embed, view=view)
                 else:
                     await ctx.interaction.response.send_message(
-                        content=content, embed=embed)
+                        content=content, embed=embed, view=view)
             else:
-                await ctx.send(content=content, embed=embed)
+                await ctx.send(content=content, embed=embed, view=view)
             return
         except discord.HTTPException as e:
             if e.status != 400:
@@ -174,9 +181,11 @@ class ProvisionOfficial(commands.Cog):
         app_commands.Choice(name="verify — raporla (değişiklik yok)", value="verify"),
         app_commands.Choice(name="diff — fark listesi", value="diff"),
         app_commands.Choice(name="reset — SIFIRLA ve yeniden kur", value="reset"),
+        app_commands.Choice(name="dagit — üye/bot rollerini dağıt", value="dagit"),
     ])
     @commands.guild_only()
     async def provision_official(self, ctx: commands.Context, eylem: str = "apply"):
+        """eylem: apply | verify | diff | dagit | reset"""
         deny = self._guard(ctx)
         if deny:
             await ctx.reply(deny, ephemeral=True)
@@ -205,6 +214,27 @@ class ProvisionOfficial(commands.Cog):
             embed.add_field(name="Manuel Adımlar",
                             value="\n".join(f"[ ] {m}" for m in report["manual"])[:1024],
                             inline=False)
+            await self._safe_reply(ctx, embed=embed)
+            return
+
+        if eylem == "dagit":
+            await self._safe_reply(ctx, "⏳ Roller dağıtılıyor…")
+            try:
+                r = await runner.distribute_member_roles(guild)
+            except Exception as e:
+                logger.exception("distribute_member_roles hatasi")
+                await self._safe_reply(
+                    ctx, f"❌ Rol dağıtımı hatası: `{type(e).__name__}: {e}`")
+                return
+            embed = discord.Embed(title="🎭 Rol Dağıtımı", color=ORANGE,
+                                  description=(f"Taranan üye: **{r['scanned']}**\n"
+                                               f"✅ Üye verildi: **{r['member']}**\n"
+                                               f"🤖 Bot verildi: **{r['bot']}**"))
+            if r["skipped"]:
+                embed.add_field(name="Atlanan (izin/hata)",
+                                value=str(r["skipped"]), inline=True)
+            if not r["member"] and not r["bot"]:
+                embed.description = "✅ Tüm üyelerin rolü zaten doğru."
             await self._safe_reply(ctx, embed=embed)
             return
 

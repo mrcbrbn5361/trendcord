@@ -94,6 +94,62 @@ check("_safe_reply DM yedeği", "create_dm()" in psrc)
 check("reset sonrasi cevaplar _safe_reply kullanir",
       psrc.count("self._safe_reply(ctx") >= 5)
 
+print("\n== Rol dagitimi (uye/bot)")
+import asyncio  # noqa: E402
+from provisioner.official.runner import (distribute_member_roles,  # noqa: E402
+                                         MEMBER_ROLE_NAME, BOT_ROLE_NAME)
+
+
+class _Role:
+    def __init__(self, rid, name):
+        self.id, self.name = rid, name
+
+
+class _Member:
+    def __init__(self, uid, bot, roles):
+        self.id, self.bot, self.name = uid, bot, f"u{uid}"
+        self.roles = list(roles)
+
+    async def add_roles(self, role, reason=None):
+        self.roles.append(role)
+
+
+class _Guild:
+    id = 12345
+
+    def __init__(self, roles, members):
+        self.roles, self._m = roles, members
+
+    @property
+    def members(self):
+        return self._m
+
+
+_u, _b = _Role(1, MEMBER_ROLE_NAME), _Role(2, BOT_ROLE_NAME)
+_g = _Guild([_u, _b], [_Member(10, False, []), _Member(11, True, []),
+                       _Member(12, False, [_u]), _Member(13, True, [_b])])
+r1 = asyncio.run(distribute_member_roles(_g, delay=0))
+check("insana Uye rolu verildi", r1["member"] == 1, str(r1))
+check("bota Bot rolu verildi", r1["bot"] == 1, str(r1))
+check("tum uyeler tarandi", r1["scanned"] == 4, str(r1))
+r2 = asyncio.run(distribute_member_roles(_g, delay=0))
+check("idempotent (tekrar vermez)", r2["member"] == 0 and r2["bot"] == 0, str(r2))
+
+_g2 = _Guild([_u, _b], [_Member(i, False, []) for i in range(20)])
+r3 = asyncio.run(distribute_member_roles(_g2, batch_size=5, delay=0))
+check("batch siniri uygulanir", r3["scanned"] == 5, str(r3))
+
+_r4 = asyncio.run(distribute_member_roles(_Guild([], []), delay=0))
+check("rol yoksa cokmez", _r4["scanned"] == 0, str(_r4))
+
+psrc2 = psrc
+check("reset rol dagitimi cagirir", "distribute_member_roles(guild)" in rsrc)
+check("auto_sync kademeli dagitir",
+      "batch_size=ROLE_BATCH" in psrc2)
+check("ROLE_BATCH ayari var", "ROLE_BATCH" in psrc2)
+check("/provision-official dagit secenegi",
+      'value="dagit"' in psrc2 and 'eylem == "dagit"' in psrc2)
+
 print(f"\n{'=' * 46}\nSONUC: {len(fails)} basarisiz")
 for f in fails:
     print("  FAIL:", f)

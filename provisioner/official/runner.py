@@ -460,6 +460,80 @@ def _deletable_roles(guild):
     return out
 
 
+MEMBER_ROLE_NAME = "✅ Üye"
+BOT_ROLE_NAME = "🤖 Bot"
+
+
+async def distribute_member_roles(guild, batch_size: int = 0,
+                                  delay: float = 0.7) -> dict:
+    """Mevcut uyelere rol dagitir: insan -> Üye, bot -> Bot.
+
+    Idempotent (yalnizca eksikleri ekler). on_member_join sadece YENI gelenlere
+    rol verir; reset sonrasi roller silinip yeniden olustugunda mevcut
+    uyeler rolsuz kalir — bu fonksiyon onlari tamamlar.
+
+    batch_size > 0 ise en fazla o kadar uye islenir (kademeli araclama).
+    """
+    from provisioner.common.ratelimit import pace
+    report = {"member": 0, "bot": 0, "skipped": 0, "scanned": 0}
+    uye = discord.utils.find(lambda r: r.name == MEMBER_ROLE_NAME, guild.roles)
+    bot = discord.utils.find(lambda r: r.name == BOT_ROLE_NAME, guild.roles)
+    if not uye or not bot:
+        logger.warning(f"[Official] {guild.id}: rol dagitimi icin "
+                       f"'{MEMBER_ROLE_NAME}' / '{BOT_ROLE_NAME}' rolu eksik")
+        return report
+
+    limit = batch_size if batch_size and batch_size > 0 else None
+    isel = iter(guild.members)
+    done = 0
+    while True:
+        if limit is not None and done >= limit:
+            break
+        batch = []
+        while len(batch) < 100:
+            if limit is not None and done + len(batch) >= limit:
+                break
+            try:
+                batch.append(next(isel))
+            except StopIteration:
+                break
+        if not batch:
+            break
+
+        for m in batch:
+            report["scanned"] += 1
+            role = bot if m.bot else uye
+            key = "bot" if m.bot else "member"
+            if role in m.roles:
+                continue
+            try:
+                await m.add_roles(role, reason="Trendcord: rol dağıtımı")
+                report[key] += 1
+            except discord.Forbidden:
+                report["skipped"] += 1
+            except discord.HTTPException as e:
+                if e.status == 429:
+                    await pace(getattr(e, "retry_after", 2.0) or 2.0)
+                    try:
+                        await m.add_roles(role, reason="Trendcord: rol dağıtımı")
+                        report[key] += 1
+                    except Exception:
+                        report["skipped"] += 1
+                else:
+                    report["skipped"] += 1
+            except Exception:
+                report["skipped"] += 1
+            await pace(delay)
+
+        done += len(batch)
+
+    if report["member"] or report["bot"] or report["skipped"]:
+        logger.info(f"[Official] {guild.id}: rol dagitimi — Üye={report['member']} "
+                    f"Bot={report['bot']} atlanan={report['skipped']} "
+                    f"(taranan={report['scanned']})")
+    return report
+
+
 async def reset_official(guild, db=None) -> dict:
     """TAM PURGE: tum kanallar + yonetilebilir roller, sonra blueprint sifirdan.
 
@@ -513,6 +587,9 @@ async def reset_official(guild, db=None) -> dict:
 
         # 4) blueprint'i sifirdan kur
         report = await apply_official(guild, db=db)
+
+        # 5) roller silinip yeniden olustu -> mevcut uyelere yeniden dagit
+        report["member_roles"] = await distribute_member_roles(guild)
 
     report["reset"] = reset
     return report
