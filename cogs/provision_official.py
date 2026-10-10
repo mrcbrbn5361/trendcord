@@ -138,6 +138,35 @@ class ProvisionOfficial(commands.Cog):
             return True
         return False
 
+    async def _safe_reply(self, ctx, content=None, embed=None):
+        """Cevabi gonder; kanal reset sirasinda silinmisse DM'e duser.
+
+        /provision-official reset komutun cagrildigi kanali da siler; o
+        zaman ctx.reply() 10003 'Unknown Channel' ile patliyordu.
+        """
+        try:
+            if ctx.interaction is not None:
+                if ctx.interaction.response.is_done():
+                    await ctx.interaction.followup.send(content=content, embed=embed)
+                else:
+                    await ctx.interaction.response.send_message(
+                        content=content, embed=embed)
+            else:
+                await ctx.send(content=content, embed=embed)
+            return
+        except discord.HTTPException as e:
+            if e.status != 400:
+                raise
+            logger.warning("[Official] cevap kanalina ulasilamadi (silinmis), DM deneniyor")
+        except AttributeError:
+            pass
+        try:
+            dm = await ctx.author.create_dm()
+            await dm.send(content="⚠️ Komut kanalı silinmişti, sonuç DM ile:",
+                         embed=embed)
+        except Exception:
+            logger.warning("[Official] sonuc ne kanala ne DM'e gonderilemedi")
+
     @commands.hybrid_command(name="provision-official",
                              description="Resmi sunucu yapısını kur/doğrula (yetkili)")
     @app_commands.choices(eylem=[
@@ -176,12 +205,12 @@ class ProvisionOfficial(commands.Cog):
             embed.add_field(name="Manuel Adımlar",
                             value="\n".join(f"[ ] {m}" for m in report["manual"])[:1024],
                             inline=False)
-            await ctx.reply(embed=embed)
+            await self._safe_reply(ctx, embed=embed)
             return
 
         if eylem == "reset":
             view = ResetConfirm(ctx.author.id)
-            await ctx.reply(
+            await self._safe_reply(ctx, 
                 "⚠️ **TAM SIFIRLAMA** — sunucudaki BÜTÜN kanallar ve tüm "
                 "yönetilebilir roller silinecek (başka botların rolleri hariç), "
                 "ardından blueprint sıfırdan kurulacak.\n\n"
@@ -190,13 +219,13 @@ class ProvisionOfficial(commands.Cog):
             await view.wait()
             if not view.onay:
                 return
-            await ctx.reply("⏳ Sıfırlama sürüyor — kanal/rol sayısına göre "
+            await self._safe_reply(ctx, "⏳ Sıfırlama sürüyor — kanal/rol sayısına göre "
                             "birkaç dakika sürebilir…")
             try:
                 report = await runner.reset_official(guild, db=self.bot.db)
             except Exception as e:
                 logger.exception("reset_official hatasi")
-                await ctx.reply(f"❌ Sıfırlama hatası: `{type(e).__name__}: {e}`\n"
+                await self._safe_reply(ctx, f"❌ Sıfırlama hatası: `{type(e).__name__}: {e}`\n"
                                 "Loglar #sistem-log'a düştü.")
                 return
             embed = discord.Embed(
@@ -218,7 +247,7 @@ class ProvisionOfficial(commands.Cog):
             embed.add_field(name="Manuel Adımlar",
                             value="\n".join(f"[ ] {m}" for m in report["manual"])[:1024],
                             inline=False)
-            await ctx.reply(embed=embed)
+            await self._safe_reply(ctx, embed=embed)
             return
 
         # apply
@@ -245,7 +274,7 @@ class ProvisionOfficial(commands.Cog):
         embed.add_field(name="Manuel Adımlar",
                         value="\n".join(f"[ ] {m}" for m in report["manual"])[:1024],
                         inline=False)
-        await ctx.reply(embed=embed)
+        await self._safe_reply(ctx, embed=embed)
 
 
 

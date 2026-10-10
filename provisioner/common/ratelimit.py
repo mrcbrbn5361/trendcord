@@ -1,12 +1,33 @@
 """Siral olusturma + rate limit guvenli cagri yardimcisi (2.3, Bolum 7)."""
 import asyncio
 import logging
+import os
 
 import discord
 
 logger = logging.getLogger("Trendcord")
 
 MAX_RETRY = 3
+
+# Discord limitleri:
+#   * mesaj gonderme : kanal basina 5 mesaj / 5 sn
+#   * kanal/rol olusturma: guild basina dakikada ~10
+#   * silme islemleri de ayni kova
+# Toplu kurulumda (sifirdan kurulum / reset) aralik birakilmazsa 429 firtinasi
+# olusur ve discord.py her istek icin tekrar tekrar bekleyip donguyu kilitler.
+MESSAGE_PACE = float(os.getenv("PROVISION_MESSAGE_PACE", "1.3"))
+STRUCTURE_PACE = float(os.getenv("PROVISION_STRUCTURE_PACE", "0.45"))
+RESET_PACE = float(os.getenv("PROVISION_RESET_PACE", "0.6"))
+
+# Ayni anda tek bir toplu islem (provision/reset) calissin; otomatik senkron,
+# sahip rolu taramasi ve icerik yenileme ile cakismasin.
+provision_lock = asyncio.Lock()
+
+
+async def pace(seconds: float):
+    """Discord kovalarini korumak icin aralik bekle."""
+    if seconds > 0:
+        await asyncio.sleep(seconds)
 
 
 class StepResult:

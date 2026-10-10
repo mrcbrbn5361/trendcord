@@ -69,6 +69,31 @@ hrc = open(os.path.join(ROOT, "cogs", "product_commands.py"), encoding="utf-8").
 check("COMMAND_HELP tek tanim", hrc.count("COMMAND_HELP") >= 1)
 check("icerik-guncelle kapsam secenekleri", hrc.count("app_commands.Choice") >= 3)
 
+print("\n== Rate limit korumasi")
+rc = open(os.path.join(ROOT, "provisioner", "common", "ratelimit.py"),
+          encoding="utf-8").read()
+check("provision_lock tanimli", "provision_lock = asyncio.Lock()" in rc)
+check("MESSAGE_PACE tanimli", "MESSAGE_PACE" in rc)
+check("STRUCTURE_PACE tanimli", "STRUCTURE_PACE" in rc)
+check("RESET_PACE tanimli", "RESET_PACE" in rc)
+check("pace() yardimcisi", "async def pace(" in rc)
+
+check("reset kanal silerken pace", "await pace(RESET_PACE)" in rsrc)
+check("reset kilit aliyor", "async with provision_lock:" in rsrc)
+check("reset sonrasi bekleme", "await pace(3.0)" in rsrc)
+check("rol olusturmada pace", "await pace(STRUCTURE_PACE)" in rsrc)
+check("kanal olusturmada pace", "await pace(STRUCTURE_PACE)" in rsrc)
+check("icerik gonderiminde pace", "await pace(MESSAGE_PACE)" in csrc)
+check("mesaj silmede pace", "await pace(0.25)" in csrc)
+
+print("\n== Silinen kanala cevap")
+psrc = open(os.path.join(ROOT, "cogs", "provision_official.py"),
+            encoding="utf-8").read()
+check("_safe_reply tanimli", "async def _safe_reply(" in psrc)
+check("_safe_reply DM yedeği", "create_dm()" in psrc)
+check("reset sonrasi cevaplar _safe_reply kullanir",
+      psrc.count("self._safe_reply(ctx") >= 5)
+
 print(f"\n{'=' * 46}\nSONUC: {len(fails)} basarisiz")
 for f in fails:
     print("  FAIL:", f)

@@ -470,6 +470,7 @@ async def clean_channel(guild, ch, limit: int = 100) -> int:
     Sadece bot'un kendi mesajlari silinir; kullanici mesajlari ve
     fiyat/durum bildirimleri korunur.
     """
+    from provisioner.common.ratelimit import pace
     bot_id = guild.me.id
     silinen = 0
     try:
@@ -479,6 +480,7 @@ async def clean_channel(guild, ch, limit: int = 100) -> int:
             try:
                 await m.delete()
                 silinen += 1
+                await pace(0.25)   # silme kovasi (kanal basina 5/5sn)
             except discord.NotFound:
                 continue
             except discord.Forbidden:
@@ -582,6 +584,7 @@ async def post_all_content(guild, db=None, official: bool = False,
     icerik mesajlari silinir), sonra taze icerik post edilir.
     """
     assert db is not None, "db gerekli"
+    from provisioner.common.ratelimit import MESSAGE_PACE, pace
     n = 0
     for spec in CONTENT:
         if spec.get("official_only") and not official:
@@ -590,6 +593,9 @@ async def post_all_content(guild, db=None, official: bool = False,
             if await post_channel_content(guild, spec, db, force=force,
                                           stats=stats):
                 n += 1
+                # Discord: kanal basina 5 mesaj / 5 sn. Sifirdan kurulumda
+                # aralik verilmezse 429 firtinasi basip komutu kilitler.
+                await pace(MESSAGE_PACE)
         except Exception as e:
             logger.warning(f"[Content] {guild.id}/{spec['keys'][0]}: {e}")
     logger.info(f"[Content] {guild.id}: {n} kanal icerigi "

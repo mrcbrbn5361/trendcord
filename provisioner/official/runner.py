@@ -8,7 +8,7 @@ import os
 
 import discord
 
-from provisioner.common.ratelimit import safe_call, StepResult
+from provisioner.common.ratelimit import safe_call, StepResult, pace, STRUCTURE_PACE
 from provisioner.official import data as odata
 
 logger = logging.getLogger("Trendcord")
@@ -66,7 +66,10 @@ async def _ensure_role(guild, spec, current_by_name: dict):
             permissions=_resolve_permissions(spec["permissions"]),
             mentionable=spec["mentionable"],
             reason="Trendcord official provisioning")
-    return await safe_call(f"role:{name}", factory)
+    res = await safe_call(f"role:{name}", factory)
+    if res.status == StepResult.CREATED:
+        await pace(STRUCTURE_PACE)   # rol olusturma kovasi: guild basina ~10/dk
+    return res
 
 
 async def ensure_official_roles(guild, report=None) -> list:
@@ -151,6 +154,7 @@ async def _ensure_channel(guild, ch, parent, overwrite_map):
 
     res = await safe_call(key, factory)
     if res.status == StepResult.CREATED:
+        await pace(STRUCTURE_PACE)   # kanal olusturma kovasi
         try:
             if parent is not None:
                 await res.entity.edit(category=parent)
@@ -277,6 +281,7 @@ async def apply_official(guild, db=None) -> dict:
                 store.mark(guild.id, cat["key"], "CATEGORY", res.entity.id)
                 parent = res.entity
                 report["created"].append(f"📂 {res.entity.name}")
+                await pace(STRUCTURE_PACE)
             else:
                 report["errors"].append(f"{cat['key']}: {res.status}")
                 continue
@@ -459,42 +464,55 @@ async def reset_official(guild, db=None) -> dict:
     """TAM PURGE: tum kanallar + yonetilebilir roller, sonra blueprint sifirdan.
 
     G4: yalnizca resmi sunucuda cagrilir. Geri alinamaz.
+
+    NOT: Discord kanal/rol silme limitleri nedeniyle aralik birakilir;
+    aralik verilmezse 429 firtinasi baslar ve discord.py her istek icin
+    tekrar tekrar bekleyerek tam komutu kilitler.
     """
+    from provisioner.common.ratelimit import (RESET_PACE, pace,
+                                              provision_lock)
     from provisioner.common.store import SetupStore
     assert db is not None, 'db gerekli'
     store = SetupStore(db)
     reset = {"channels": [], "roles": [], "errors": []}
 
-    # 1) tum kanallar (kategoriler dahil)
-    for ch in list(guild.channels):
-        name = getattr(ch, "name", str(ch.id))
-        try:
-            await ch.delete(reason="Trendcord: /provision-official reset")
-            reset["channels"].append(name)
-        except discord.Forbidden:
-            reset["errors"].append(f"kanal {name}: 50013")
-        except discord.NotFound:
-            pass
-        except Exception as e:
-            reset["errors"].append(f"kanal {name}: {type(e).__name__}")
+    async with provision_lock:
+        # 1) tum kanallar (kategoriler dahil)
+        for ch in list(guild.channels):
+            name = getattr(ch, "name", str(ch.id))
+            try:
+                await ch.delete(reason="Trendcord: /provision-official reset")
+                reset["channels"].append(name)
+            except discord.Forbidden:
+                reset["errors"].append(f"kanal {name}: 50013")
+            except discord.NotFound:
+                pass
+            except Exception as e:
+                reset["errors"].append(f"kanal {name}: {type(e).__name__}")
+            await pace(RESET_PACE)
 
-    # 2) yonetilebilir roller (bot/entegrasyon/sahip rolleri haric)
-    for role in _deletable_roles(guild):
-        try:
-            await role.delete(reason="Trendcord: /provision-official reset")
-            reset["roles"].append(role.name)
-        except discord.Forbidden:
-            reset["errors"].append(f"rol {role.name}: 50013")
-        except discord.NotFound:
-            pass
-        except Exception as e:
-            reset["errors"].append(f"rol {role.name}: {type(e).__name__}")
+        # 2) yonetilebilir roller (bot/entegrasyon/sahip rolleri haric)
+        for role in _deletable_roles(guild):
+            try:
+                await role.delete(reason="Trendcord: /provision-official reset")
+                reset["roles"].append(role.name)
+            except discord.Forbidden:
+                reset["errors"].append(f"rol {role.name}: 50013")
+            except discord.NotFound:
+                pass
+            except Exception as e:
+                reset["errors"].append(f"rol {role.name}: {type(e).__name__}")
+            await pace(RESET_PACE)
 
-    logger.info(f"[Official] reset {guild.id}: "
-                f"{len(reset['channels'])} kanal, {len(reset['roles'])} rol silindi, "
-                f"{len(reset['errors'])} hata")
+        logger.info(f"[Official] reset {guild.id}: "
+                    f"{len(reset['channels'])} kanal, {len(reset['roles'])} rol "
+                    f"silindi, {len(reset['errors'])} hata")
 
-    # 3) blueprint'i sifirdan kur
-    report = await apply_official(guild, db=db)
+        # 3) silme bucket'lari dolsun diye biraz bekle
+        await pace(3.0)
+
+        # 4) blueprint'i sifirdan kur
+        report = await apply_official(guild, db=db)
+
     report["reset"] = reset
     return report
