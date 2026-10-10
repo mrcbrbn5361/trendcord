@@ -94,9 +94,20 @@ for h, need in [
 ]:
     v = hdrs.get(h)
     check(h, (v is not None) if need is True else (v == need), str(v)[:70])
-check("CSP script-src 'self' (inline script yok)", "script-src 'self'" in hdrs.get("content-security-policy", ""), "")
+csp = hdrs.get("content-security-policy", "")
+check("CSP script-src 'self' (inline script yok)",
+      "script-src 'self'" in csp and "engelsizforum.com" in csp, "")
 check("CSP frame-ancestors", "frame-ancestors 'none'" in hdrs.get("content-security-policy", ""))
 check("HSTS yok (http yerel)", "strict-transport-security" not in {k.lower() for k in hdrs})
+
+print("\n== EngelsizForum erisilebilirlik widget'i")
+lay = io.open(os.path.join(ROOT, "web/templates/layout.html"), encoding="utf-8").read()
+check("widget scripti layout'ta", "engelsizforum.com/widget/engelsiz-accessibility.js" in lay)
+check("widget rengi Trendcord turuncusu", 'data-color="#F27A1A"' in lay)
+check("eski mavi renk kalmadi", 'data-color="#185886"' not in lay)
+check("widget async+defer", "async" in lay and "defer" in lay)
+check("CSP frame-src acik", "frame-src" in csp and "engelsizforum.com" in csp)
+check("CSP connect-src acik", "connect-src 'self' https://engelsizforum.com" in csp)
 
 # --------------------------------------------------------------- CSRF reddi
 print("\n== CSRF reddi (403 olmali)")
