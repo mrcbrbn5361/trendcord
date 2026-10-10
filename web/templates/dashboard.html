@@ -111,6 +111,8 @@
         <p class="mt-2 text-xs text-on-surface-variant" data-auto-reload="12000">
             🔄 Fiyatlar arka planda tazeleniyor… bu sayfa birazdan kendini yenileyecek.
         </p>
+        {% elif request.query_params.get('refreshing') == '-1' %}
+        <p class="mt-2 text-xs text-on-surface-variant">ℹ️ Fiyat tazelemesi zaten çalışıyor, birazdan tamamlanacak.</p>
         {% elif request.query_params.get('refreshing') == '0' %}
         <p class="mt-2 text-xs text-error">⚠️ Bot şu anda çevrimdışı görünüyor; fiyatlar otomatik tazelenecek.</p>
         {% endif %}

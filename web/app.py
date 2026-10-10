@@ -5,6 +5,7 @@ import base64
 import hashlib
 import re
 import asyncio
+import time
 import functools
 import httpx
 import logging
@@ -673,13 +674,21 @@ def _may_delete_product(session, pid: str) -> bool:
 
 
 _refresh_tasks: dict = {}
+_refresh_last: dict = {}
+REFRESH_COOLDOWN = int(os.getenv("REFRESH_COOLDOWN_SECONDS", "90") or 90)
 
 
 def _schedule_refresh(guild_id=None) -> int:
-    """Fiyat tazelemesi bot tarafinda baslatilir (tek istek = tek gorev)."""
+    """Fiyat tazelemesi bot tarafinda baslatilir (tek istek = tek gorev).
+
+    Donus: 1 baslatildi, -1 zaten calisiyor, 0 bot yok/limitli.
+    """
     key = str(guild_id or "all")
+    now = time.time()
     if key in _refresh_tasks and not _refresh_tasks[key].done():
         return -1  # zaten calisiyor
+    if now - _refresh_last.get(key, 0) < REFRESH_COOLDOWN:
+        return -1  # cok yakin zamanda baslatildi (spam korumasi)
     try:
         import main as botmain
     except Exception:
@@ -687,6 +696,7 @@ def _schedule_refresh(guild_id=None) -> int:
     if botmain.bot is None or not botmain.bot.is_ready():
         return 0
     task = asyncio.create_task(botmain.force_refresh(guild_id=guild_id))
+    _refresh_last[key] = now
     _refresh_tasks[key] = task
     task.add_done_callback(lambda t: _refresh_tasks.pop(key, None))
     return 1

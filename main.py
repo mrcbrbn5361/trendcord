@@ -318,19 +318,26 @@ async def before_refresh_stale():
 
 
 async def force_refresh(guild_id=None, limit=STALE_BATCH):
-    """Beklemeden fiyat tazele (web paneli / komut tetikler). Donus: sayi."""
+    """Beklemeden fiyat tazele (web paneli / komut tetikler). Donus: sayi.
+
+    Not: check_prices/refresh_stale_prices calisirsa atlanir (cakisma yok).
+    """
+    if _refresh_lock.locked():
+        logger.info("Zorunlu yenileme atlandi: periyodik döngü çalışıyor.")
+        return 0
     products = (bot.db.get_stale_products(older_than_minutes=0, limit=limit)
                 if guild_id is None else
                 [p for p in bot.db.get_all_products(guild_id=guild_id)][:limit])
     n = 0
-    for p in products:
-        try:
-            if await refresh_product(p):
-                n += 1
-            await asyncio.sleep(1.5)
-        except Exception as e:
-            logger.error(f"Zorunlu yenileme hatası "
-                         f"({p.get('product_id', '?')}): {e}")
+    async with _refresh_lock:
+        for p in products:
+            try:
+                if await refresh_product(p):
+                    n += 1
+                await asyncio.sleep(1.5)
+            except Exception as e:
+                logger.error(f"Zorunlu yenileme hatası "
+                             f"({p.get('product_id', '?')}): {e}")
     return n
 
 def run_web(port):
