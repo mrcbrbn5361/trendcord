@@ -116,6 +116,27 @@ check("CSP frame-src her iki hostu da acik",
 check("CSP connect-src her iki hostu da acik",
       "connect-src 'self' https://engelsizforum.com https://www.engelsizforum.com" in csp)
 
+print("\n== Govde kaydirma container'i (renk korlugu filtresi icin)")
+# NOT: v= parametresi diskteki dosya adiyla eslesmeli; eski surum numarasi
+# tutulursa 404 gelir ve kontroller yanlis negatif verir.
+st_tw, tw, _ = req("/static/css/tailwind.min.css?v=11")
+check("tailwind.min.css?v=11 sunuluyor", st_tw == 200 and len(tw or "") > 1000,
+      f"{st_tw} len={len(tw or '')}")
+tw = tw or ""
+check("html sabit tutuluyor",
+      "overflow-x:clip" in tw and "height:100%" in tw and "overflow:hidden" in tw)
+check("body kendi kaydirma alani", "overflow-y:auto" in tw and "height:100%" in tw)
+check("body icinde mobil alt menu boslugu korunuyor", "mobile-safe-bottom" in tw)
+st_aj, aj, _ = req("/static/js/app.js?v=3")
+check("app.js?v=3 sunuluyor", st_aj == 200 and len(aj or "") > 1000,
+      f"{st_aj} len={len(aj or '')}")
+aj = aj or ""
+check("scroll dinleyicisi body'ye bagli", "document.body || window" in aj)
+check("baslik golgesi body.scrollTop okuyor", "document.body.scrollTop" in aj)
+check("eski window.scrollY kullanimi kalmadi", "window.scrollY > 24" not in aj)
+check("lockPage body.overflow kullanıyor (artık gerçekten kilitliyor)",
+      "document.body.style.overflow" in aj)
+
 print("\n== Widget mobil uyumlama")
 check("layout widget-overrides yuklüyor", "widget-overrides.css" in lay)
 st, wcss, _ = req("/static/css/widget-overrides.css")
@@ -212,7 +233,7 @@ check("Vary: Cookie", "cookie" in vary.lower(), vary)
 check("Vary: Accept-Encoding", "accept-encoding" in vary.lower(), vary)
 st, _, h = req("/api/v1/me")
 check("API no-store", "no-store" in h.get("cache-control", ""), h.get("cache-control", "-"))
-for a in ["/static/css/tailwind.min.css?v=9", "/static/js/app.js?v=2", "/static/js/chart.js?v=1",
+for a in ["/static/css/tailwind.min.css?v=11", "/static/js/app.js?v=3", "/static/js/chart.js?v=1",
           "/static/img/placeholder.svg", "/static/fonts/nunito-sans.woff2?v=2"]:
     st, _, h = req(a)
     cc = h.get("cache-control", "")

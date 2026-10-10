@@ -289,13 +289,19 @@
 
 
     /* ---------------- Scroll golgesi ---------------- */
+    /* Kaydirma container'i govde (bkz. input.css): html sabit, body kayar.
+       Bu yuzden window.scrollY degil, body's scrollTop okunur. */
+    function scrollTop() {
+        return document.body ? document.body.scrollTop : (window.scrollY || 0);
+    }
     var scrollTicking = false;
-    window.addEventListener('scroll', function () {
+    var scrollHost = document.body || window;
+    scrollHost.addEventListener('scroll', function () {
         if (scrollTicking) return;
         scrollTicking = true;
         requestAnimationFrame(function () {
             document.querySelectorAll('[data-site-header]').forEach(function (h) {
-                h.classList.toggle('is-scrolled', window.scrollY > 24);
+                h.classList.toggle('is-scrolled', scrollTop() > 24);
             });
             scrollTicking = false;
         });

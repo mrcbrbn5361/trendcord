@@ -164,6 +164,10 @@
         text-size-adjust: 100%;
         overflow-x: clip;
         overscroll-behavior-x: none;
+        /* Govde kaydirma container'i: asagida `body` kendi kaydirma alanini
+           yonetiyor, html yalnizca boyut tutar ve kendisi tasmaz. */
+        height: 100%;
+        overflow: hidden;
     }
 
     html, body {
@@ -181,6 +185,22 @@
         -webkit-tap-highlight-color: transparent;
         min-height: 100dvh;
         transition: background-color 0.3s ease, color 0.3s ease;
+
+        /* KRITIK (renk korlugu filtresi): EngelsizForum widget'i renk korlugu
+           modu secildiginde <body>'ye `filter: url(#...)` uygular. CSS'te
+           `filter`, icindeki `position: fixed` cocuklar icin CONTAINING BLOCK
+           yaratir; boylece `bottom: 0` "belge dibi"ne gider ve mobil alt menu /
+           FAB / widget butonu ekrandan kaybolur.
+
+           Cozum: govdeyi kendi kaydirma container'i yapip yuksekligini ekrana
+           sabitliyoruz. Boylece filter body'yi containing block yapsa bile
+           body's kutusu ekranla ayni yukseklikte kalir; `bottom: 0` yine
+           gorunur ekranin altina oturur. Normal durumda da davranis degismez
+           (gorsel sonuc ayni, sadece kaydirma hedefi window yerine body). */
+        height: 100%;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
     }
 
     /* Tasma emniyet supaplari: masaustu pencere kuculse de, mobil pinch
