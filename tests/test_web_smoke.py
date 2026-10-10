@@ -106,8 +106,15 @@ check("widget scripti layout'ta", "engelsizforum.com/widget/engelsiz-accessibili
 check("widget rengi Trendcord turuncusu", 'data-color="#F27A1A"' in lay)
 check("eski mavi renk kalmadi", 'data-color="#185886"' not in lay)
 check("widget async+defer", "async" in lay and "defer" in lay)
-check("CSP frame-src acik", "frame-src" in csp and "engelsizforum.com" in csp)
-check("CSP connect-src acik", "connect-src 'self' https://engelsizforum.com" in csp)
+# 308 yonlendirmesi: apenam kullanilirsa www'ye gider ve CSP bloklar
+check("www adresi dogrudan kullaniliyor",
+      'src="https://www.engelsizforum.com/widget/engelsiz-accessibility.js"' in lay)
+check("CSP her iki hostu da acik",
+      "script-src 'self' https://engelsizforum.com https://www.engelsizforum.com" in csp)
+check("CSP frame-src her iki hostu da acik",
+      "frame-src 'self' https://engelsizforum.com https://www.engelsizforum.com" in csp)
+check("CSP connect-src her iki hostu da acik",
+      "connect-src 'self' https://engelsizforum.com https://www.engelsizforum.com" in csp)
 
 # --------------------------------------------------------------- CSRF reddi
 print("\n== CSRF reddi (403 olmali)")

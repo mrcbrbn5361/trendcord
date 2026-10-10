@@ -85,8 +85,11 @@ CSP = "; ".join([
     # CSP tarafindan calistirilabilir sayilmaz, bu yuzden ek izin gerekmez.
     # EngelsizForum WCAG 2.1 AAA erisilebilirlik widget'i harici kaynaktan
     # yuklenir (async/defer, sayfa performansini bloklamaz).
-    "script-src 'self' https://engelsizforum.com",
-    "frame-src 'self' https://engelsizforum.com",
+    # NOT: widget adresi www.engelsizforum.com'a YONLENIYOR (308). CSP
+    # yalnizca apenam (engelsizforum.com) izin verirse yonlenen istek
+    # bloklanir ve butun hic gorunmez; bu yuzden ikisi de acik.
+    "script-src 'self' https://engelsizforum.com https://www.engelsizforum.com",
+    "frame-src 'self' https://engelsizforum.com https://www.engelsizforum.com",
     # Tailwind/inline CSS ve sinif ici stil nitelikleri icin 'unsafe-inline'
     # (zorunlu: utility-first CSS, her sayfada ayri derlenmis tek dosya).
     "style-src 'self' 'unsafe-inline'",
@@ -95,7 +98,7 @@ CSP = "; ".join([
     # bu yuzden kaynak sunucu zorunlu olarak harici.
     "img-src 'self' data: https://cdn.discordapp.com https://cdn.dsmcdn.com https://*.trendyol.com",
     "font-src 'self'",
-    "connect-src 'self' https://engelsizforum.com",
+    "connect-src 'self' https://engelsizforum.com https://www.engelsizforum.com",
     # NOT: `upgrade-insecure-requests` yalnizca HTTPS yanitlarda eklenir
     # (asagida); HTTP uzerinden calisan yerel sunucuda tum relative
     # kaynaklari https'e zorlar ve gelistirmeyi bozardi.
