@@ -141,7 +141,7 @@ class TrendcordBot(commands.Bot):
 bot = TrendcordBot()
 
 
-@bot.tree.on_error
+@bot.tree.error
 async def on_app_command_error(interaction: discord.Interaction, error):
     """Slash komut hatasi: hem logla hem kullaniciya bildir.
 
