@@ -42,3 +42,19 @@ jobs:
         env:
           COOKIE_SECURE: "0"
         run: python tests/test_web_smoke.py
+
+  cog-guards:
+    name: Discord API Kullanim Kontrolleri
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # discord.py 2.7 API kullanimlari: Context.followup / defer(thinking) /
+      # tree.on_error. Bunlar calisma aninda patliyor, CI'da yakalansin.
+      - name: Run cog guard tests
+        run: python tests/test_cog_guards.py

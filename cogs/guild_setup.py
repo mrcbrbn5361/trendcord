@@ -288,7 +288,9 @@ class GuildSetup(commands.Cog):
         if hatali:
             embed.add_field(name="❌ Hatalı", value="\n".join(hatali[:20]),
                             inline=False)
-        await ctx.followup.send(embed=embed, ephemeral=True)
+        # Context.send() hem message baglaminda hem defer edilmis
+        # interaction'da calisir (discord.py 2.7'de Context.followup yok).
+        await ctx.send(embed=embed, ephemeral=True)
 
     # ---------- /destek ----------
     @commands.hybrid_command(name="destek",

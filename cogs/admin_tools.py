@@ -46,7 +46,9 @@ class AdminTools(commands.Cog):
             bayat = len([p for p in self.bot.db.get_all_products(guild_id=gid)
                          if not p.get("last_checked")])
         n = await botmain.force_refresh(guild_id=gid)
-        await ctx.followup.send(
+        # Context.send() hem message baglaminda hem defer edilmis
+        # interaction'da calisir (discord.py 2.7'de Context.followup yok).
+        await ctx.send(
             f"🔄 **{n}** ürün tazelendi (işaretli: {bayat}).", ephemeral=True)
 
     @commands.command(name="reload")

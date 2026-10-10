@@ -428,7 +428,9 @@ class ProductCommands(commands.Cog):
             embed.add_field(name="Detay", value="\n".join(ok[:25]), inline=False)
         if hatali:
             embed.add_field(name="❌ Hatalı", value="\n".join(hatali[:15]), inline=False)
-        await ctx.followup.send(embed=embed, ephemeral=True)
+        # Context.send() hem message baglaminda hem defer edilmis
+        # interaction'da calisir (discord.py 2.7'de Context.followup yok).
+        await ctx.send(embed=embed, ephemeral=True)
 
     @commands.command(name="istatistik", aliases=["stats", "bilgi"])
     @commands.is_owner()
