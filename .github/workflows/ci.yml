@@ -53,6 +53,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+
+      # test_provisioner.py provisioner.official.runner'i import ediyor ve o
+      # modul discord.py'ye bagli. Tam requirements.txt kurmaya gerek yok
+      # (curl_cffi/cloudscraper bu testlerde kullanilmiyor) ama discord.py sart.
+      - name: Install test dependencies
+        run: pip install --disable-pip-version-check "discord.py==2.7.1"
 
       # discord.py 2.7 API kullanimlari: Context.followup / defer(thinking) /
       # tree.on_error. Bunlar calisma aninda patliyor, CI'da yakalansin.
