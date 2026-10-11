@@ -54,11 +54,48 @@ OPTIONAL_MODULES = {
     },
 }
 
-# Bot daveti onerilen izinler (G2) — hesaplanmis deger:
-# view_channel, send_messages, embed_links, attach_files, add_reactions,
-# use_external_emojis, read_message_history, use_application_commands,
-# manage_messages, manage_channels, create_public_threads, send_messages_in_threads
-RECOMMENDED_PERMISSIONS = 311385517136
+# Bot daveti onerilen izinler (G2).
+#
+# ONCEDEN: sihirli sayi 311385517136 vardi ve YORUMDA yazilan izinlerin bir
+# kismi ICINMIYORDU (send_messages_in_threads, create_private_threads).
+# Davet linki `permissions=8` (Administrator) ile paylasildigi icin kimse
+# fark etmiyordu; Administrator HER seyi verir. Izinler daraltildiginda
+# destek/ticket sistemi (private thread + icinde mesaj) kirilirdi.
+#
+# Artik liste ACIK yaziliyor ve deger hesaplaniyor -> yorum ile deger
+# birbirinden ayrilamaz.
+#
+# administrator (bit 3) BILINCLI OLARAK DAHIL DEGILDIR: sunucu yonetimi
+# gerektiriyor.
+BOT_INVITE_PERMISSIONS = [
+    "view_channel",              # kanal goruntuleme
+    "send_messages",             # fiyat/duyuru bildirimleri
+    "send_messages_in_threads",  # destek talebi icinde yanit (ZORUNLU)
+    "create_public_threads",
+    "create_private_threads",    # destek paneli private thread aciyor
+    "manage_threads",            # ticket yonetimi
+    "embed_links",               # embed gonderimi
+    "attach_files",
+    "read_message_history",
+    "add_reactions",
+    "use_external_emojis",
+    "use_application_commands",  # slash komutlar
+    "manage_messages",           # duyuru/panel temizligi
+    "manage_channels",           # kanal + izin yonetimi (provisioner)
+]
+
+def _compute_permissions() -> int:
+    """Izin listesinden bitfield hesapla (yorum/deger ayrilamaz)."""
+    import discord
+    p = discord.Permissions.none()
+    for name in BOT_INVITE_PERMISSIONS:
+        setattr(p, name, True)
+    p.administrator = False
+    return p.value
+
+
+RECOMMENDED_PERMISSIONS = _compute_permissions()
+assert "administrator" not in BOT_INVITE_PERMISSIONS
 
 
 def channel_set(modules: dict):

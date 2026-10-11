@@ -400,7 +400,22 @@ _ensure_db()
 
 OWNER_ID = os.getenv("OWNER_ID", "")
 CLIENT_ID = os.getenv("CLIENT_ID", "")
-BOT_INVITE_URL = f"https://discord.com/api/oauth2/authorize?client_id={CLIENT_ID}&permissions=8&scope=bot%20applications.commands"
+
+
+def build_invite_url(client_id: str) -> str:
+    """Bot davet linki — en AZ yetkiyle (Administrator DEGIL).
+
+    `permissions=8` (Administrator) sunucunun tamamini bota veriyordu.
+    Gereken izinler provisioner/client/data.BOT_INVITE_PERMISSIONS
+    listesinden hesaplanir.
+    """
+    from provisioner.client.data import RECOMMENDED_PERMISSIONS
+    return (f"https://discord.com/api/oauth2/authorize?client_id={client_id}"
+            f"&permissions={RECOMMENDED_PERMISSIONS}"
+            f"&scope=bot%20applications.commands")
+
+
+BOT_INVITE_URL = build_invite_url(CLIENT_ID)
 SUPPORT_SERVER = os.getenv("SUPPORT_SERVER", "https://discord.gg/XwyPpCbMA8")
 
 @app.exception_handler(404)
@@ -627,7 +642,7 @@ async def dashboard(request: Request, guild_id: str = Query(None)):
                     print(f"[AVATAR] httpx error ({uid_key}): {e}")
                     user_avatars[uid_key] = ""
 
-    invite_url = f"https://discord.com/api/oauth2/authorize?client_id={os.getenv('CLIENT_ID')}&permissions=8&scope=bot%20applications.commands"
+    invite_url = build_invite_url(os.getenv('CLIENT_ID', ''))
 
     ctx = template_context(request, {
         "request": request, "user": user, "products": products, 

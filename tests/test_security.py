@@ -107,6 +107,37 @@ check("SQL parametrik (string-format SELECT yok)",
 check("SECRET_KEY gercek (placeholder degil)",
       'or "trendcord-dev-csrf"' in app_src)   # fallback var ama SECRET_KEY oncelikli
 
+# ---------------------------------------------------------------- 8) bot izinleri
+print("\n== Bot daveti en az yetkiyle")
+import importlib.util  # noqa: E402
+_spec = importlib.util.spec_from_file_location(
+    "_tdata", os.path.join(ROOT, "provisioner", "client", "data.py"))
+_tdata = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_tdata)
+
+perms = _tdata.BOT_INVITE_PERMISSIONS
+check("izin listesi acik yazili (sihirli sayi degil)", isinstance(perms, list) and len(perms) > 0,
+      f"{len(perms)} izin")
+check("administrator YOK", "administrator" not in perms)
+for need in ("view_channel", "send_messages", "send_messages_in_threads",
+             "create_private_threads", "manage_threads", "use_application_commands",
+             "manage_channels", "embed_links"):
+    check(f"gerekli izin var: {need}", need in perms)
+check("deger hesaplanmis", _tdata.RECOMMENDED_PERMISSIONS > 0,
+      str(_tdata.RECOMMENDED_PERMISSIONS))
+
+import discord  # noqa: E402
+_p = discord.Permissions(_tdata.RECOMMENDED_PERMISSIONS)
+check("hesaplanan degerde administrator yok", not _p.administrator)
+check("hesaplanan deger thread izinleri iceriyor",
+      _p.send_messages_in_threads and _p.create_private_threads and _p.manage_threads)
+
+check("web'de permissions=8 kalmadi",
+      "permissions=8&scope" not in app_src)
+check("build_invite_url fonksiyonu var", "def build_invite_url(" in app_src)
+check("BOT_INVITE_URL hesaplanmis degeri kullanir",
+      "BOT_INVITE_URL = build_invite_url(CLIENT_ID)" in app_src)
+
 print(f"\n{'=' * 46}\nSONUC: {len(fails)} basarisiz")
 for f in fails:
     print("  FAIL:", f)
