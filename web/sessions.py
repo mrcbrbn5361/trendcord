@@ -32,13 +32,31 @@ def _get_db():
     return _local.conn
 
 
-def _cleanup_expired():
+_last_cleanup = 0.0
+
+
+def _cleanup_expired(min_interval: int = 3600) -> int:
+    """Suresi dolmus oturumlari siler (en fazla saatte bir calisir).
+
+    Once `int(time.time()) % 3600 == 0` kosulu vardi; bu yalnizca o SANIYEDE
+    gelen istekte tetiklendigi icin dusuk trafikte hic calismiyor ve tablo
+    sinirsiz buyuyordu (101 kayit birikmisti).
+    """
+    global _last_cleanup
+    now = time.time()
+    if now - _last_cleanup < min_interval:
+        return 0
+    _last_cleanup = now
     try:
         db = _get_db()
-        db.execute("DELETE FROM sessions WHERE expires_at < ?", (time.time(),))
+        n = db.execute("DELETE FROM sessions WHERE expires_at < ?", (now,)).rowcount
         db.commit()
+        if n:
+            logger.info(f"Session bakimi: {n} suresi dolmus oturum silindi")
+        return n
     except Exception as e:
         logger.warning(f"Session cleanup error: {e}")
+        return 0
 
 
 class ServerSession:
@@ -206,9 +224,8 @@ class ServerSessionMiddleware:
             await self.app(scope, receive, send)
             return
 
-        # Periodic cleanup
-        if int(time.time()) % 3600 == 0:
-            _cleanup_expired()
+        # Periyodik bakim: suresi dolmus oturumlar (en fazla saatte bir)
+        _cleanup_expired()
 
         # Extract session ID from cookies
         cookie_header = ""

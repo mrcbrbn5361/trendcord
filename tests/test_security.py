@@ -138,6 +138,15 @@ check("build_invite_url fonksiyonu var", "def build_invite_url(" in app_src)
 check("BOT_INVITE_URL hesaplanmis degeri kullanir",
       "BOT_INVITE_URL = build_invite_url(CLIENT_ID)" in app_src)
 
+# ---------------------------------------------------------------- 9) oturum bakimi
+print("\n== Oturum bakimi (tablo sismesin)")
+check("sureli dolmus oturum siliniyor",
+      "DELETE FROM sessions WHERE expires_at < ?" in sess_src)
+check("eski 'sadece tam saniye' tetikleyicisi gitti",
+      re.search(r"^\s*if int\(time\.time\(\)\) % 3600", sess_src, re.M) is None)
+check("saatlik throttle var", "min_interval: int = 3600" in sess_src)
+check("silinen adet loglaniyor", "suresi dolmus oturum silindi" in sess_src)
+
 print(f"\n{'=' * 46}\nSONUC: {len(fails)} basarisiz")
 for f in fails:
     print("  FAIL:", f)
