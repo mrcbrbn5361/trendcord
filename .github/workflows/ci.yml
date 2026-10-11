@@ -80,8 +80,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+
+      # Bot izin bitfield'i discord.py ile hesaplaniyor -> paket gerekli.
+      - name: Install test dependencies
+        run: pip install --disable-pip-version-check "discord.py==2.7.1"
 
       # Path traversal, origin erisimi, rate-limit fail-open, XFF, OAuth
-      # state, session fixation, API kapsam sizintisi.
+      # state, session fixation, API kapsam sizintisi, bot izinleri.
       - name: Run security tests
         run: python tests/test_security.py
